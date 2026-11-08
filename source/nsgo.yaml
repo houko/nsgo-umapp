@@ -1,0 +1,12 @@
+name: Umapp
+id: me.oneo.umapp
+version: 0.1.0
+
+icon:
+  png: assets/icon.png
+
+dev:
+  target: native
+
+build:
+  output: ../dist

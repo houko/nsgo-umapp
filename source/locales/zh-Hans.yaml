@@ -1,0 +1,95 @@
+appName: "Umapp"
+title: "Umapp"
+connectTitle: "连接到 Umami"
+connectBody: "菜单栏里一键查看网站与访客。在 Umami 的设置 → API 密钥中创建密钥，粘贴到这里。"
+settingsTitle: "设置"
+account: "账户"
+apiEndpoint: "API 地址"
+apiEndpointHint: "Umami Cloud，或你自己的服务器地址。"
+apiKey: "API 密钥"
+connect: "连接"
+save: "保存"
+checkingKey: "正在检查密钥…"
+disconnect: "断开"
+menuBar: "菜单栏"
+liveLabel: "在线访客"
+liveHint: "在菜单栏显示当前有多少人在浏览网站。"
+websites: "网站"
+order: "排序"
+orderByVisitors: "访客多的在前"
+orderCustom: "自定义顺序"
+orderHint: "在这里或列表里移动网站，即可排成你的顺序。"
+orderMenuHint: "移动网站以排成你的顺序"
+showSite:
+  message: "显示 {Name}"
+  placeholders:
+    Name: { type: String }
+version:
+  message: "umapp {Version}"
+  placeholders:
+    Version: { type: String }
+quit: "退出"
+pasteKey: "请粘贴 API 密钥。"
+visitors: "访客"
+byVisitors: "按访客"
+inYourOrder: "自定义顺序"
+mostVisitorsFirst: "访客多的在前"
+yourOrder: "自定义顺序"
+views: "浏览"
+comparedWith:
+  message: "对比{Range}"
+  placeholders:
+    Range: { type: String }
+updated:
+  message: "{When}更新"
+  placeholders:
+    When: { type: String }
+loadErrorTitle: "无法加载网站"
+tryAgain: "重试"
+noSitesTitle: "还没有网站"
+noSitesBody: "在 Umami 中添加网站后，就会出现在这里。"
+allHiddenTitle: "所有网站都已隐藏"
+allHiddenBody: "在设置中选择要显示的网站。"
+range24h: "24H"
+range7d: "7D"
+range30d: "30D"
+range90d: "90D"
+range24hLong: "过去 24 小时"
+range7dLong: "过去 7 天"
+range30dLong: "过去 30 天"
+range90dLong: "过去 90 天"
+refresh: "刷新"
+settings: "设置"
+openUmami: "在 Umami 中打开"
+visits: "访问"
+viewsPerVisit: "每次访问浏览"
+bounceRate: "跳出率"
+visitDuration: "访问时长"
+pages: "页面"
+referrers: "来源"
+countries: "国家/地区"
+nothingInRange: "这段时间没有数据"
+chartByHour: "按小时的访客与浏览"
+chartByDay: "按天的访客与浏览"
+online:
+  message: "{Count} 在线"
+  placeholders:
+    Count: { type: int }
+liveTooltip:
+  message: "过去 5 分钟有 {Count} {Unit}"
+  placeholders:
+    Count: { type: int }
+    Unit: { type: String }
+trayTooltip:
+  message: "{Count} {Unit}在线"
+  placeholders:
+    Count: { type: int }
+    Unit: { type: String }
+visitor: "位访客"
+visitorsUnit: "位访客"
+viewUnit: "次浏览"
+viewsUnit: "次浏览"
+new: "新"
+moveUp: "上移"
+moveDown: "下移"
+dash: "—"

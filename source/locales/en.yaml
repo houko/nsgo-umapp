@@ -1,0 +1,95 @@
+appName: "Umapp"
+title: "Umapp"
+connectTitle: "Connect to Umami"
+connectBody: "Your websites and their visitors, a click away in the menu bar. Create an API key in Umami under Settings → API keys, and paste it here."
+settingsTitle: "Settings"
+account: "Account"
+apiEndpoint: "API endpoint"
+apiEndpointHint: "Umami Cloud's, or your own server's address."
+apiKey: "API key"
+connect: "Connect"
+save: "Save"
+checkingKey: "Checking the key…"
+disconnect: "Disconnect"
+menuBar: "Menu bar"
+liveLabel: "Visitors online"
+liveHint: "Show how many people are on your websites now."
+websites: "Websites"
+order: "Order"
+orderByVisitors: "Most visitors first"
+orderCustom: "Your order"
+orderHint: "Move websites to put them in your order, here or in the list."
+orderMenuHint: "Move websites to put them in your order"
+showSite:
+  message: "Show {Name}"
+  placeholders:
+    Name: { type: String }
+version:
+  message: "umapp {Version}"
+  placeholders:
+    Version: { type: String }
+quit: "Quit"
+pasteKey: "Paste an API key."
+visitors: "Visitors"
+byVisitors: "by visitors"
+inYourOrder: "in your order"
+mostVisitorsFirst: "Most Visitors First"
+yourOrder: "Your Order"
+views: "Views"
+comparedWith:
+  message: "Compared with the {Range}"
+  placeholders:
+    Range: { type: String }
+updated:
+  message: "Updated {When}"
+  placeholders:
+    When: { type: String }
+loadErrorTitle: "Couldn't load your websites"
+tryAgain: "Try again"
+noSitesTitle: "No websites yet"
+noSitesBody: "Add a website in Umami, and it shows up here."
+allHiddenTitle: "Every website is hidden"
+allHiddenBody: "Choose the websites to show in Settings."
+range24h: "24H"
+range7d: "7D"
+range30d: "30D"
+range90d: "90D"
+range24hLong: "previous 24 hours"
+range7dLong: "previous 7 days"
+range30dLong: "previous 30 days"
+range90dLong: "previous 90 days"
+refresh: "Refresh"
+settings: "Settings"
+openUmami: "Open in Umami"
+visits: "Visits"
+viewsPerVisit: "Views per visit"
+bounceRate: "Bounce rate"
+visitDuration: "Visit duration"
+pages: "Pages"
+referrers: "Referrers"
+countries: "Countries"
+nothingInRange: "Nothing in this range"
+chartByHour: "Visitors and views by hour"
+chartByDay: "Visitors and views by day"
+online:
+  message: "{Count} online"
+  placeholders:
+    Count: { type: int }
+liveTooltip:
+  message: "{Count} {Unit} in the last 5 minutes"
+  placeholders:
+    Count: { type: int }
+    Unit: { type: String }
+trayTooltip:
+  message: "{Count} {Unit} online"
+  placeholders:
+    Count: { type: int }
+    Unit: { type: String }
+visitor: "visitor"
+visitorsUnit: "visitors"
+viewUnit: "view"
+viewsUnit: "views"
+new: "new"
+moveUp: "Move up"
+moveDown: "Move down"
+dash: "—"
