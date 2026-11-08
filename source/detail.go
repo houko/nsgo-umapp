@@ -22,24 +22,21 @@ func (a *app) detail(cx *core.Scope, s *site) core.Node {
 		nav = append(nav, ui.Button{Text: tr.OpenUmami(), Icon: lucide.ExternalLink, Variant: ui.ButtonGhost, TestID: "open",
 			OnPress: func() { cx.OpenURL(u, nil) }})
 	}
-	return core.View{Style: ui.FillRest, Children: []core.Node{
-		core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Padding: core.Edges{Right: 10, Bottom: 4, Left: 8}, FlexShrink: 0},
-			Children: nav},
-		ui.ScrollView{Style: ui.FillRest, TestID: "detail-" + s.ID,
-			ContentStyle: core.Style{Padding: core.Edges{Top: 4, Right: gutter, Bottom: gutter, Left: gutter}, Gap: 18},
-			Children: []core.Node{
-				column(2,
-					row(8, oneLine(ui.Text(s.Name, 17, ui.Semibold, colors.Text)), a.liveBadge(cx, s.active, true)),
-					domainLine(cx, s.Domain),
-				),
-				a.metricsGrid(cx, s),
-				a.chart(cx, s),
-				a.detailError(cx, s),
-				breakdown(cx, tr.Pages(), tr.Views(), "path", s.pages, s.detailGen == a.gen && s.pages == nil && s.detailErr == nil),
-				breakdown(cx, tr.Referrers(), tr.Visitors(), "referrer", s.referrers, s.pages == nil && s.detailErr == nil),
-				breakdown(cx, tr.Countries(), tr.Visitors(), "country", s.countries, s.pages == nil && s.detailErr == nil),
-			}},
-	}}
+	return ui.ScrollView{Style: ui.FillRest, TestID: "detail-" + s.ID,
+		ContentStyle: core.Style{Padding: core.All(gutter), Gap: 18},
+		Children: []core.Node{
+			row(0, nav...),
+			column(2,
+				row(8, oneLine(ui.Text(s.Name, 17, ui.Semibold, colors.Text)), a.liveBadge(cx, s.active, true)),
+				domainLine(cx, s.Domain),
+			),
+			a.metricsGrid(cx, s),
+			a.chart(cx, s),
+			a.detailError(cx, s),
+			breakdown(cx, tr.Pages(), tr.Views(), "path", s.pages, s.detailGen == a.gen && s.pages == nil && s.detailErr == nil),
+			breakdown(cx, tr.Referrers(), tr.Visitors(), "referrer", s.referrers, s.pages == nil && s.detailErr == nil),
+			breakdown(cx, tr.Countries(), tr.Visitors(), "country", s.countries, s.pages == nil && s.detailErr == nil),
+		}}
 }
 
 func domainLine(cx *core.Scope, domain string) core.Node {
@@ -198,7 +195,7 @@ func legend(cx *core.Scope, color func() core.Color, label string) core.Node {
 func breakdown(cx *core.Scope, title, unit, kind string, rows []metric, loading bool) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
-	head := core.View{Style: core.Style{Direction: core.Row, Padding: core.Edges{Bottom: 2}},
+	head := core.View{Style: core.Style{Direction: core.Row},
 		Children: []core.Node{
 			core.Text{Content: title, Style: core.Style{FontSize: 11, FontWeight: ui.Medium, FlexGrow: 1}, StyleFunc: ui.Colored(colors.Faint)},
 			ui.Text(unit, 11, ui.Medium, colors.Faint),
@@ -209,7 +206,7 @@ func breakdown(cx *core.Scope, title, unit, kind string, rows []metric, loading 
 		sk := make([]core.Node, 3)
 		for i := range sk {
 			sk[i] = ui.SkeletonBlock{Width: core.Pt(core.Points(160 - i*36)), Height: core.Pt(10),
-				Style: core.Style{Height: core.Pt(24), AlignItems: core.AlignCenter}}
+				Style: core.Style{Height: core.Pt(28), AlignItems: core.AlignCenter}}
 		}
 		body = column(0, sk...)
 	case len(rows) == 0:
@@ -220,12 +217,12 @@ func breakdown(cx *core.Scope, title, unit, kind string, rows []metric, loading 
 		for _, m := range rows {
 			share := float32(float64(m.Y) / top * 100)
 			label := pathLabel(kind, m.X)
-			items = append(items, core.View{Style: core.Style{Height: core.Pt(24)}, Children: []core.Node{
+			items = append(items, core.View{Style: core.Style{Height: core.Pt(28)}, Children: []core.Node{
 				core.View{Style: core.Style{Position: core.Absolute, Top: core.Pt(0), Bottom: core.Pt(0), Left: core.Pt(0),
 					Width: core.Pct(share), CornerRadius: 5},
 					StyleFunc: func() core.Style { return core.Style{Background: ui.Alpha(colors.Accent(), 0.1)} }},
 				core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8, FlexGrow: 1,
-					Padding: core.Symmetric(0, 8), Height: core.Pt(24)},
+					Padding: core.All(6), Height: core.Pt(28)},
 					Children: []core.Node{
 						oneLine(ui.Text(label, 12, ui.Regular, colors.Text)),
 						ui.Tabular(ui.Text(count(float64(m.Y)), 12, ui.Regular, colors.Muted)),

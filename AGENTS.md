@@ -7,7 +7,8 @@ Umapp is a native menu bar app that shows the websites of an Umami account and t
 - Keep all Go code, `nsgo.yaml` and runtime payload in `source/`; run Go and NSGo commands there.
 - NSGo comes from the checkout `source/go.mod` replaces it with; follow that repository's own instructions when changing it.
 - Keep documentation at the repository root.
-- Use NSGo's `ui` components and Warm Dusk, its Onevra theme; build reusable UI in NSGo rather than here.
+- Use NSGo's `ui` components and its default theme; build reusable UI in NSGo rather than here.
+- Pad every side of a bar, page or row alike: `gutter` for bars and pages, `inset` for rows.
 - Run Umami requests off the UI thread. Apply results on the main thread and never start that work inside a builder.
 - Keep the API key in the macOS keychain, and in the config file elsewhere.
 

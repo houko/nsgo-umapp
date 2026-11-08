@@ -15,11 +15,14 @@ import (
 const (
 	panelWidth  = 360
 	panelHeight = 560
-	gutter      = 16
+	// gutter pads bars and pages on every side; inset pads rows, which
+	// sit gutter-inset from the edge so that their text lines up.
+	gutter = 12
+	inset  = 8
 )
 
 func (a *app) root(cx *core.Scope) core.Node {
-	cx.SetTheme(ui.WarmDuskTheme())
+	cx.SetTheme(ui.DefaultTheme())
 	cx.OnKey("mod+r", func() {
 		if a.configured() {
 			a.refresh()
@@ -85,8 +88,10 @@ func (a *app) detailKey() string {
 }
 
 func (a *app) header(cx *core.Scope) core.Node {
+	colors := ui.ColorsOf(cx)
 	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 4,
-		Padding: core.Edges{Top: 12, Right: 12, Bottom: 8, Left: gutter}, FlexShrink: 0},
+		Padding: core.All(gutter), Borders: core.Edges{Bottom: 1}, FlexShrink: 0},
+		StyleFunc: func() core.Style { return core.Style{BorderColor: colors.Line()} },
 		Children: []core.Node{
 			a.rangeControl(cx),
 			ui.Spacer{},
@@ -126,7 +131,8 @@ func (a *app) list(cx *core.Scope) core.Node {
 	case a.listErr != nil && len(a.sites) == 0:
 		return a.problem(cx, tr.LoadErrorTitle(), a.listErr.Error())
 	case len(a.sites) == 0 && a.loading > 0:
-		return column(0, a.summary(cx), a.skeletonList(cx))
+		return core.View{Style: core.Style{Padding: core.All(gutter - inset)},
+			Children: []core.Node{a.summary(cx), a.skeletonList(cx)}}
 	case len(a.visible()) == 0:
 		if len(a.sites) == 0 {
 			return a.problem(cx, tr.NoSitesTitle(), tr.NoSitesBody())
@@ -134,8 +140,6 @@ func (a *app) list(cx *core.Scope) core.Node {
 		return a.problem(cx, tr.AllHiddenTitle(), tr.AllHiddenBody())
 	}
 	return core.View{Style: ui.FillRest, Children: []core.Node{
-		a.summary(cx),
-		a.listHeading(cx),
 		a.region(a.listKey, a.siteList),
 		a.footer(cx),
 	}}
@@ -154,7 +158,7 @@ func (a *app) listHeading(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
 	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 2,
-		Padding: core.Edges{Top: 8, Right: gutter, Bottom: 2, Left: gutter}, FlexShrink: 0},
+		Padding: core.All(inset), FlexShrink: 0},
 		Children: []core.Node{
 			ui.Text(tr.Websites(), 11, ui.Medium, colors.Faint),
 			a.orderMenu(cx),
@@ -189,12 +193,13 @@ func (a *app) orderMenu(cx *core.Scope) core.Node {
 
 func (a *app) siteList(cx *core.Scope) core.Node {
 	vis := a.visible()
-	children := make([]core.Node, 0, len(vis))
+	children := make([]core.Node, 0, len(vis)+2)
+	children = append(children, a.summary(cx), a.listHeading(cx))
 	for i, s := range vis {
 		children = append(children, a.siteRow(cx, s, i))
 	}
 	return ui.ScrollView{Style: ui.FillRest, TestID: "sites",
-		ContentStyle: core.Style{Padding: core.Edges{Top: 0, Right: 6, Bottom: 6, Left: 6}, Gap: 0},
+		ContentStyle: core.Style{Padding: core.All(gutter - inset)},
 		Children:     children}
 }
 
@@ -226,7 +231,7 @@ func (a *app) siteRow(cx *core.Scope, s *site, _ int) core.Node {
 		Label: name, TestID: id,
 		OnPress: func(core.PressEvent) { a.openSite(id) },
 		Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 12,
-			Padding: core.Symmetric(8, 10), CornerRadius: 8, Width: core.Pct(100)},
+			Padding: core.All(inset), CornerRadius: 8, Width: core.Pct(100)},
 		StyleFunc: func() core.Style {
 			return core.Style{
 				Hover:  &core.Style{Background: colors.Hover()},
@@ -259,7 +264,7 @@ func (a *app) skeletonList(cx *core.Scope) core.Node {
 }
 
 func (a *app) skeletonRow(cx *core.Scope) core.Node {
-	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 12, Padding: core.Symmetric(8, 10)},
+	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 12, Padding: core.All(inset)},
 		Children: []core.Node{
 			column(6, ui.SkeletonBlock{Width: core.Pt(120), Height: core.Pt(11)}, ui.SkeletonBlock{Width: core.Pt(80), Height: core.Pt(9)}),
 			ui.SkeletonBlock{Width: core.Pt(56), Height: core.Pt(20)},
@@ -282,7 +287,7 @@ func (a *app) summary(cx *core.Scope) core.Node {
 	} else {
 		figure = ui.SkeletonBlock{Width: core.Pt(96), Height: core.Pt(26), Style: core.Style{Margin: core.Edges{Top: 6, Bottom: 4}}}
 	}
-	return core.View{Style: core.Style{Padding: core.Edges{Top: 6, Right: gutter, Bottom: 4, Left: gutter}, Gap: 2, FlexShrink: 0},
+	return core.View{Style: core.Style{Padding: core.All(inset), Gap: 2, FlexShrink: 0},
 		Children: []core.Node{
 			row(6, ui.Text(tr.Visitors(), 12, ui.Medium, colors.Muted), ui.Spacer{}, a.liveBadge(cx, active, true)),
 			figure,
@@ -300,7 +305,7 @@ func (a *app) footer(cx *core.Scope) core.Node {
 		children = append(children, ui.Text(tr.Updated(ago(a.now(), a.loadedAt)), 11, ui.Regular, colors.Faint))
 	}
 	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 6, FlexShrink: 0,
-		Padding: core.Edges{Top: 8, Right: gutter, Bottom: 10, Left: gutter}, Borders: core.Edges{Top: 1}},
+		Padding: core.All(gutter), Borders: core.Edges{Top: 1}},
 		StyleFunc: func() core.Style { return core.Style{BorderColor: colors.Line()} },
 		Children:  children}
 }
@@ -427,7 +432,7 @@ func (a *app) problem(cx *core.Scope, title, detail string) core.Node {
 		a.invalidate()
 	}})
 	return core.View{Style: core.Style{FlexGrow: 1, AlignItems: core.AlignCenter, JustifyContent: core.JustifyCenter, Gap: 6,
-		Padding: core.Symmetric(24, 32)},
+		Padding: core.All(24)},
 		Children: []core.Node{
 			ui.Text(title, 14, ui.Semibold, colors.Text),
 			core.Text{Content: detail, Style: core.Style{FontSize: 12, TextAlign: core.TextAlignCenter, LineHeight: 16},

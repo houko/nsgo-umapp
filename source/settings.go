@@ -14,27 +14,16 @@ func (a *app) settings(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
 	connected := a.configured()
-	var children []core.Node
-	if connected {
-		children = append(children, core.View{Style: core.Style{Padding: core.Edges{Top: 12, Right: 12, Bottom: 4, Left: 8}, FlexShrink: 0},
-			Children: []core.Node{
-				ui.Button{Text: tr.Websites(), Icon: lucide.ChevronLeft, Variant: ui.ButtonGhost, TestID: "back", OnPress: a.back},
-			}})
-	}
-	top := core.Points(4)
-	if !connected {
-		top = 28
-	}
-	children = append(children, ui.ScrollView{Style: ui.FillRest, TestID: "settings",
-		ContentStyle: core.Style{Padding: core.Edges{Top: top, Right: gutter, Bottom: gutter, Left: gutter}, Gap: 22},
+	children := []core.Node{ui.ScrollView{Style: ui.FillRest, TestID: "settings",
+		ContentStyle: core.Style{Padding: core.All(gutter), Gap: 22},
 		Children:     a.settingsBody(cx, connected)},
 		core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8, FlexShrink: 0,
-			Padding: core.Edges{Top: 10, Right: gutter, Bottom: 12, Left: gutter}, Borders: core.Edges{Top: 1}},
+			Padding: core.All(gutter), Borders: core.Edges{Top: 1}},
 			StyleFunc: func() core.Style { return core.Style{BorderColor: colors.Line()} },
 			Children: []core.Node{
 				core.Text{Content: tr.Version(version), Style: core.Style{FontSize: 11, FlexGrow: 1}, StyleFunc: ui.Colored(colors.Faint)},
 				ui.Button{Text: tr.Quit(), Variant: ui.ButtonGhost, TestID: "quit", OnPress: a.quit},
-			}})
+			}}}
 	return core.View{Style: ui.FillRest, Children: children}
 }
 
@@ -49,7 +38,10 @@ func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 			core.Text{Content: tr.ConnectBody(), Style: core.Style{FontSize: 12, LineHeight: 17}, StyleFunc: ui.Colored(colors.Muted)},
 		}
 	} else {
-		intro = []core.Node{ui.Text(tr.SettingsTitle(), 17, ui.Semibold, colors.Text)}
+		intro = []core.Node{
+			row(0, ui.Button{Text: tr.Websites(), Icon: lucide.ChevronLeft, Variant: ui.ButtonGhost, TestID: "back", OnPress: a.back}),
+			ui.Text(tr.SettingsTitle(), 17, ui.Semibold, colors.Text),
+		}
 	}
 	nodes := []core.Node{column(4, intro...)}
 	title := tr.Account()
@@ -58,7 +50,11 @@ func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 	}
 	nodes = append(nodes, a.accountSection(cx, title, connected))
 	if connected {
-		nodes = append(nodes, a.section(cx, tr.MenuBar(), a.liveSwitch(cx)))
+		general := []core.Node{a.liveSwitch(cx)}
+		if a.canLaunchAtLogin {
+			general = append([]core.Node{a.loginSwitch(cx)}, general...)
+		}
+		nodes = append(nodes, a.section(cx, tr.General(), general...))
 		if len(a.sites) > 0 {
 			nodes = append(nodes, a.websitesSection(cx))
 		}
@@ -130,6 +126,11 @@ func (a *app) liveSwitch(cx *core.Scope) core.Node {
 		})
 }
 
+func (a *app) loginSwitch(cx *core.Scope) core.Node {
+	tr := msgsOf(cx)
+	return a.switchRow(cx, tr.LaunchAtLoginLabel(), "", live(a, func() bool { return a.launchAtLogin }), a.setLaunchAtLogin)
+}
+
 func (a *app) websitesSection(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
@@ -192,7 +193,7 @@ func (a *app) websiteRows(cx *core.Scope) core.Node {
 			children = append([]core.Node{movers}, children...)
 		}
 		rows = append(rows, core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8,
-			Padding: core.Symmetric(5, 6), CornerRadius: 8},
+			Padding: core.All(6), CornerRadius: 8},
 			Children: children})
 	}
 	return column(0, rows...)
@@ -241,7 +242,7 @@ func (a *app) mark(cx *core.Scope) core.Node {
 			StyleFunc: ui.Filled(func() core.Color { return core.RGB(0xffffff) })})
 	}
 	return core.View{Style: core.Style{Direction: core.Row, Width: core.Pt(44), Height: core.Pt(44), CornerRadius: 11,
-		Padding: core.Edges{Top: 11, Bottom: 11}, Gap: 4, JustifyContent: core.JustifyCenter, AlignItems: core.AlignEnd,
+		Padding: core.All(9), Gap: 4, JustifyContent: core.JustifyCenter, AlignItems: core.AlignEnd,
 		AlignSelf: core.AlignStart, Margin: core.Edges{Bottom: 12}},
 		StyleFunc: ui.Filled(colors.AccentFill),
 		Children:  bars}

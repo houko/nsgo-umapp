@@ -58,6 +58,11 @@ func (s *shell) ready(cx *core.Scope, dir string) {
 		go s.save(dir, cfg)
 	}
 	a.attach(cx)
+	if runtime.GOOS == "darwin" {
+		a.canLaunchAtLogin = true
+		a.readLogin = func(done func(bool)) { desktop.LaunchAtLogin(cx, done) }
+		a.setLogin = func(on bool) { desktop.SetLaunchAtLogin(cx, on) }
+	}
 
 	desktop.SetShutdownMode(cx, desktop.ShutdownOnExplicit)
 	s.installMenu(cx)

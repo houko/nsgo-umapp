@@ -257,6 +257,24 @@ func TestSettings(t *testing.T) {
 	}
 }
 
+func TestLaunchAtLogin(t *testing.T) {
+	a := testApp(t, newFake())
+	var set []bool
+	a.canLaunchAtLogin = true
+	a.readLogin = func(done func(bool)) { done(true) }
+	a.setLogin = func(on bool) { set = append(set, on) }
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("settings")
+	if !a.launchAtLogin {
+		t.Fatal("the system's setting is not read")
+	}
+	tt.Press("Open at login")
+	if a.launchAtLogin || !slices.Equal(set, []bool{false}) {
+		t.Fatalf("on %v, set %v", a.launchAtLogin, set)
+	}
+}
+
 func TestErrors(t *testing.T) {
 	f := newFake()
 	f.err = errors.New("Couldn't reach the server.")

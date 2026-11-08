@@ -27,6 +27,7 @@
 - Open one website for bounce rate, duration, a chart, and the top pages, referrers and countries.
 - Connect to Umami Cloud or a server of your own, hide websites, and keep them in your order.
 - Show the count of visitors online beside the icon, or hide it.
+- Open at login on macOS.
 
 ## Install
 

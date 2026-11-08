@@ -78,7 +78,8 @@ const (
 	textSave
 	textCheckingKey
 	textDisconnect
-	textMenuBar
+	textGeneral
+	textLaunchAtLoginLabel
 	textLiveLabel
 	textLiveHint
 	textWebsites
@@ -149,7 +150,8 @@ var keyOfText = [numTexts]string{
 	"save",
 	"checkingKey",
 	"disconnect",
-	"menuBar",
+	"general",
+	"launchAtLoginLabel",
 	"liveLabel",
 	"liveHint",
 	"websites",
@@ -218,9 +220,10 @@ var textsEn = i18n.NewTexts(""+
 	"Save"+
 	"Checking the key…"+
 	"Disconnect"+
-	"Menu bar"+
+	"General"+
+	"Open at login"+
 	"Visitors online"+
-	"Show how many people are on your websites now."+
+	"Show by the menu bar icon how many people are on your websites now."+
 	"Websites"+
 	"Order"+
 	"Most visitors first"+
@@ -284,9 +287,10 @@ var textsEn = i18n.NewTexts(""+
 		4,
 		19,
 		10,
-		8,
+		7,
+		13,
 		15,
-		46,
+		67,
 		8,
 		5,
 		19,
@@ -353,7 +357,8 @@ var textsZhHans = i18n.NewTexts(""+
 	"保存"+
 	"正在检查密钥…"+
 	"断开"+
-	"菜单栏"+
+	"通用"+
+	"开机时启动"+
 	"在线访客"+
 	"在菜单栏显示当前有多少人在浏览网站。"+
 	"网站"+
@@ -419,7 +424,8 @@ var textsZhHans = i18n.NewTexts(""+
 		6,
 		21,
 		6,
-		9,
+		6,
+		15,
 		12,
 		54,
 		6,
@@ -652,12 +658,19 @@ func Disconnect(cx *core.Scope) string { return For(cx).Disconnect() }
 // Disconnect is the package's Disconnect in the language of msgs.
 func (msgs Messages) Disconnect() string { return msgs.text(textDisconnect) }
 
-// MenuBar says "Menu bar"
+// General says "General"
 // in the language the app shows under cx.
-func MenuBar(cx *core.Scope) string { return For(cx).MenuBar() }
+func General(cx *core.Scope) string { return For(cx).General() }
 
-// MenuBar is the package's MenuBar in the language of msgs.
-func (msgs Messages) MenuBar() string { return msgs.text(textMenuBar) }
+// General is the package's General in the language of msgs.
+func (msgs Messages) General() string { return msgs.text(textGeneral) }
+
+// LaunchAtLoginLabel says "Open at login"
+// in the language the app shows under cx.
+func LaunchAtLoginLabel(cx *core.Scope) string { return For(cx).LaunchAtLoginLabel() }
+
+// LaunchAtLoginLabel is the package's LaunchAtLoginLabel in the language of msgs.
+func (msgs Messages) LaunchAtLoginLabel() string { return msgs.text(textLaunchAtLoginLabel) }
 
 // LiveLabel says "Visitors online"
 // in the language the app shows under cx.
@@ -666,7 +679,7 @@ func LiveLabel(cx *core.Scope) string { return For(cx).LiveLabel() }
 // LiveLabel is the package's LiveLabel in the language of msgs.
 func (msgs Messages) LiveLabel() string { return msgs.text(textLiveLabel) }
 
-// LiveHint says "Show how many people are on your websites now."
+// LiveHint says "Show by the menu bar icon how many people are on your websites now."
 // in the language the app shows under cx.
 func LiveHint(cx *core.Scope) string { return For(cx).LiveHint() }
 

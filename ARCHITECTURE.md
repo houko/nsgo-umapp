@@ -34,7 +34,7 @@ Umapp is a native menu bar application that reads an Umami account and shows its
 
 ## Data and state
 
-Preferences live in `config.json` under the platform configuration directory. On macOS the API key is in the login keychain under `umapp: Umami API key`. The list of websites is held in memory only: each launch loads it again.
+Preferences live in `config.json` under the platform configuration directory. On macOS the API key is in the login keychain under `umapp: Umami API key`. Whether the app opens at login is the system's, read and changed through NSGo. The list of websites is held in memory only: each launch loads it again.
 
 ## Verification
 

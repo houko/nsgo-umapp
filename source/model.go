@@ -175,6 +175,13 @@ type app struct {
 	connecting   bool
 	connectErr   string
 
+	// Whether the system starts the app at login, where it can. The
+	// system keeps the setting: readLogin asks it, setLogin changes it.
+	canLaunchAtLogin bool
+	launchAtLogin    bool
+	readLogin        func(done func(on bool))
+	setLogin         func(on bool)
+
 	// cx is the app's scope, nil until attach; rev counts the changes to
 	// the state, which the views follow.
 	cx       *core.Scope
@@ -194,6 +201,9 @@ func newApp(cfg config, src source) *app {
 		onLive:   func(int) {},
 		quit:     func() {},
 		selected: -1,
+
+		readLogin: func(done func(bool)) { done(false) },
+		setLogin:  func(bool) {},
 	}
 	a.cfg.Range = min(max(a.cfg.Range, 0), len(spans)-1)
 	a.resetSettings()
@@ -622,6 +632,21 @@ func (a *app) resetSettings() {
 		a.editEndpoint = cloudEndpoint
 	}
 	a.connectErr = ""
+	if a.canLaunchAtLogin {
+		a.readLogin(func(on bool) {
+			a.launchAtLogin = on
+			a.invalidate()
+		})
+	}
+}
+
+func (a *app) setLaunchAtLogin(on bool) {
+	if on == a.launchAtLogin {
+		return
+	}
+	a.setLogin(on)
+	a.launchAtLogin = on
+	a.invalidate()
 }
 
 // connect tries the settings' endpoint and key, and keeps them if Umami
