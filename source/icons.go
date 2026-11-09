@@ -9,7 +9,7 @@ import (
 	"runtime"
 )
 
-// trayIcon draws three rising bars, 18 points high at twice the scale:
+// trayIcon draws a U holding a dot, 18 points high at twice the scale:
 // black on transparent for macOS to tint, a gray that shows on light and
 // dark taskbars elsewhere.
 func trayIcon() []byte {
@@ -19,20 +19,14 @@ func trayIcon() []byte {
 	if runtime.GOOS == "darwin" {
 		ink = color.NRGBA{A: 255}
 	}
-	// Bars 6 wide with rounded ends, 4 apart, from the baseline at 30.
-	bars := []struct{ x, top float64 }{{7, 19}, {15, 12}, {23, 5}}
 	for y := range size {
 		for x := range size {
-			// Supersample each pixel 4x4 for smooth ends.
+			// Supersample each pixel 4x4 for smooth edges.
 			cover := 0
 			for sy := range 4 {
 				for sx := range 4 {
-					px, py := float64(x)+(float64(sx)+0.5)/4, float64(y)+(float64(sy)+0.5)/4
-					for _, b := range bars {
-						if inBar(px, py, b.x, b.top, 6, 31) {
-							cover++
-							break
-						}
+					if inCup(float64(x)+(float64(sx)+0.5)/4, float64(y)+(float64(sy)+0.5)/4) {
+						cover++
 					}
 				}
 			}
@@ -48,19 +42,20 @@ func trayIcon() []byte {
 	return b.Bytes()
 }
 
-// inBar reports whether (px, py) is in a bar from x to x+w and top to
-// bottom whose ends are round.
-func inBar(px, py, x, top, w, bottom float64) bool {
-	r := w / 2
-	cx := x + r
-	if px < x || px > x+w || py > bottom || py < top {
-		return false
+// inCup reports whether (px, py) is in the tray icon: a U 4.5 wide with
+// round ends around a centerline of radius 10, and a dot in its bowl.
+func inCup(px, py float64) bool {
+	const cx, cy, r, top, half = 18, 18.5, 10, 6, 2.25
+	if math.Hypot(px-cx, py-17) <= 3.6 {
+		return true
 	}
-	if py < top+r {
-		return math.Hypot(px-cx, py-(top+r)) <= r
+	if py >= cy {
+		return math.Abs(math.Hypot(px-cx, py-cy)-r) <= half
 	}
-	if py > bottom-r {
-		return math.Hypot(px-cx, py-(bottom-r)) <= r
+	for _, x := range [2]float64{cx - r, cx + r} {
+		if math.Hypot(px-x, py-max(py, top)) <= half {
+			return true
+		}
 	}
-	return true
+	return false
 }

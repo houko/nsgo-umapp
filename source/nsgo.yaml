@@ -3,6 +3,7 @@ id: me.oneo.umapp
 version: 0.1.0
 
 icon:
+  apple: assets/AppIcon.icon
   png: assets/icon.png
 
 dev:
