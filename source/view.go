@@ -23,6 +23,7 @@ const (
 
 func (a *app) root(cx *core.Scope) core.Node {
 	cx.SetTheme(ui.DefaultTheme())
+	base.SetScrollbarTheme(cx, ui.ScrollbarTheme(cx))
 	cx.OnKey("mod+r", func() {
 		if a.configured() {
 			a.refresh()
@@ -46,7 +47,7 @@ func (a *app) root(cx *core.Scope) core.Node {
 		}
 	})
 	colors := ui.ColorsOf(cx)
-	return core.View{Style: core.Style{FlexGrow: 1, MinHeight: core.Pt(0), FontSize: 13},
+	return core.View{Style: ui.FillRest.Merge(core.Style{FontSize: 13, Overflow: core.Hidden}),
 		StyleFunc: func() core.Style {
 			if desktop.ShowsMaterial(cx) {
 				return core.Style{Color: colors.Text()}
@@ -60,11 +61,11 @@ func (a *app) root(cx *core.Scope) core.Node {
 					return a.settings(cx)
 				case a.page == pageSite && a.site(a.open) != nil:
 					return a.region(a.detailKey, func(cx *core.Scope) core.Node {
-						return column(0, a.header(cx), a.detail(cx, a.site(a.open)))
+						return core.View{Style: ui.FillRest, Children: []core.Node{a.header(cx), a.detail(cx, a.site(a.open))}}
 					})
 				default:
 					return a.region(a.listContentKey, func(cx *core.Scope) core.Node {
-						return column(0, a.header(cx), a.list(cx))
+						return core.View{Style: ui.FillRest, Children: []core.Node{a.header(cx), a.list(cx)}}
 					})
 				}
 			}),
@@ -76,7 +77,7 @@ func (a *app) pageKey() string {
 }
 
 func (a *app) listContentKey() string {
-	return fmt.Sprint(a.cfg.Range, a.cfg.CustomOrder, a.listErr, a.loading, a.gen, a.loadedAt, a.listKey())
+	return fmt.Sprint(a.cfg.Range, a.cfg.Sort, a.listErr, a.loading, a.gen, a.loadedAt, a.listKey())
 }
 
 func (a *app) detailKey() string {
@@ -147,9 +148,9 @@ func (a *app) list(cx *core.Scope) core.Node {
 
 func (a *app) listKey() string {
 	var b string
-	b += fmt.Sprint(a.cfg.CustomOrder, a.cfg.Range, a.loading, a.gen)
+	b += fmt.Sprint(a.cfg.Sort, a.cfg.Range, a.loading, a.gen)
 	for _, s := range a.visible() {
-		b += fmt.Sprintf("%s:%v:%d:%g;", s.ID, s.loaded, s.active, s.cur.Visitors)
+		b += fmt.Sprintf("%s:%v:%d:%g:%g;", s.ID, s.loaded, s.active, s.cur.Visitors, s.cur.Pageviews)
 	}
 	return b
 }
@@ -157,13 +158,18 @@ func (a *app) listKey() string {
 func (a *app) listHeading(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
+	metrics := column(1,
+		ui.Text(tr.Visitors(), 11, ui.Medium, colors.Faint),
+		ui.Text(tr.Views(), 11, ui.Medium, colors.Faint),
+	)
+	metrics.Style = metrics.Style.Merge(core.Style{Width: core.Pt(58), AlignItems: core.AlignEnd})
 	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 2,
 		Padding: core.All(inset), FlexShrink: 0},
 		Children: []core.Node{
 			ui.Text(tr.Websites(), 11, ui.Medium, colors.Faint),
 			a.orderMenu(cx),
 			ui.Spacer{},
-			ui.Text(tr.Visitors(), 11, ui.Medium, colors.Faint),
+			metrics,
 		}}
 }
 
@@ -171,8 +177,11 @@ func (a *app) orderMenu(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
 	label := tr.ByVisitors()
-	if a.cfg.CustomOrder {
-		label = tr.InYourOrder()
+	switch a.cfg.Sort {
+	case sortByViews:
+		label = tr.ByViews()
+	case sortByName:
+		label = tr.ByName()
 	}
 	return ui.Menu{
 		Trigger: ui.Button{Text: label, Variant: ui.ButtonGhost, TestID: "order"},
@@ -183,10 +192,12 @@ func (a *app) orderMenu(cx *core.Scope) core.Node {
 		Label:  tr.Order(),
 		TestID: "order",
 		Children: []core.Node{
-			ui.MenuItem{Text: tr.MostVisitorsFirst(), Checked: live(a, func() bool { return !a.cfg.CustomOrder }),
-				OnSelect: func() { a.setCustomOrder(false) }},
-			ui.MenuItem{Text: tr.YourOrder(), Checked: live(a, func() bool { return a.cfg.CustomOrder }),
-				OnSelect: func() { a.setCustomOrder(true) }},
+			ui.MenuItem{Text: tr.MostVisitorsFirst(), Checked: live(a, func() bool { return a.cfg.Sort == sortByVisitors }),
+				OnSelect: func() { a.setSort(sortByVisitors) }},
+			ui.MenuItem{Text: tr.MostViewsFirst(), Checked: live(a, func() bool { return a.cfg.Sort == sortByViews }),
+				OnSelect: func() { a.setSort(sortByViews) }},
+			ui.MenuItem{Text: tr.ByNameFirst(), Checked: live(a, func() bool { return a.cfg.Sort == sortByName }),
+				OnSelect: func() { a.setSort(sortByName) }},
 		},
 	}
 }
@@ -223,9 +234,13 @@ func (a *app) siteRow(cx *core.Scope, s *site, _ int) core.Node {
 	case s.err != nil && s.cur.Visitors == 0:
 		spark = ui.Icon(lucide.CircleAlert, 13, colors.Danger)
 	default:
-		spark = a.sparkline(cx, s.visitors, 20, 56, false)
+		series := s.visitors
+		if a.cfg.Sort == sortByViews {
+			series = s.views
+		}
+		spark = a.sparkline(cx, series, 20, 56, false)
 	}
-	right := column(1, a.visitorCount(cx, s)...)
+	right := column(1, a.siteCount(cx, s)...)
 	right.Style = right.Style.Merge(core.Style{Width: core.Pt(58), AlignItems: core.AlignEnd})
 	return base.Button{
 		Label: name, TestID: id,
@@ -242,15 +257,18 @@ func (a *app) siteRow(cx *core.Scope, s *site, _ int) core.Node {
 	}
 }
 
-func (a *app) visitorCount(cx *core.Scope, s *site) []core.Node {
+func (a *app) siteCount(cx *core.Scope, s *site) []core.Node {
+	colors := ui.ColorsOf(cx)
 	if !s.loaded {
 		return []core.Node{
 			ui.SkeletonBlock{Width: core.Pt(32), Height: core.Pt(11), Style: core.Style{Margin: core.Symmetric(2, 0)}},
+			ui.SkeletonBlock{Width: core.Pt(28), Height: core.Pt(9), Style: core.Style{Margin: core.Symmetric(2, 0)}},
 			ui.SkeletonBlock{Width: core.Pt(24), Height: core.Pt(9), Style: core.Style{Margin: core.Symmetric(2, 0)}},
 		}
 	}
 	return []core.Node{
-		ui.Tabular(ui.Text(count(float64(s.cur.Visitors)), 13, ui.Semibold, ui.ColorsOf(cx).Text)),
+		ui.Tabular(ui.Text(count(float64(s.cur.Visitors)), 13, ui.Semibold, colors.Text)),
+		ui.Tabular(ui.Text(count(float64(s.cur.Pageviews)), 11, ui.Regular, colors.Muted)),
 		a.delta(cx, float64(s.cur.Visitors), float64(s.prev.Visitors), false),
 	}
 }

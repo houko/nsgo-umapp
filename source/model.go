@@ -253,35 +253,34 @@ func (a *app) site(id string) *site {
 	return nil
 }
 
-// ordered returns every site in the order the app shows them: the user's
-// own, or those with the most visitors first. Sites the user's order does
-// not have yet come after it, by name.
+// ordered returns every site in the order the app shows them: by name, or
+// those with the most visitors or views first.
 func (a *app) ordered() []*site {
 	out := slices.Clone(a.sites)
 	byName := func(x, y *site) int {
 		return strings.Compare(strings.ToLower(x.Name), strings.ToLower(y.Name))
 	}
-	if a.cfg.CustomOrder {
-		rank := func(s *site) int {
-			if i := slices.Index(a.cfg.Order, s.ID); i >= 0 {
-				return i
-			}
-			return len(a.cfg.Order)
+	byMetric := func(xv, yv float64) int {
+		if xv == yv {
+			return 0
 		}
-		slices.SortStableFunc(out, func(x, y *site) int {
-			if rx, ry := rank(x), rank(y); rx != ry {
-				return rx - ry
-			}
-			return byName(x, y)
-		})
-		return out
+		if xv > yv {
+			return -1
+		}
+		return 1
 	}
 	slices.SortStableFunc(out, func(x, y *site) int {
-		if x.cur.Visitors != y.cur.Visitors {
-			if x.cur.Visitors > y.cur.Visitors {
-				return -1
-			}
-			return 1
+		var d int
+		switch a.cfg.Sort {
+		case sortByName:
+			return byName(x, y)
+		case sortByViews:
+			d = byMetric(float64(x.cur.Pageviews), float64(y.cur.Pageviews))
+		default:
+			d = byMetric(float64(x.cur.Visitors), float64(y.cur.Visitors))
+		}
+		if d != 0 {
+			return d
 		}
 		return byName(x, y)
 	})
@@ -299,72 +298,13 @@ func (a *app) visible() []*site {
 	return out
 }
 
-// reorderVisible moves the shown sites at rows before the one at to, as
-// the user dragged them in the list, and keeps that order from now on.
-// Hidden sites keep their places among the others.
-func (a *app) reorderVisible(rows []int, to int) {
-	moved := moveRows(ids(a.visible()), rows, to)
-	all := ids(a.ordered())
-	j := 0
-	for i, id := range all {
-		if !slices.Contains(a.cfg.Hidden, id) {
-			all[i] = moved[j]
-			j++
-		}
-	}
-	a.setOrder(all)
-}
-
-// reorderAll moves sites at rows of every site, hidden ones included, as
-// in the settings.
-func (a *app) reorderAll(rows []int, to int) {
-	a.setOrder(moveRows(ids(a.ordered()), rows, to))
-}
-
-func (a *app) setOrder(order []string) {
-	a.cfg.Order, a.cfg.CustomOrder = order, true
-	a.commitCfg()
-}
-
-// setCustomOrder shows the sites in the user's order, or goes back to
-// showing those with the most visitors first, keeping the user's order
-// for later.
-func (a *app) setCustomOrder(on bool) {
-	if on == a.cfg.CustomOrder {
+// setSort shows the sites by visitors, views or name.
+func (a *app) setSort(sort int) {
+	if sort == a.cfg.Sort || sort < sortByVisitors || sort > sortByName {
 		return
 	}
-	if on && len(a.cfg.Order) == 0 {
-		a.cfg.Order = ids(a.ordered()) // start from what shows
-	}
-	a.cfg.CustomOrder = on
+	a.cfg.Sort = sort
 	a.commitCfg()
-}
-
-func ids(sites []*site) []string {
-	out := make([]string, len(sites))
-	for i, s := range sites {
-		out[i] = s.ID
-	}
-	return out
-}
-
-// moveRows moves the items at rows, ascending, before the item at to, or
-// to the end for len(items).
-func moveRows[T any](items []T, rows []int, to int) []T {
-	var picked, rest []T
-	at := to
-	for i, it := range items {
-		if slices.Contains(rows, i) {
-			picked = append(picked, it)
-			if i < to {
-				at--
-			}
-		} else {
-			rest = append(rest, it)
-		}
-	}
-	at = min(max(at, 0), len(rest))
-	return slices.Concat(rest[:at], picked, rest[at:])
 }
 
 // totals sums the sites shown.

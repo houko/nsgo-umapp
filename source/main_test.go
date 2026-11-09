@@ -247,6 +247,10 @@ func TestSettings(t *testing.T) {
 	if a.page != pageSettings {
 		t.Fatalf("page %v", a.page)
 	}
+	v := tt.Find("id:settings")
+	if v.Content.Height <= v.Frame.Size.Height {
+		t.Fatalf("settings does not scroll: content %g, viewport %g", v.Content.Height, v.Frame.Size.Height)
+	}
 	tt.Press("Show Landing page")
 	if len(a.cfg.Hidden) != 1 || a.cfg.Hidden[0] != "c" {
 		t.Fatalf("hidden %q", a.cfg.Hidden)
@@ -404,57 +408,28 @@ func TestClient(t *testing.T) {
 	}
 }
 
-func TestMoveRows(t *testing.T) {
-	in := []string{"a", "b", "c", "d", "e"}
-	for _, tc := range []struct {
-		rows []int
-		to   int
-		want string
-	}{
-		{[]int{3}, 0, "dabce"},
-		{[]int{0}, 5, "bcdea"},
-		{[]int{0}, 2, "bacde"},
-		{[]int{1, 3}, 5, "acebd"},
-		{[]int{4}, 1, "aebcd"},
-	} {
-		if got := strings.Join(moveRows(in, tc.rows, tc.to), ""); got != tc.want {
-			t.Errorf("moveRows(%v, %d) = %s, want %s", tc.rows, tc.to, got, tc.want)
-		}
-	}
-	a := testApp(t, newFake())
-	a.refresh()
-	a.cfg.Order, a.cfg.CustomOrder = []string{"e", "d"}, true
-	if got := names(a.ordered()); got[0] != "Status" || got[1] != "Changelog" || got[2] != "Acme Docs" {
-		t.Errorf("order %q", got)
-	}
-}
-
-func TestReorder(t *testing.T) {
+func TestSort(t *testing.T) {
 	a := testApp(t, newFake())
 	saved := 0
 	a.changed = func(config) { saved++ }
 	a.refresh()
-	a.reorderVisible([]int{3}, 0)
+	if got := names(a.visible()); got[0] != "Landing page" || got[len(got)-1] != "Status" {
+		t.Errorf("by visitors %q", got)
+	}
+	a.site("e").cur.Pageviews = 1e6
+	a.setSort(sortByViews)
+	if a.visible()[0].Name != "Status" || saved == 0 {
+		t.Fatalf("by views %q, saved %d", names(a.visible()), saved)
+	}
+	a.setSort(sortByName)
 	got := names(a.visible())
-	want := []string{"Changelog", "Landing page", "Acme Docs", "Personal blog", "Status"}
-	if !slices.Equal(got, want) || !a.cfg.CustomOrder || saved == 0 {
-		t.Fatalf("order %q, custom %v, saved %d", got, a.cfg.CustomOrder, saved)
+	want := []string{"Acme Docs", "Changelog", "Landing page", "Personal blog", "Status"}
+	if !slices.Equal(got, want) || a.cfg.Sort != sortByName {
+		t.Fatalf("by name %q", got)
 	}
-	a.setCustomOrder(false)
-	if a.cfg.CustomOrder || a.visible()[0].Name != "Landing page" || len(a.cfg.Order) != 5 {
-		t.Errorf("custom %v, order %q", a.cfg.CustomOrder, names(a.visible()))
-	}
-}
-
-func TestReorderHidden(t *testing.T) {
-	a := testApp(t, newFake())
-	a.cfg.Hidden = []string{"a"}
-	a.refresh()
-	a.setOrder(ids(a.ordered()))
-	before := slices.Index(ids(a.ordered()), "a")
-	a.reorderVisible([]int{0}, 2)
-	if after := slices.Index(ids(a.ordered()), "a"); after != before {
-		t.Errorf("the hidden site moved from %d to %d", before, after)
+	a.setSort(sortByVisitors)
+	if a.cfg.Sort != sortByVisitors || a.visible()[0].Name != "Landing page" {
+		t.Errorf("by visitors again %q", names(a.visible()))
 	}
 }
 

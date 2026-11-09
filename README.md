@@ -25,7 +25,7 @@
 - Open a panel from the menu bar with every website the API key can see, and how many people are on them now.
 - Show visitors, views and a sparkline for 24 hours, 7 days, 30 days or 90 days, compared with the range before.
 - Open one website for bounce rate, duration, a chart, and the top pages, referrers and countries.
-- Connect to Umami Cloud or a server of your own, hide websites, and keep them in your order.
+- Connect to Umami Cloud or a server of your own, hide websites, and sort them by visitors, views or name.
 - Show the count of visitors online beside the icon, or hide it.
 - Open at login on macOS.
 

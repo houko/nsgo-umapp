@@ -84,17 +84,15 @@ const (
 	textLiveHint
 	textWebsites
 	textOrder
-	textOrderByVisitors
-	textOrderCustom
-	textOrderHint
-	textOrderMenuHint
 	textQuit
 	textPasteKey
 	textVisitors
 	textByVisitors
-	textInYourOrder
+	textByViews
+	textByName
 	textMostVisitorsFirst
-	textYourOrder
+	textMostViewsFirst
+	textByNameFirst
 	textViews
 	textLoadErrorTitle
 	textTryAgain
@@ -128,8 +126,6 @@ const (
 	textViewUnit
 	textViewsUnit
 	textNew
-	textMoveUp
-	textMoveDown
 	textDash
 	numTexts
 )
@@ -156,17 +152,15 @@ var keyOfText = [numTexts]string{
 	"liveHint",
 	"websites",
 	"order",
-	"orderByVisitors",
-	"orderCustom",
-	"orderHint",
-	"orderMenuHint",
 	"quit",
 	"pasteKey",
 	"visitors",
 	"byVisitors",
-	"inYourOrder",
+	"byViews",
+	"byName",
 	"mostVisitorsFirst",
-	"yourOrder",
+	"mostViewsFirst",
+	"byNameFirst",
 	"views",
 	"loadErrorTitle",
 	"tryAgain",
@@ -200,8 +194,6 @@ var keyOfText = [numTexts]string{
 	"viewUnit",
 	"viewsUnit",
 	"new",
-	"moveUp",
-	"moveDown",
 	"dash",
 }
 
@@ -226,17 +218,15 @@ var textsEn = i18n.NewTexts(""+
 	"Show by the menu bar icon how many people are on your websites now."+
 	"Websites"+
 	"Order"+
-	"Most visitors first"+
-	"Your order"+
-	"Move websites to put them in your order, here or in the list."+
-	"Move websites to put them in your order"+
 	"Quit"+
 	"Paste an API key."+
 	"Visitors"+
 	"by visitors"+
-	"in your order"+
+	"by views"+
+	"by name"+
 	"Most Visitors First"+
-	"Your Order"+
+	"Most Views First"+
+	"By Name"+
 	"Views"+
 	"Couldn't load your websites"+
 	"Try again"+
@@ -270,8 +260,6 @@ var textsEn = i18n.NewTexts(""+
 	"view"+
 	"views"+
 	"new"+
-	"Move up"+
-	"Move down"+
 	"—",
 	[]uint16{
 		5,
@@ -293,17 +281,15 @@ var textsEn = i18n.NewTexts(""+
 		67,
 		8,
 		5,
-		19,
-		10,
-		61,
-		39,
 		4,
 		17,
 		8,
 		11,
-		13,
+		8,
+		7,
 		19,
-		10,
+		16,
+		7,
 		5,
 		27,
 		9,
@@ -337,8 +323,6 @@ var textsEn = i18n.NewTexts(""+
 		4,
 		5,
 		3,
-		7,
-		9,
 		3,
 	})
 
@@ -363,17 +347,15 @@ var textsZhHans = i18n.NewTexts(""+
 	"在菜单栏显示当前有多少人在浏览网站。"+
 	"网站"+
 	"排序"+
-	"访客多的在前"+
-	"自定义顺序"+
-	"在这里或列表里移动网站，即可排成你的顺序。"+
-	"移动网站以排成你的顺序"+
 	"退出"+
 	"请粘贴 API 密钥。"+
 	"访客"+
 	"按访客"+
-	"自定义顺序"+
+	"按浏览"+
+	"按名称"+
 	"访客多的在前"+
-	"自定义顺序"+
+	"浏览多的在前"+
+	"按名称"+
 	"浏览"+
 	"无法加载网站"+
 	"重试"+
@@ -407,8 +389,6 @@ var textsZhHans = i18n.NewTexts(""+
 	"次浏览"+
 	"次浏览"+
 	"新"+
-	"上移"+
-	"下移"+
 	"—",
 	[]uint16{
 		5,
@@ -430,17 +410,15 @@ var textsZhHans = i18n.NewTexts(""+
 		54,
 		6,
 		6,
-		18,
-		15,
-		63,
-		33,
 		6,
 		23,
 		6,
 		9,
-		15,
+		9,
+		9,
 		18,
-		15,
+		18,
+		9,
 		6,
 		18,
 		6,
@@ -474,8 +452,6 @@ var textsZhHans = i18n.NewTexts(""+
 		9,
 		9,
 		3,
-		6,
-		6,
 		3,
 	})
 
@@ -700,34 +676,6 @@ func Order(cx *core.Scope) string { return For(cx).Order() }
 // Order is the package's Order in the language of msgs.
 func (msgs Messages) Order() string { return msgs.text(textOrder) }
 
-// OrderByVisitors says "Most visitors first"
-// in the language the app shows under cx.
-func OrderByVisitors(cx *core.Scope) string { return For(cx).OrderByVisitors() }
-
-// OrderByVisitors is the package's OrderByVisitors in the language of msgs.
-func (msgs Messages) OrderByVisitors() string { return msgs.text(textOrderByVisitors) }
-
-// OrderCustom says "Your order"
-// in the language the app shows under cx.
-func OrderCustom(cx *core.Scope) string { return For(cx).OrderCustom() }
-
-// OrderCustom is the package's OrderCustom in the language of msgs.
-func (msgs Messages) OrderCustom() string { return msgs.text(textOrderCustom) }
-
-// OrderHint says "Move websites to put them in your order, here or in the list."
-// in the language the app shows under cx.
-func OrderHint(cx *core.Scope) string { return For(cx).OrderHint() }
-
-// OrderHint is the package's OrderHint in the language of msgs.
-func (msgs Messages) OrderHint() string { return msgs.text(textOrderHint) }
-
-// OrderMenuHint says "Move websites to put them in your order"
-// in the language the app shows under cx.
-func OrderMenuHint(cx *core.Scope) string { return For(cx).OrderMenuHint() }
-
-// OrderMenuHint is the package's OrderMenuHint in the language of msgs.
-func (msgs Messages) OrderMenuHint() string { return msgs.text(textOrderMenuHint) }
-
 // ShowSite says "Show {Name}"
 // in the language the app shows under cx.
 func ShowSite(cx *core.Scope, Name string) string { return For(cx).ShowSite(Name) }
@@ -800,12 +748,19 @@ func ByVisitors(cx *core.Scope) string { return For(cx).ByVisitors() }
 // ByVisitors is the package's ByVisitors in the language of msgs.
 func (msgs Messages) ByVisitors() string { return msgs.text(textByVisitors) }
 
-// InYourOrder says "in your order"
+// ByViews says "by views"
 // in the language the app shows under cx.
-func InYourOrder(cx *core.Scope) string { return For(cx).InYourOrder() }
+func ByViews(cx *core.Scope) string { return For(cx).ByViews() }
 
-// InYourOrder is the package's InYourOrder in the language of msgs.
-func (msgs Messages) InYourOrder() string { return msgs.text(textInYourOrder) }
+// ByViews is the package's ByViews in the language of msgs.
+func (msgs Messages) ByViews() string { return msgs.text(textByViews) }
+
+// ByName says "by name"
+// in the language the app shows under cx.
+func ByName(cx *core.Scope) string { return For(cx).ByName() }
+
+// ByName is the package's ByName in the language of msgs.
+func (msgs Messages) ByName() string { return msgs.text(textByName) }
 
 // MostVisitorsFirst says "Most Visitors First"
 // in the language the app shows under cx.
@@ -814,12 +769,19 @@ func MostVisitorsFirst(cx *core.Scope) string { return For(cx).MostVisitorsFirst
 // MostVisitorsFirst is the package's MostVisitorsFirst in the language of msgs.
 func (msgs Messages) MostVisitorsFirst() string { return msgs.text(textMostVisitorsFirst) }
 
-// YourOrder says "Your Order"
+// MostViewsFirst says "Most Views First"
 // in the language the app shows under cx.
-func YourOrder(cx *core.Scope) string { return For(cx).YourOrder() }
+func MostViewsFirst(cx *core.Scope) string { return For(cx).MostViewsFirst() }
 
-// YourOrder is the package's YourOrder in the language of msgs.
-func (msgs Messages) YourOrder() string { return msgs.text(textYourOrder) }
+// MostViewsFirst is the package's MostViewsFirst in the language of msgs.
+func (msgs Messages) MostViewsFirst() string { return msgs.text(textMostViewsFirst) }
+
+// ByNameFirst says "By Name"
+// in the language the app shows under cx.
+func ByNameFirst(cx *core.Scope) string { return For(cx).ByNameFirst() }
+
+// ByNameFirst is the package's ByNameFirst in the language of msgs.
+func (msgs Messages) ByNameFirst() string { return msgs.text(textByNameFirst) }
 
 // Views says "Views"
 // in the language the app shows under cx.
@@ -1165,20 +1127,6 @@ func New(cx *core.Scope) string { return For(cx).New() }
 
 // New is the package's New in the language of msgs.
 func (msgs Messages) New() string { return msgs.text(textNew) }
-
-// MoveUp says "Move up"
-// in the language the app shows under cx.
-func MoveUp(cx *core.Scope) string { return For(cx).MoveUp() }
-
-// MoveUp is the package's MoveUp in the language of msgs.
-func (msgs Messages) MoveUp() string { return msgs.text(textMoveUp) }
-
-// MoveDown says "Move down"
-// in the language the app shows under cx.
-func MoveDown(cx *core.Scope) string { return For(cx).MoveDown() }
-
-// MoveDown is the package's MoveDown in the language of msgs.
-func (msgs Messages) MoveDown() string { return msgs.text(textMoveDown) }
 
 // Dash says "—"
 // in the language the app shows under cx.

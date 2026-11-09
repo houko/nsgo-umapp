@@ -19,11 +19,15 @@ type config struct {
 	Range    int      `json:"range"`
 	HideLive bool     `json:"hideLive,omitempty"` // no count of live visitors in the menu bar
 	Hidden   []string `json:"hidden,omitempty"`   // IDs of websites not shown
-	// The user's order of websites, by ID, used while CustomOrder is on;
-	// off, those with the most visitors come first.
-	Order       []string `json:"order,omitempty"`
-	CustomOrder bool     `json:"customOrder,omitempty"`
+	// Sort is how the list orders websites: by visitors, views or name.
+	Sort int `json:"sort,omitempty"`
 }
+
+const (
+	sortByVisitors = iota
+	sortByViews
+	sortByName
+)
 
 const keychainService = "umapp: Umami API key"
 

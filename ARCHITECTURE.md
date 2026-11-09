@@ -30,7 +30,7 @@ Umapp is a native menu bar application that reads an Umami account and shows its
 
 **Refresh.** Loads every website the key can see, then each one's stats, series and visitors online for the range shown. Visitors online refresh every minute; the rest every five, or as the panel opens on numbers older than a minute.
 
-**Order.** Websites with the most visitors come first, unless the user keeps their own order in Settings.
+**Order.** Websites with the most visitors come first, or by views or name when the user chooses that.
 
 ## Data and state
 
@@ -38,9 +38,4 @@ Preferences live in `config.json` under the platform configuration directory. On
 
 ## Verification
 
-The Umami client, formatting, bucketizing and reorder logic are pure and fully testable headless. Localization and the view builders have headless tests. The panel and tray need review in a desktop session.
-
-## Subjects
-
-| Document | When to read |
-| --- | --- |
+The Umami client, formatting, bucketizing and sort logic are pure and fully testable headless. Localization and the view builders have headless tests. The panel and tray need review in a desktop session.

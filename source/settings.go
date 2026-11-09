@@ -11,39 +11,66 @@ import (
 )
 
 func (a *app) settings(cx *core.Scope) core.Node {
+	connected := a.configured()
+	body := core.View{Style: ui.FillRest, Children: []core.Node{
+		core.Scroll{Style: ui.FillRest, TestID: "settings",
+			Children: []core.Node{core.View{Style: core.Style{Padding: core.All(gutter), Gap: 22},
+				Children: a.settingsBody(cx, connected)}}},
+		a.settingsFooter(cx),
+	}}
+	if !connected {
+		return body
+	}
+	return core.View{Style: ui.FillRest, Children: []core.Node{a.settingsHeader(cx), body}}
+}
+
+func (a *app) settingsHeader(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
-	connected := a.configured()
-	children := []core.Node{ui.ScrollView{Style: ui.FillRest, TestID: "settings",
-		ContentStyle: core.Style{Padding: core.All(gutter), Gap: 22},
-		Children:     a.settingsBody(cx, connected)},
-		core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8, FlexShrink: 0,
-			Padding: core.All(gutter), Borders: core.Edges{Top: 1}},
-			StyleFunc: func() core.Style { return core.Style{BorderColor: colors.Line()} },
-			Children: []core.Node{
-				core.Text{Content: tr.Version(version), Style: core.Style{FontSize: 11, FlexGrow: 1}, StyleFunc: ui.Colored(colors.Faint)},
-				ui.Button{Text: tr.Quit(), Variant: ui.ButtonGhost, TestID: "quit", OnPress: a.quit},
-			}}}
-	return core.View{Style: ui.FillRest, Children: children}
+	title := oneLine(ui.Text(tr.SettingsTitle(), 13, ui.Semibold, colors.Text))
+	title.Role = core.RoleHeader
+	title.Style = title.Style.Merge(core.Style{FlexGrow: 1, TextAlign: core.TextAlignCenter})
+	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 4,
+		Padding: core.All(gutter), Borders: core.Edges{Bottom: 1}, FlexShrink: 0},
+		StyleFunc: func() core.Style { return core.Style{BorderColor: colors.Line()} },
+		Children: []core.Node{
+			ui.IconButton{Icon: lucide.ChevronLeft, Label: tr.Websites(), TestID: "back", OnPress: a.back},
+			title,
+			core.View{Style: core.Style{Width: core.Pt(28), Height: core.Pt(28), FlexShrink: 0}},
+		}}
+}
+
+func (a *app) settingsFooter(cx *core.Scope) core.Node {
+	tr := msgsOf(cx)
+	colors := ui.ColorsOf(cx)
+	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 6, FlexShrink: 0,
+		Padding: core.All(gutter), Borders: core.Edges{Top: 1}},
+		StyleFunc: func() core.Style { return core.Style{BorderColor: colors.Line()} },
+		Children: []core.Node{
+			core.Text{Content: tr.Version(version), Style: core.Style{FontSize: 11, FlexGrow: 1, FlexShrink: 1},
+				StyleFunc: ui.Colored(colors.Faint)},
+			base.Button{Label: tr.Quit(), TestID: "quit",
+				OnPress: func(core.PressEvent) { a.quit() },
+				Style: core.Style{Padding: core.Symmetric(0, 2), CornerRadius: 6},
+				StyleFunc: func() core.Style {
+					return core.Style{Hover: &core.Style{Background: ui.Alpha(colors.Text(), 0.08)},
+						Active: &core.Style{Background: ui.Alpha(colors.Text(), 0.14)}}
+				},
+				Children: []core.Node{ui.Text(tr.Quit(), 11, ui.Regular, colors.Text)}},
+		}}
 }
 
 func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
-	var intro []core.Node
+	var nodes []core.Node
 	if !connected {
-		intro = []core.Node{
+		nodes = append(nodes, column(4,
 			a.mark(cx),
 			ui.Text(tr.ConnectTitle(), 17, ui.Semibold, colors.Text),
 			core.Text{Content: tr.ConnectBody(), Style: core.Style{FontSize: 12, LineHeight: 17}, StyleFunc: ui.Colored(colors.Muted)},
-		}
-	} else {
-		intro = []core.Node{
-			row(0, ui.Button{Text: tr.Websites(), Icon: lucide.ChevronLeft, Variant: ui.ButtonGhost, TestID: "back", OnPress: a.back}),
-			ui.Text(tr.SettingsTitle(), 17, ui.Semibold, colors.Text),
-		}
+		))
 	}
-	nodes := []core.Node{column(4, intro...)}
 	title := tr.Account()
 	if !connected {
 		title = ""
@@ -133,68 +160,39 @@ func (a *app) loginSwitch(cx *core.Scope) core.Node {
 
 func (a *app) websitesSection(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
-	colors := ui.ColorsOf(cx)
 	return a.section(cx, tr.Websites(),
-		ui.Tabs[int]{
-			Options: []ui.Option[int]{
-				{Value: 0, Label: tr.OrderByVisitors()},
-				{Value: 1, Label: tr.OrderCustom()},
-			},
-			Value: live(a, func() int {
-				if a.cfg.CustomOrder {
-					return 1
-				}
-				return 0
-			}),
-			OnChange: func(v int) { a.setCustomOrder(v == 1) },
-			Label:    tr.Order(),
-			TestID:   "order-mode",
-			Size:     ui.SizeSmall,
-		},
-		ui.Text(tr.OrderHint(), 11, ui.Regular, colors.Muted),
 		a.region(func() string {
-			return fmt.Sprint(a.cfg.CustomOrder, a.cfg.Order, a.cfg.Hidden)
+			return fmt.Sprint(a.cfg.Sort, a.cfg.Hidden)
 		}, a.websiteRows),
 	)
 }
 
 func (a *app) websiteRows(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
-	all := ids(a.ordered())
-	rows := make([]core.Node, 0, len(all))
-	for i, id := range all {
-		s := a.site(id)
+	sites := a.ordered()
+	rows := make([]core.Node, 0, len(sites))
+	for _, s := range sites {
 		text := column(1, body(cx, s.Name), caption(cx, s.Domain))
 		text.Style = text.Style.Merge(core.Style{FlexGrow: 1, FlexShrink: 1})
-		siteID := id
-		index := i
-		var movers core.Node
-		if a.cfg.CustomOrder {
-			movers = row(2,
-				ui.IconButton{Icon: lucide.ChevronUp, Label: tr.MoveUp(), Size: 24, TestID: "up-" + siteID,
-					Disabled: func() bool { return index == 0 },
-					OnPress:  func() { a.reorderAll([]int{index}, index-1) }},
-				ui.IconButton{Icon: lucide.ChevronDown, Label: tr.MoveDown(), Size: 24, TestID: "down-" + siteID,
-					Disabled: func() bool { return index == len(all)-1 },
-					OnPress:  func() { a.reorderAll([]int{index}, index+2) }},
-			)
-		}
-		children := []core.Node{text,
-			ui.Switch{Checked: live(a, func() bool { return !slices.Contains(a.cfg.Hidden, siteID) }),
-				Label: tr.ShowSite(s.Name),
-				OnChange: func(on bool) {
-					hidden := slices.Contains(a.cfg.Hidden, siteID)
-					if on == !hidden {
-						return
-					}
-					a.toggleHidden(siteID)
-				}}}
-		if movers != nil {
-			children = append([]core.Node{movers}, children...)
-		}
-		rows = append(rows, core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8,
-			Padding: core.All(6), CornerRadius: 8},
-			Children: children})
+		siteID := s.ID
+		rows = append(rows, core.View{
+			Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8,
+				Padding: core.All(6), CornerRadius: 8},
+			Children: []core.Node{
+				text,
+				ui.Switch{
+					Checked: live(a, func() bool { return !slices.Contains(a.cfg.Hidden, siteID) }),
+					Label:   tr.ShowSite(s.Name),
+					OnChange: func(on bool) {
+						hidden := slices.Contains(a.cfg.Hidden, siteID)
+						if on == !hidden {
+							return
+						}
+						a.toggleHidden(siteID)
+					},
+				},
+			},
+		})
 	}
 	return column(0, rows...)
 }
