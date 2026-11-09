@@ -21,28 +21,14 @@ showSite:
   message: "显示 {Name}"
   placeholders:
     Name: { type: String }
-version:
-  message: "umapp {Version}"
-  placeholders:
-    Version: { type: String }
 quit: "退出"
 pasteKey: "请粘贴 API 密钥。"
 visitors: "访客"
 byVisitors: "按访客"
-byViews: "按浏览"
 byName: "按名称"
 mostVisitorsFirst: "访客多的在前"
-mostViewsFirst: "浏览多的在前"
 byNameFirst: "按名称"
 views: "浏览"
-comparedWith:
-  message: "对比{Range}"
-  placeholders:
-    Range: { type: String }
-updated:
-  message: "{When}更新"
-  placeholders:
-    When: { type: String }
 loadErrorTitle: "无法加载网站"
 tryAgain: "重试"
 noSitesTitle: "还没有网站"
@@ -53,10 +39,6 @@ range24h: "24H"
 range7d: "7D"
 range30d: "30D"
 range90d: "90D"
-range24hLong: "过去 24 小时"
-range7dLong: "过去 7 天"
-range30dLong: "过去 30 天"
-range90dLong: "过去 90 天"
 refresh: "刷新"
 settings: "设置"
 openUmami: "在 Umami 中打开"

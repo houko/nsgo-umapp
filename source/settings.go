@@ -12,12 +12,9 @@ import (
 
 func (a *app) settings(cx *core.Scope) core.Node {
 	connected := a.configured()
-	body := core.View{Style: ui.FillRest, Children: []core.Node{
-		core.Scroll{Style: ui.FillRest, TestID: "settings",
-			Children: []core.Node{core.View{Style: core.Style{Padding: core.All(gutter), Gap: 22},
-				Children: a.settingsBody(cx, connected)}}},
-		a.settingsFooter(cx),
-	}}
+	body := core.Scroll{Style: ui.FillRest, TestID: "settings",
+		Children: []core.Node{core.View{Style: core.Style{Padding: core.All(gutter), Gap: 22},
+			Children: a.settingsBody(cx, connected)}}}
 	if !connected {
 		return body
 	}
@@ -37,26 +34,6 @@ func (a *app) settingsHeader(cx *core.Scope) core.Node {
 			ui.IconButton{Icon: lucide.ChevronLeft, Label: tr.Websites(), TestID: "back", OnPress: a.back},
 			title,
 			core.View{Style: core.Style{Width: core.Pt(28), Height: core.Pt(28), FlexShrink: 0}},
-		}}
-}
-
-func (a *app) settingsFooter(cx *core.Scope) core.Node {
-	tr := msgsOf(cx)
-	colors := ui.ColorsOf(cx)
-	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 6, FlexShrink: 0,
-		Padding: core.All(gutter), Borders: core.Edges{Top: 1}},
-		StyleFunc: func() core.Style { return core.Style{BorderColor: colors.Line()} },
-		Children: []core.Node{
-			core.Text{Content: tr.Version(version), Style: core.Style{FontSize: 11, FlexGrow: 1, FlexShrink: 1},
-				StyleFunc: ui.Colored(colors.Faint)},
-			base.Button{Label: tr.Quit(), TestID: "quit",
-				OnPress: func(core.PressEvent) { a.quit() },
-				Style: core.Style{Padding: core.Symmetric(0, 2), CornerRadius: 6},
-				StyleFunc: func() core.Style {
-					return core.Style{Hover: &core.Style{Background: ui.Alpha(colors.Text(), 0.08)},
-						Active: &core.Style{Background: ui.Alpha(colors.Text(), 0.14)}}
-				},
-				Children: []core.Node{ui.Text(tr.Quit(), 11, ui.Regular, colors.Text)}},
 		}}
 }
 

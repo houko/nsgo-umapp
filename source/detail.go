@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/oneo-me/nsgo/base/plot"
@@ -26,16 +27,17 @@ func (a *app) detail(cx *core.Scope, s *site) core.Node {
 		ContentStyle: core.Style{Padding: core.All(gutter), Gap: 18},
 		Children: []core.Node{
 			row(0, nav...),
-			column(2,
+			row(10, favicon(cx, s.Domain, 28), column(2,
 				row(8, oneLine(ui.Text(s.Name, 17, ui.Semibold, colors.Text)), a.liveBadge(cx, s.active, true)),
 				domainLine(cx, s.Domain),
-			),
+			)),
 			a.metricsGrid(cx, s),
 			a.chart(cx, s),
 			a.detailError(cx, s),
-			breakdown(cx, tr.Pages(), tr.Views(), "path", s.pages, s.detailGen == a.gen && s.pages == nil && s.detailErr == nil),
-			breakdown(cx, tr.Referrers(), tr.Visitors(), "referrer", s.referrers, s.pages == nil && s.detailErr == nil),
-			breakdown(cx, tr.Countries(), tr.Visitors(), "country", s.countries, s.pages == nil && s.detailErr == nil),
+			breakdown(cx, tr.Pages(), tr.Views(), "path", s.pages, s.detailGen == a.gen && s.pages == nil && s.detailErr == nil, nil),
+			breakdown(cx, tr.Referrers(), tr.Visitors(), "referrer", s.referrers, s.pages == nil && s.detailErr == nil,
+				func(x string) core.Node { return favicon(cx, x, 14) }),
+			breakdown(cx, tr.Countries(), tr.Visitors(), "country", s.countries, s.pages == nil && s.detailErr == nil, flag),
 		}}
 }
 
@@ -120,7 +122,11 @@ func (a *app) chart(cx *core.Scope, s *site) core.Node {
 	if a.span().hours {
 		label = tr.ChartByHour()
 	}
-	ticks := axisTicks(n, a.span().hours, a.buckets)
+	hours := a.span().hours
+	ticks := axisTicks(n, hours, a.buckets)
+	buckets := append([]time.Time(nil), a.buckets...)
+	tip := core.NewSignal(cx, 0)
+	fin := ui.FinOf(cx)
 	return column(8,
 		row(12,
 			legend(cx, colors.Accent, tr.Visitors()),
@@ -131,6 +137,25 @@ func (a *app) chart(cx *core.Scope, s *site) core.Node {
 			YScale: func() plot.Scale { return plot.LinearScale(0, hi) },
 			XScale: func() plot.Scale { return plot.BandScale(plot.Band{PaddingInner: 0.28, PaddingOuter: 0.06}) },
 			Label:  label,
+			AccessibilityValue: func() core.AccessibilityValue {
+				i := tip.Get()
+				return core.AccessibilityValue{Text: fmt.Sprintf("%s: %s %s, %s %s", bucketLabel(buckets[i], hours),
+					count(visitors[i]), tr.Visitors(), count(views[i]), tr.Views())}
+			},
+			OnHoverChange: func(i int) {
+				if i >= 0 && i < n {
+					tip.Set(i)
+				}
+			},
+			TooltipOffset: 4,
+			Tooltip: core.View{StyleFunc: func() core.Style {
+				return fin.Menu().Over(core.Style{Gap: 3, Padding: core.Symmetric(6, 8), CornerRadius: 8, BorderWidth: 1})
+			},
+				Children: []core.Node{
+					ui.Textf(func() string { return bucketLabel(buckets[tip.Get()], hours) }, 11, ui.Regular, colors.Muted),
+					tipValue(cx, colors.Accent, func() string { return count(visitors[tip.Get()]) }, tr.Visitors()),
+					tipValue(cx, func() core.Color { return ui.Alpha(colors.Accent(), 0.28) }, func() string { return count(views[tip.Get()]) }, tr.Views()),
+				}},
 			TestID: "chart",
 			Style:  core.Style{Height: core.Pt(150)},
 			Children: []core.Node{
@@ -185,6 +210,17 @@ func axisTicks(n int, hours bool, buckets []time.Time) axisLabels {
 	return out
 }
 
+// tipValue is a row of the chart's tooltip: a series' key, its value at
+// the bucket under the pointer and its name.
+func tipValue(cx *core.Scope, color func() core.Color, value func() string, label string) core.Node {
+	colors := ui.ColorsOf(cx)
+	return row(5,
+		core.View{Style: core.Style{Width: core.Pt(8), Height: core.Pt(8), CornerRadius: 2}, StyleFunc: ui.Filled(color)},
+		ui.Tabular(ui.Textf(value, 12, ui.Semibold, colors.Text)),
+		muted(cx, label, 11),
+	)
+}
+
 func legend(cx *core.Scope, color func() core.Color, label string) core.Node {
 	return row(5,
 		core.View{Style: core.Style{Width: core.Pt(8), Height: core.Pt(8), CornerRadius: 2}, StyleFunc: ui.Filled(color)},
@@ -192,7 +228,9 @@ func legend(cx *core.Scope, color func() core.Color, label string) core.Node {
 	)
 }
 
-func breakdown(cx *core.Scope, title, unit, kind string, rows []metric, loading bool) core.Node {
+// breakdown lists the top values of a kind, each with what icon draws for
+// it when icon is set.
+func breakdown(cx *core.Scope, title, unit, kind string, rows []metric, loading bool, icon func(x string) core.Node) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
 	head := core.View{Style: core.Style{Direction: core.Row},
@@ -217,19 +255,63 @@ func breakdown(cx *core.Scope, title, unit, kind string, rows []metric, loading 
 		for _, m := range rows {
 			share := float32(float64(m.Y) / top * 100)
 			label := pathLabel(kind, m.X)
+			cells := []core.Node{oneLine(ui.Text(label, 12, ui.Regular, colors.Text))}
+			if icon != nil {
+				cells = append([]core.Node{icon(m.X)}, cells...)
+			}
+			cells = append(cells, ui.Spacer{}, ui.Tabular(ui.Text(count(float64(m.Y)), 12, ui.Regular, colors.Muted)))
 			items = append(items, core.View{Style: core.Style{Height: core.Pt(28)}, Children: []core.Node{
 				core.View{Style: core.Style{Position: core.Absolute, Top: core.Pt(0), Bottom: core.Pt(0), Left: core.Pt(0),
 					Width: core.Pct(share), CornerRadius: 5},
 					StyleFunc: func() core.Style { return core.Style{Background: ui.Alpha(colors.Accent(), 0.1)} }},
 				core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8, FlexGrow: 1,
 					Padding: core.All(6), Height: core.Pt(28)},
-					Children: []core.Node{
-						oneLine(ui.Text(label, 12, ui.Regular, colors.Text)),
-						ui.Tabular(ui.Text(count(float64(m.Y)), 12, ui.Regular, colors.Muted)),
-					}},
+					Children: cells},
 			}})
 		}
 		body = column(0, items...)
 	}
 	return column(4, head, body)
+}
+
+// favicon is a website's icon from the service Umami shows them from, at a
+// size, or a globe where it has none.
+func favicon(cx *core.Scope, domain string, size core.Points) core.Node {
+	colors := ui.ColorsOf(cx)
+	host := faviconHost(domain)
+	failed := core.NewSignal(cx, host == "")
+	return core.View{Style: core.Style{Width: core.Pt(size), Height: core.Pt(size), FlexShrink: 0,
+		AlignItems: core.AlignCenter, JustifyContent: core.JustifyCenter},
+		Children: []core.Node{core.Show{When: failed.Get,
+			Then: func(*core.Scope) core.Node { return ui.Icon(lucide.Globe, size*0.85, colors.Faint) },
+			Else: func(*core.Scope) core.Node {
+				return core.Image{Source: core.ImageSource{URI: "https://icons.duckduckgo.com/ip3/" + host + ".ico"},
+					ResizeMode: core.Contain, Style: core.Style{Width: core.Pt(size), Height: core.Pt(size)},
+					OnError: func(error) { failed.Set(true) }}
+			}}}}
+}
+
+// faviconHost is the host of a website's domain or a referrer, which may
+// come with a scheme or a path; empty for none.
+func faviconHost(domain string) string {
+	domain = strings.TrimSpace(domain)
+	if _, rest, ok := strings.Cut(domain, "://"); ok {
+		domain = rest
+	}
+	domain, _, _ = strings.Cut(domain, "/")
+	if !strings.Contains(domain, ".") {
+		return ""
+	}
+	return strings.ToLower(domain)
+}
+
+// flag is a country's flag by its ISO code, or the room of one where the
+// code is unknown.
+func flag(code string) core.Node {
+	box := core.Style{Width: core.Pt(16), Height: core.Pt(12), FlexShrink: 0, CornerRadius: 2, Overflow: core.Hidden}
+	if len(code) != 2 {
+		return core.View{Style: box}
+	}
+	return core.Image{Source: core.ImageSource{URI: "https://flagcdn.com/32x24/" + strings.ToLower(code) + ".png"},
+		ResizeMode: core.Cover, Style: box}
 }

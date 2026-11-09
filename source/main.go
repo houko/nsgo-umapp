@@ -131,8 +131,6 @@ func (s *shell) createTray(cx *core.Scope) {
 func (s *shell) trayMenu() []desktop.MenuItem {
 	tr := s.a.msgs()
 	return []desktop.MenuItem{
-		{Label: tr.Refresh(), OnSelect: s.a.refresh},
-		{Separator: true},
 		{Label: tr.Quit(), OnSelect: s.a.quit},
 	}
 }

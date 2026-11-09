@@ -12,7 +12,7 @@ Umapp is a native menu bar application that reads an Umami account and shows its
 | `source/umami.go` | Umami HTTP client for Cloud and self-hosted servers. |
 | `source/config.go` | Config file and the macOS keychain. |
 | `source/view.go` | List, header, summary and sparklines. |
-| `source/detail.go` | One website's metrics, chart and breakdowns. |
+| `source/detail.go` | One website's metrics, chart and breakdowns, with favicons and flags. |
 | `source/settings.go` | Connect, menu bar options and which websites to show. |
 | `source/locales/` | NSGo message catalogs, and the accessors the `nsgo` tool writes from them. |
 | `source/assets/` | Icon sources. |
@@ -21,7 +21,7 @@ Umapp is a native menu bar application that reads an Umami account and shows its
 
 - Run network work off the UI thread. Apply results on the main thread and never start that work inside a builder.
 - Views follow the state through a revision: actions change plain data and call `invalidate`, and a region builds again only when its key changes.
-- Present Umapp as a menu bar app: the tray icon opens the panel on a left click and offers Refresh and Quit on a right click. Where NSGo opens no panels or tray icons, the same view is the main window's.
+- Present Umapp as a menu bar app: the tray icon opens the panel on a left click and offers Quit on a right click. Where NSGo opens no panels or tray icons, the same view is the main window's.
 - Keep the API key in the macOS keychain. The config file on that platform stores the rest.
 
 ## Core flows
@@ -30,7 +30,7 @@ Umapp is a native menu bar application that reads an Umami account and shows its
 
 **Refresh.** Loads every website the key can see, then each one's stats, series and visitors online for the range shown. Visitors online refresh every minute; the rest every five, or as the panel opens on numbers older than a minute.
 
-**Order.** Websites with the most visitors come first, or by views or name when the user chooses that.
+**Order.** Websites with the most visitors come first, or by name when the user chooses that.
 
 ## Data and state
 

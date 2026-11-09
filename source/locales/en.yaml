@@ -21,28 +21,14 @@ showSite:
   message: "Show {Name}"
   placeholders:
     Name: { type: String }
-version:
-  message: "umapp {Version}"
-  placeholders:
-    Version: { type: String }
 quit: "Quit"
 pasteKey: "Paste an API key."
 visitors: "Visitors"
 byVisitors: "by visitors"
-byViews: "by views"
 byName: "by name"
 mostVisitorsFirst: "Most Visitors First"
-mostViewsFirst: "Most Views First"
 byNameFirst: "By Name"
 views: "Views"
-comparedWith:
-  message: "Compared with the {Range}"
-  placeholders:
-    Range: { type: String }
-updated:
-  message: "Updated {When}"
-  placeholders:
-    When: { type: String }
 loadErrorTitle: "Couldn't load your websites"
 tryAgain: "Try again"
 noSitesTitle: "No websites yet"
@@ -53,10 +39,6 @@ range24h: "24H"
 range7d: "7D"
 range30d: "30D"
 range90d: "90D"
-range24hLong: "previous 24 hours"
-range7dLong: "previous 7 days"
-range30dLong: "previous 30 days"
-range90dLong: "previous 90 days"
 refresh: "Refresh"
 settings: "Settings"
 openUmami: "Open in Umami"

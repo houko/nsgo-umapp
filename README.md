@@ -23,9 +23,9 @@
 ## Features
 
 - Open a panel from the menu bar with every website the API key can see, and how many people are on them now.
-- Show visitors, views and a sparkline for 24 hours, 7 days, 30 days or 90 days, compared with the range before.
-- Open one website for bounce rate, duration, a chart, and the top pages, referrers and countries.
-- Connect to Umami Cloud or a server of your own, hide websites, and sort them by visitors, views or name.
+- Show visitors and a sparkline for 24 hours, 7 days, 30 days or 90 days, compared with the range before.
+- Open one website for bounce rate, duration, a chart with counts under the pointer, and the top pages, referrers and countries with their icons and flags.
+- Connect to Umami Cloud or a server of your own, hide websites, and sort them by visitors or name.
 - Show the count of visitors online beside the icon, or hide it.
 - Open at login on macOS.
 
@@ -43,7 +43,7 @@ Requirements:
 1. Start Umapp. It adds an icon to the menu bar.
 2. Open the panel and set the API endpoint (Umami Cloud by default) and an API key from *Settings → API keys*.
 3. Browse the websites, change the range, or open one for its breakdown.
-4. Right-click the icon to refresh or quit.
+4. Right-click the icon to quit.
 
 On macOS the key is kept in the login keychain; elsewhere it is stored in the app's user data directory.
 

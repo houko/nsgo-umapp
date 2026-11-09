@@ -37,13 +37,10 @@ func For(cx *core.Scope) Messages { return In(i18n.Language(cx)) }
 // its method, for the TSX declarations of the messages
 // (tsx.RegisterMessages).
 var Parameters = map[string][]string{
-	"ShowSite":     {"Name"},
-	"Version":      {"Version"},
-	"ComparedWith": {"Range"},
-	"Updated":      {"When"},
-	"Online":       {"Count"},
-	"LiveTooltip":  {"Count", "Unit"},
-	"TrayTooltip":  {"Count", "Unit"},
+	"ShowSite":    {"Name"},
+	"Online":      {"Count"},
+	"LiveTooltip": {"Count", "Unit"},
+	"TrayTooltip": {"Count", "Unit"},
 }
 
 // Translation is a language's messages another package supplies:
@@ -51,14 +48,11 @@ var Parameters = map[string][]string{
 // of the others; a key or a field left out leaves the message to the
 // catalog.
 type Translation struct {
-	Texts        map[string]string
-	ShowSite     func(Name string) string
-	Version      func(Version string) string
-	ComparedWith func(Range string) string
-	Updated      func(When string) string
-	Online       func(Count int) string
-	LiveTooltip  func(Count int, Unit string) string
-	TrayTooltip  func(Count int, Unit string) string
+	Texts       map[string]string
+	ShowSite    func(Name string) string
+	Online      func(Count int) string
+	LiveTooltip func(Count int, Unit string) string
+	TrayTooltip func(Count int, Unit string) string
 }
 
 var supplied = map[string]Translation{}
@@ -88,10 +82,8 @@ const (
 	textPasteKey
 	textVisitors
 	textByVisitors
-	textByViews
 	textByName
 	textMostVisitorsFirst
-	textMostViewsFirst
 	textByNameFirst
 	textViews
 	textLoadErrorTitle
@@ -104,10 +96,6 @@ const (
 	textRange7d
 	textRange30d
 	textRange90d
-	textRange24hLong
-	textRange7dLong
-	textRange30dLong
-	textRange90dLong
 	textRefresh
 	textSettings
 	textOpenUmami
@@ -156,10 +144,8 @@ var keyOfText = [numTexts]string{
 	"pasteKey",
 	"visitors",
 	"byVisitors",
-	"byViews",
 	"byName",
 	"mostVisitorsFirst",
-	"mostViewsFirst",
 	"byNameFirst",
 	"views",
 	"loadErrorTitle",
@@ -172,10 +158,6 @@ var keyOfText = [numTexts]string{
 	"range7d",
 	"range30d",
 	"range90d",
-	"range24hLong",
-	"range7dLong",
-	"range30dLong",
-	"range90dLong",
 	"refresh",
 	"settings",
 	"openUmami",
@@ -222,10 +204,8 @@ var textsEn = i18n.NewTexts(""+
 	"Paste an API key."+
 	"Visitors"+
 	"by visitors"+
-	"by views"+
 	"by name"+
 	"Most Visitors First"+
-	"Most Views First"+
 	"By Name"+
 	"Views"+
 	"Couldn't load your websites"+
@@ -238,10 +218,6 @@ var textsEn = i18n.NewTexts(""+
 	"7D"+
 	"30D"+
 	"90D"+
-	"previous 24 hours"+
-	"previous 7 days"+
-	"previous 30 days"+
-	"previous 90 days"+
 	"Refresh"+
 	"Settings"+
 	"Open in Umami"+
@@ -285,10 +261,8 @@ var textsEn = i18n.NewTexts(""+
 		17,
 		8,
 		11,
-		8,
 		7,
 		19,
-		16,
 		7,
 		5,
 		27,
@@ -301,10 +275,6 @@ var textsEn = i18n.NewTexts(""+
 		2,
 		3,
 		3,
-		17,
-		15,
-		16,
-		16,
 		7,
 		8,
 		13,
@@ -351,10 +321,8 @@ var textsZhHans = i18n.NewTexts(""+
 	"请粘贴 API 密钥。"+
 	"访客"+
 	"按访客"+
-	"按浏览"+
 	"按名称"+
 	"访客多的在前"+
-	"浏览多的在前"+
 	"按名称"+
 	"浏览"+
 	"无法加载网站"+
@@ -367,10 +335,6 @@ var textsZhHans = i18n.NewTexts(""+
 	"7D"+
 	"30D"+
 	"90D"+
-	"过去 24 小时"+
-	"过去 7 天"+
-	"过去 30 天"+
-	"过去 90 天"+
 	"刷新"+
 	"设置"+
 	"在 Umami 中打开"+
@@ -415,8 +379,6 @@ var textsZhHans = i18n.NewTexts(""+
 		6,
 		9,
 		9,
-		9,
-		18,
 		18,
 		9,
 		6,
@@ -430,10 +392,6 @@ var textsZhHans = i18n.NewTexts(""+
 		2,
 		3,
 		3,
-		16,
-		12,
-		13,
-		13,
 		6,
 		6,
 		19,
@@ -511,15 +469,6 @@ func Supply(lang string, t Translation) {
 	s := supplied[lang]
 	if t.ShowSite != nil {
 		s.ShowSite = t.ShowSite
-	}
-	if t.Version != nil {
-		s.Version = t.Version
-	}
-	if t.ComparedWith != nil {
-		s.ComparedWith = t.ComparedWith
-	}
-	if t.Updated != nil {
-		s.Updated = t.Updated
 	}
 	if t.Online != nil {
 		s.Online = t.Online
@@ -698,28 +647,6 @@ func (msgs Messages) ShowSite(Name string) string {
 	}
 }
 
-// Version says "umapp {Version}"
-// in the language the app shows under cx.
-func Version(cx *core.Scope, Version string) string { return For(cx).Version(Version) }
-
-// Version is the package's Version in the language of msgs.
-func (msgs Messages) Version(Version string) string {
-	if i18n.IsPseudo(msgs.lang) {
-		return i18n.Pseudo(msgs.lang, Messages{lang: Source, mark: true}.Version(Version))
-	}
-	for lang := msgs.lang; ; lang = i18n.Parent(lang) {
-		if f := supplied[lang].Version; f != nil {
-			return f(Version)
-		}
-		switch lang {
-		case "", "en":
-			return "umapp " + msgs.arg(Version)
-		case "zh-Hans":
-			return "umapp " + Version
-		}
-	}
-}
-
 // Quit says "Quit"
 // in the language the app shows under cx.
 func Quit(cx *core.Scope) string { return For(cx).Quit() }
@@ -748,13 +675,6 @@ func ByVisitors(cx *core.Scope) string { return For(cx).ByVisitors() }
 // ByVisitors is the package's ByVisitors in the language of msgs.
 func (msgs Messages) ByVisitors() string { return msgs.text(textByVisitors) }
 
-// ByViews says "by views"
-// in the language the app shows under cx.
-func ByViews(cx *core.Scope) string { return For(cx).ByViews() }
-
-// ByViews is the package's ByViews in the language of msgs.
-func (msgs Messages) ByViews() string { return msgs.text(textByViews) }
-
 // ByName says "by name"
 // in the language the app shows under cx.
 func ByName(cx *core.Scope) string { return For(cx).ByName() }
@@ -769,13 +689,6 @@ func MostVisitorsFirst(cx *core.Scope) string { return For(cx).MostVisitorsFirst
 // MostVisitorsFirst is the package's MostVisitorsFirst in the language of msgs.
 func (msgs Messages) MostVisitorsFirst() string { return msgs.text(textMostVisitorsFirst) }
 
-// MostViewsFirst says "Most Views First"
-// in the language the app shows under cx.
-func MostViewsFirst(cx *core.Scope) string { return For(cx).MostViewsFirst() }
-
-// MostViewsFirst is the package's MostViewsFirst in the language of msgs.
-func (msgs Messages) MostViewsFirst() string { return msgs.text(textMostViewsFirst) }
-
 // ByNameFirst says "By Name"
 // in the language the app shows under cx.
 func ByNameFirst(cx *core.Scope) string { return For(cx).ByNameFirst() }
@@ -789,50 +702,6 @@ func Views(cx *core.Scope) string { return For(cx).Views() }
 
 // Views is the package's Views in the language of msgs.
 func (msgs Messages) Views() string { return msgs.text(textViews) }
-
-// ComparedWith says "Compared with the {Range}"
-// in the language the app shows under cx.
-func ComparedWith(cx *core.Scope, Range string) string { return For(cx).ComparedWith(Range) }
-
-// ComparedWith is the package's ComparedWith in the language of msgs.
-func (msgs Messages) ComparedWith(Range string) string {
-	if i18n.IsPseudo(msgs.lang) {
-		return i18n.Pseudo(msgs.lang, Messages{lang: Source, mark: true}.ComparedWith(Range))
-	}
-	for lang := msgs.lang; ; lang = i18n.Parent(lang) {
-		if f := supplied[lang].ComparedWith; f != nil {
-			return f(Range)
-		}
-		switch lang {
-		case "", "en":
-			return "Compared with the " + msgs.arg(Range)
-		case "zh-Hans":
-			return "对比" + Range
-		}
-	}
-}
-
-// Updated says "Updated {When}"
-// in the language the app shows under cx.
-func Updated(cx *core.Scope, When string) string { return For(cx).Updated(When) }
-
-// Updated is the package's Updated in the language of msgs.
-func (msgs Messages) Updated(When string) string {
-	if i18n.IsPseudo(msgs.lang) {
-		return i18n.Pseudo(msgs.lang, Messages{lang: Source, mark: true}.Updated(When))
-	}
-	for lang := msgs.lang; ; lang = i18n.Parent(lang) {
-		if f := supplied[lang].Updated; f != nil {
-			return f(When)
-		}
-		switch lang {
-		case "", "en":
-			return "Updated " + msgs.arg(When)
-		case "zh-Hans":
-			return When + "更新"
-		}
-	}
-}
 
 // LoadErrorTitle says "Couldn't load your websites"
 // in the language the app shows under cx.
@@ -903,34 +772,6 @@ func Range90d(cx *core.Scope) string { return For(cx).Range90d() }
 
 // Range90d is the package's Range90d in the language of msgs.
 func (msgs Messages) Range90d() string { return msgs.text(textRange90d) }
-
-// Range24hLong says "previous 24 hours"
-// in the language the app shows under cx.
-func Range24hLong(cx *core.Scope) string { return For(cx).Range24hLong() }
-
-// Range24hLong is the package's Range24hLong in the language of msgs.
-func (msgs Messages) Range24hLong() string { return msgs.text(textRange24hLong) }
-
-// Range7dLong says "previous 7 days"
-// in the language the app shows under cx.
-func Range7dLong(cx *core.Scope) string { return For(cx).Range7dLong() }
-
-// Range7dLong is the package's Range7dLong in the language of msgs.
-func (msgs Messages) Range7dLong() string { return msgs.text(textRange7dLong) }
-
-// Range30dLong says "previous 30 days"
-// in the language the app shows under cx.
-func Range30dLong(cx *core.Scope) string { return For(cx).Range30dLong() }
-
-// Range30dLong is the package's Range30dLong in the language of msgs.
-func (msgs Messages) Range30dLong() string { return msgs.text(textRange30dLong) }
-
-// Range90dLong says "previous 90 days"
-// in the language the app shows under cx.
-func Range90dLong(cx *core.Scope) string { return For(cx).Range90dLong() }
-
-// Range90dLong is the package's Range90dLong in the language of msgs.
-func (msgs Messages) Range90dLong() string { return msgs.text(textRange90dLong) }
 
 // Refresh says "Refresh"
 // in the language the app shows under cx.

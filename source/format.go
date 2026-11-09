@@ -76,21 +76,6 @@ func duration(d time.Duration) string {
 	}
 }
 
-// ago says how long ago t was, in few words.
-func ago(now, t time.Time) string {
-	d := now.Sub(t)
-	switch {
-	case d < 10*time.Second:
-		return "just now"
-	case d < time.Minute:
-		return fmt.Sprintf("%ds ago", int(d.Seconds()))
-	case d < time.Hour:
-		return fmt.Sprintf("%dm ago", int(d.Minutes()))
-	default:
-		return t.Format("15:04")
-	}
-}
-
 // bucketLabel names a bucket of a chart: 14:00, or Mon, Oct 12.
 func bucketLabel(t time.Time, hours bool) string {
 	if hours {

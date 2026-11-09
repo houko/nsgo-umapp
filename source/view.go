@@ -140,17 +140,14 @@ func (a *app) list(cx *core.Scope) core.Node {
 		}
 		return a.problem(cx, tr.AllHiddenTitle(), tr.AllHiddenBody())
 	}
-	return core.View{Style: ui.FillRest, Children: []core.Node{
-		a.region(a.listKey, a.siteList),
-		a.footer(cx),
-	}}
+	return a.region(a.listKey, a.siteList)
 }
 
 func (a *app) listKey() string {
 	var b string
 	b += fmt.Sprint(a.cfg.Sort, a.cfg.Range, a.loading, a.gen)
 	for _, s := range a.visible() {
-		b += fmt.Sprintf("%s:%v:%d:%g:%g;", s.ID, s.loaded, s.active, s.cur.Visitors, s.cur.Pageviews)
+		b += fmt.Sprintf("%s:%v:%d:%g;", s.ID, s.loaded, s.active, s.cur.Visitors)
 	}
 	return b
 }
@@ -158,10 +155,7 @@ func (a *app) listKey() string {
 func (a *app) listHeading(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
-	metrics := column(1,
-		ui.Text(tr.Visitors(), 11, ui.Medium, colors.Faint),
-		ui.Text(tr.Views(), 11, ui.Medium, colors.Faint),
-	)
+	metrics := column(1, ui.Text(tr.Visitors(), 11, ui.Medium, colors.Faint))
 	metrics.Style = metrics.Style.Merge(core.Style{Width: core.Pt(58), AlignItems: core.AlignEnd})
 	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 2,
 		Padding: core.All(inset), FlexShrink: 0},
@@ -177,10 +171,7 @@ func (a *app) orderMenu(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
 	label := tr.ByVisitors()
-	switch a.cfg.Sort {
-	case sortByViews:
-		label = tr.ByViews()
-	case sortByName:
+	if a.cfg.Sort == sortByName {
 		label = tr.ByName()
 	}
 	return ui.Menu{
@@ -194,8 +185,6 @@ func (a *app) orderMenu(cx *core.Scope) core.Node {
 		Children: []core.Node{
 			ui.MenuItem{Text: tr.MostVisitorsFirst(), Checked: live(a, func() bool { return a.cfg.Sort == sortByVisitors }),
 				OnSelect: func() { a.setSort(sortByVisitors) }},
-			ui.MenuItem{Text: tr.MostViewsFirst(), Checked: live(a, func() bool { return a.cfg.Sort == sortByViews }),
-				OnSelect: func() { a.setSort(sortByViews) }},
 			ui.MenuItem{Text: tr.ByNameFirst(), Checked: live(a, func() bool { return a.cfg.Sort == sortByName }),
 				OnSelect: func() { a.setSort(sortByName) }},
 		},
@@ -234,11 +223,7 @@ func (a *app) siteRow(cx *core.Scope, s *site, _ int) core.Node {
 	case s.err != nil && s.cur.Visitors == 0:
 		spark = ui.Icon(lucide.CircleAlert, 13, colors.Danger)
 	default:
-		series := s.visitors
-		if a.cfg.Sort == sortByViews {
-			series = s.views
-		}
-		spark = a.sparkline(cx, series, 20, 56, false)
+		spark = a.sparkline(cx, s.visitors, 20, 56, false)
 	}
 	right := column(1, a.siteCount(cx, s)...)
 	right.Style = right.Style.Merge(core.Style{Width: core.Pt(58), AlignItems: core.AlignEnd})
@@ -262,13 +247,11 @@ func (a *app) siteCount(cx *core.Scope, s *site) []core.Node {
 	if !s.loaded {
 		return []core.Node{
 			ui.SkeletonBlock{Width: core.Pt(32), Height: core.Pt(11), Style: core.Style{Margin: core.Symmetric(2, 0)}},
-			ui.SkeletonBlock{Width: core.Pt(28), Height: core.Pt(9), Style: core.Style{Margin: core.Symmetric(2, 0)}},
 			ui.SkeletonBlock{Width: core.Pt(24), Height: core.Pt(9), Style: core.Style{Margin: core.Symmetric(2, 0)}},
 		}
 	}
 	return []core.Node{
 		ui.Tabular(ui.Text(count(float64(s.cur.Visitors)), 13, ui.Semibold, colors.Text)),
-		ui.Tabular(ui.Text(count(float64(s.cur.Pageviews)), 11, ui.Regular, colors.Muted)),
 		a.delta(cx, float64(s.cur.Visitors), float64(s.prev.Visitors), false),
 	}
 }
@@ -299,8 +282,6 @@ func (a *app) summary(cx *core.Scope) core.Node {
 		figure = row(10,
 			ui.Tabular(ui.Text(count(float64(cur.Visitors)), 30, ui.Semibold, colors.Text)),
 			a.delta(cx, float64(cur.Visitors), float64(prev.Visitors), false),
-			ui.Spacer{},
-			row(4, ui.Tabular(ui.Text(count(float64(cur.Pageviews)), 13, ui.Semibold, colors.Text)), muted(cx, tr.Views(), 13)),
 		)
 	} else {
 		figure = ui.SkeletonBlock{Width: core.Pt(96), Height: core.Pt(26), Style: core.Style{Margin: core.Edges{Top: 6, Bottom: 4}}}
@@ -311,21 +292,6 @@ func (a *app) summary(cx *core.Scope) core.Node {
 			figure,
 			a.sparkline(cx, visitors, 40, 0, true),
 		}}
-}
-
-func (a *app) footer(cx *core.Scope) core.Node {
-	tr := msgsOf(cx)
-	colors := ui.ColorsOf(cx)
-	compared := oneLine(ui.Text(tr.ComparedWith(a.spanLong()), 11, ui.Regular, colors.Faint))
-	compared.Style = compared.Style.Merge(core.Style{FlexGrow: 1, FlexShrink: 1})
-	children := []core.Node{compared}
-	if !a.loadedAt.IsZero() {
-		children = append(children, ui.Text(tr.Updated(ago(a.now(), a.loadedAt)), 11, ui.Regular, colors.Faint))
-	}
-	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 6, FlexShrink: 0,
-		Padding: core.All(gutter), Borders: core.Edges{Top: 1}},
-		StyleFunc: func() core.Style { return core.Style{BorderColor: colors.Line()} },
-		Children:  children}
 }
 
 func (a *app) liveBadge(cx *core.Scope, n int, long bool) core.Node {

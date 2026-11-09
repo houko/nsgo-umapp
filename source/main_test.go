@@ -160,7 +160,7 @@ func TestList(t *testing.T) {
 		t.Errorf("live %d", got)
 	}
 	tt := build(t, a)
-	for _, s := range []string{"Acme Docs", "Personal blog", "Landing page", "Visitors", "Compared with the previous 24 hours"} {
+	for _, s := range []string{"Acme Docs", "Personal blog", "Landing page", "Visitors"} {
 		if !tt.hasText(s) {
 			t.Errorf("no %q in %q", s, tt.Texts())
 		}
@@ -175,9 +175,6 @@ func TestRange(t *testing.T) {
 	tt.WaitUntil(2*time.Second, func() bool { return a.cfg.Range == 1 && a.loading == 0 })
 	if a.cfg.Range != 1 || len(a.buckets) != 7 {
 		t.Fatalf("range %d, %d buckets", a.cfg.Range, len(a.buckets))
-	}
-	if !tt.hasText("Compared with the previous 7 days") {
-		t.Errorf("texts %q", tt.Texts())
 	}
 	tt.Key("mod+3")
 	tt.WaitUntil(2*time.Second, func() bool { return a.cfg.Range == 2 && a.loading == 0 })
@@ -416,20 +413,25 @@ func TestSort(t *testing.T) {
 	if got := names(a.visible()); got[0] != "Landing page" || got[len(got)-1] != "Status" {
 		t.Errorf("by visitors %q", got)
 	}
-	a.site("e").cur.Pageviews = 1e6
-	a.setSort(sortByViews)
-	if a.visible()[0].Name != "Status" || saved == 0 {
-		t.Fatalf("by views %q, saved %d", names(a.visible()), saved)
-	}
 	a.setSort(sortByName)
 	got := names(a.visible())
 	want := []string{"Acme Docs", "Changelog", "Landing page", "Personal blog", "Status"}
-	if !slices.Equal(got, want) || a.cfg.Sort != sortByName {
-		t.Fatalf("by name %q", got)
+	if !slices.Equal(got, want) || a.cfg.Sort != sortByName || saved == 0 {
+		t.Fatalf("by name %q, saved %d", got, saved)
 	}
 	a.setSort(sortByVisitors)
 	if a.cfg.Sort != sortByVisitors || a.visible()[0].Name != "Landing page" {
 		t.Errorf("by visitors again %q", names(a.visible()))
+	}
+}
+
+func TestFaviconHost(t *testing.T) {
+	for in, want := range map[string]string{
+		"Acme.dev": "acme.dev", "https://www.google.com/search": "www.google.com", "": "", "localhost": "",
+	} {
+		if got := faviconHost(in); got != want {
+			t.Errorf("faviconHost(%q) = %q, want %q", in, got, want)
+		}
 	}
 }
 

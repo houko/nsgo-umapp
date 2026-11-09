@@ -13,20 +13,6 @@ func (a *app) msgs() locales.Messages {
 	return locales.In("en")
 }
 
-func (a *app) spanLong() string {
-	tr := a.msgs()
-	switch a.cfg.Range {
-	case 1:
-		return tr.Range7dLong()
-	case 2:
-		return tr.Range30dLong()
-	case 3:
-		return tr.Range90dLong()
-	default:
-		return tr.Range24hLong()
-	}
-}
-
 func (a *app) unitWord(n int, one, many string) string {
 	if n == 1 {
 		return one
