@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/oneo-me/nsgo/base"
 	"github.com/oneo-me/nsgo/core"
 	"github.com/oneo-me/nsgo/icons/lucide"
 	"github.com/oneo-me/nsgo/ui"
@@ -69,18 +68,18 @@ func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 func (a *app) accountSection(cx *core.Scope, title string, connected bool) core.Node {
 	tr := msgsOf(cx)
 	fields := []core.Node{
-		a.field(cx, tr.ApiEndpoint(), tr.ApiEndpointHint(), ui.Input{Input: base.Input{
+		a.field(cx, tr.ApiEndpoint(), tr.ApiEndpointHint(), ui.Input{
 			Value: live(a, func() string { return a.editEndpoint }), Placeholder: cloudEndpoint, Label: tr.ApiEndpoint(),
 			Disabled: live(a, func() bool { return a.connecting }), TestID: "endpoint",
 			OnChange: func(s string) { a.editEndpoint = s; a.invalidate() },
 			OnSubmit: func(string) { a.save() },
-		}}),
-		a.field(cx, tr.ApiKey(), "", ui.Input{Input: base.Input{
+		}),
+		a.field(cx, tr.ApiKey(), "", ui.Input{
 			Value: live(a, func() string { return a.editKey }), Placeholder: "api_…", Label: tr.ApiKey(),
 			Masked: true, AutoFocus: !connected, Disabled: live(a, func() bool { return a.connecting }), TestID: "key",
 			OnChange: func(s string) { a.editKey = s; a.invalidate() },
 			OnSubmit: func(string) { a.save() },
-		}}),
+		}),
 	}
 	fields = append(fields, a.region(func() string {
 		return fmt.Sprint(a.connecting, a.connectErr, connected)

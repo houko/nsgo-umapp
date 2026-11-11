@@ -10,7 +10,8 @@ Umapp is a native menu bar app that shows the websites of an Umami account and t
 - Use NSGo's `ui` components and its default theme; build reusable UI in NSGo rather than here.
 - Pad every side of a bar, page or row alike: `gutter` for bars and pages, `inset` for rows.
 - Run Umami requests off the UI thread. Apply results on the main thread and never start that work inside a builder.
-- Keep the API key in the macOS keychain, and in the config file elsewhere.
+- Target macOS on Apple silicon alone (`macos_arm64`).
+- Keep the API key in the macOS keychain.
 
 ## Working with the user
 

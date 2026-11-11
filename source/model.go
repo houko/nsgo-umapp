@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"math"
 	"os"
@@ -206,7 +207,7 @@ func newApp(cfg config, src source) *app {
 		setLogin:  func(bool) {},
 	}
 	a.cfg.Range = min(max(a.cfg.Range, 0), len(spans)-1)
-	if a.cfg.Sort != sortByName {
+	if a.cfg.Sort != sortByViews && a.cfg.Sort != sortByName {
 		a.cfg.Sort = sortByVisitors
 	}
 	a.resetSettings()
@@ -257,19 +258,20 @@ func (a *app) site(id string) *site {
 }
 
 // ordered returns every site in the order the app shows them: by name, or
-// those with the most visitors first.
+// those with the most visitors or views first.
 func (a *app) ordered() []*site {
 	out := slices.Clone(a.sites)
 	byName := func(x, y *site) int {
 		return strings.Compare(strings.ToLower(x.Name), strings.ToLower(y.Name))
 	}
+	key := func(s *site) num { return s.cur.Visitors }
+	if a.cfg.Sort == sortByViews {
+		key = func(s *site) num { return s.cur.Pageviews }
+	}
 	slices.SortStableFunc(out, func(x, y *site) int {
 		if a.cfg.Sort != sortByName {
-			switch {
-			case x.cur.Visitors > y.cur.Visitors:
-				return -1
-			case x.cur.Visitors < y.cur.Visitors:
-				return 1
+			if c := cmp.Compare(key(y), key(x)); c != 0 {
+				return c
 			}
 		}
 		return byName(x, y)
@@ -288,9 +290,9 @@ func (a *app) visible() []*site {
 	return out
 }
 
-// setSort shows the sites by visitors or name.
+// setSort shows the sites by visitors, views or name.
 func (a *app) setSort(sort int) {
-	if sort == a.cfg.Sort || sort != sortByVisitors && sort != sortByName {
+	if sort == a.cfg.Sort || sort != sortByVisitors && sort != sortByViews && sort != sortByName {
 		return
 	}
 	a.cfg.Sort = sort

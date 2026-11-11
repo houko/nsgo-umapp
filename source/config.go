@@ -19,13 +19,14 @@ type config struct {
 	Range    int      `json:"range"`
 	HideLive bool     `json:"hideLive,omitempty"` // no count of live visitors in the menu bar
 	Hidden   []string `json:"hidden,omitempty"`   // IDs of websites not shown
-	// Sort is how the list orders websites: by visitors or name.
+	// Sort is how the list orders websites: by visitors, views or name.
 	Sort int `json:"sort,omitempty"`
 }
 
-// The orders of the list. 1 was by views, which reads as by visitors now.
+// The orders of the list.
 const (
 	sortByVisitors = 0
+	sortByViews    = 1
 	sortByName     = 2
 )
 

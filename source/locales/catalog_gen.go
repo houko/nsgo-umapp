@@ -82,8 +82,10 @@ const (
 	textPasteKey
 	textVisitors
 	textByVisitors
+	textByViews
 	textByName
 	textMostVisitorsFirst
+	textMostViewsFirst
 	textByNameFirst
 	textViews
 	textLoadErrorTitle
@@ -144,8 +146,10 @@ var keyOfText = [numTexts]string{
 	"pasteKey",
 	"visitors",
 	"byVisitors",
+	"byViews",
 	"byName",
 	"mostVisitorsFirst",
+	"mostViewsFirst",
 	"byNameFirst",
 	"views",
 	"loadErrorTitle",
@@ -204,8 +208,10 @@ var textsEn = i18n.NewTexts(""+
 	"Paste an API key."+
 	"Visitors"+
 	"by visitors"+
+	"by views"+
 	"by name"+
 	"Most Visitors First"+
+	"Most Views First"+
 	"By Name"+
 	"Views"+
 	"Couldn't load your websites"+
@@ -261,8 +267,10 @@ var textsEn = i18n.NewTexts(""+
 		17,
 		8,
 		11,
+		8,
 		7,
 		19,
+		16,
 		7,
 		5,
 		27,
@@ -321,8 +329,10 @@ var textsZhHans = i18n.NewTexts(""+
 	"请粘贴 API 密钥。"+
 	"访客"+
 	"按访客"+
+	"按浏览"+
 	"按名称"+
 	"访客多的在前"+
+	"浏览多的在前"+
 	"按名称"+
 	"浏览"+
 	"无法加载网站"+
@@ -379,6 +389,8 @@ var textsZhHans = i18n.NewTexts(""+
 		6,
 		9,
 		9,
+		9,
+		18,
 		18,
 		9,
 		6,
@@ -675,6 +687,13 @@ func ByVisitors(cx *core.Scope) string { return For(cx).ByVisitors() }
 // ByVisitors is the package's ByVisitors in the language of msgs.
 func (msgs Messages) ByVisitors() string { return msgs.text(textByVisitors) }
 
+// ByViews says "by views"
+// in the language the app shows under cx.
+func ByViews(cx *core.Scope) string { return For(cx).ByViews() }
+
+// ByViews is the package's ByViews in the language of msgs.
+func (msgs Messages) ByViews() string { return msgs.text(textByViews) }
+
 // ByName says "by name"
 // in the language the app shows under cx.
 func ByName(cx *core.Scope) string { return For(cx).ByName() }
@@ -688,6 +707,13 @@ func MostVisitorsFirst(cx *core.Scope) string { return For(cx).MostVisitorsFirst
 
 // MostVisitorsFirst is the package's MostVisitorsFirst in the language of msgs.
 func (msgs Messages) MostVisitorsFirst() string { return msgs.text(textMostVisitorsFirst) }
+
+// MostViewsFirst says "Most Views First"
+// in the language the app shows under cx.
+func MostViewsFirst(cx *core.Scope) string { return For(cx).MostViewsFirst() }
+
+// MostViewsFirst is the package's MostViewsFirst in the language of msgs.
+func (msgs Messages) MostViewsFirst() string { return msgs.text(textMostViewsFirst) }
 
 // ByNameFirst says "By Name"
 // in the language the app shows under cx.

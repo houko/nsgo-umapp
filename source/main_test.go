@@ -193,7 +193,7 @@ func TestDetail(t *testing.T) {
 	if a.page != pageSite || a.open != "a" {
 		t.Fatalf("page %v %q", a.page, a.open)
 	}
-	for _, s := range []string{"Bounce rate", "Visit duration", "/docs/getting-started", "Direct", "google.com", "United States", "Open in Umami"} {
+	for _, s := range []string{"Bounce rate", "Visit duration", "/docs/getting-started", "Direct", "google.com", "United States"} {
 		if !tt.hasText(s) {
 			t.Errorf("no %q in %q", s, tt.Texts())
 		}
@@ -422,6 +422,11 @@ func TestSort(t *testing.T) {
 	a.setSort(sortByVisitors)
 	if a.cfg.Sort != sortByVisitors || a.visible()[0].Name != "Landing page" {
 		t.Errorf("by visitors again %q", names(a.visible()))
+	}
+	a.site("a").cur.Pageviews = 1e6
+	a.setSort(sortByViews)
+	if got := names(a.visible()); a.cfg.Sort != sortByViews || got[0] != "Acme Docs" || got[1] != "Landing page" {
+		t.Errorf("by views %q", got)
 	}
 }
 

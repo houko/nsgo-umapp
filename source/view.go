@@ -19,10 +19,12 @@ const (
 	// sit gutter-inset from the edge so that their text lines up.
 	gutter = 12
 	inset  = 8
+	// countWidth is the width of a row's counts, so that the sparklines
+	// beside them line up.
+	countWidth = 90
 )
 
 func (a *app) root(cx *core.Scope) core.Node {
-	cx.SetTheme(ui.DefaultTheme())
 	base.SetScrollbarTheme(cx, ui.ScrollbarTheme(cx))
 	cx.OnKey("mod+r", func() {
 		if a.configured() {
@@ -61,7 +63,8 @@ func (a *app) root(cx *core.Scope) core.Node {
 					return a.settings(cx)
 				case a.page == pageSite && a.site(a.open) != nil:
 					return a.region(a.detailKey, func(cx *core.Scope) core.Node {
-						return core.View{Style: ui.FillRest, Children: []core.Node{a.header(cx), a.detail(cx, a.site(a.open))}}
+						s := a.site(a.open)
+						return core.View{Style: ui.FillRest, Children: []core.Node{a.detailHeader(cx, s), a.detail(cx, s)}}
 					})
 				default:
 					return a.region(a.listContentKey, func(cx *core.Scope) core.Node {
@@ -89,20 +92,39 @@ func (a *app) detailKey() string {
 }
 
 func (a *app) header(cx *core.Scope) core.Node {
+	return bar(cx,
+		a.rangeControl(cx),
+		ui.Spacer{},
+		a.refreshButton(cx),
+		a.toolButton(cx, lucide.Settings, a.msgs().Settings(), nil, func() {
+			a.resetSettings()
+			a.page = pageSettings
+			a.invalidate()
+		}, "settings"),
+	)
+}
+
+// bar is the strip across the top of a page.
+func bar(cx *core.Scope, children ...core.Node) core.Node {
 	colors := ui.ColorsOf(cx)
 	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 4,
 		Padding: core.All(gutter), Borders: core.Edges{Bottom: 1}, FlexShrink: 0},
 		StyleFunc: func() core.Style { return core.Style{BorderColor: colors.Line()} },
-		Children: []core.Node{
-			a.rangeControl(cx),
-			ui.Spacer{},
-			a.toolButton(cx, lucide.RefreshCw, a.msgs().Refresh(), live(a, func() bool { return a.loading > 0 }), a.refresh, "refresh"),
-			a.toolButton(cx, lucide.Settings, a.msgs().Settings(), nil, func() {
-				a.resetSettings()
-				a.page = pageSettings
-				a.invalidate()
-			}, "settings"),
-		}}
+		Children:  children}
+}
+
+// edgeColor is what a scroll view's content fades into at its edges: the
+// panel's surface, or nothing over the material, which the page's color
+// would show as a glow on.
+func edgeColor(cx *core.Scope) func() core.Color {
+	if desktop.ShowsMaterial(cx) {
+		return ui.Fixed(core.Transparent)
+	}
+	return ui.ColorsOf(cx).Surface
+}
+
+func (a *app) refreshButton(cx *core.Scope) core.Node {
+	return a.toolButton(cx, lucide.RefreshCw, a.msgs().Refresh(), live(a, func() bool { return a.loading > 0 }), a.refresh, "refresh")
 }
 
 func (a *app) rangeControl(cx *core.Scope) core.Node {
@@ -147,7 +169,7 @@ func (a *app) listKey() string {
 	var b string
 	b += fmt.Sprint(a.cfg.Sort, a.cfg.Range, a.loading, a.gen)
 	for _, s := range a.visible() {
-		b += fmt.Sprintf("%s:%v:%d:%g;", s.ID, s.loaded, s.active, s.cur.Visitors)
+		b += fmt.Sprintf("%s:%v:%d:%g:%g;", s.ID, s.loaded, s.active, s.cur.Visitors, s.cur.Pageviews)
 	}
 	return b
 }
@@ -155,8 +177,8 @@ func (a *app) listKey() string {
 func (a *app) listHeading(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
-	metrics := column(1, ui.Text(tr.Visitors(), 11, ui.Medium, colors.Faint))
-	metrics.Style = metrics.Style.Merge(core.Style{Width: core.Pt(58), AlignItems: core.AlignEnd})
+	metrics := column(1, ui.Text(tr.Visitors()+" / "+tr.Views(), 11, ui.Medium, colors.Faint))
+	metrics.Style = metrics.Style.Merge(core.Style{Width: core.Pt(countWidth), AlignItems: core.AlignEnd})
 	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 2,
 		Padding: core.All(inset), FlexShrink: 0},
 		Children: []core.Node{
@@ -171,7 +193,10 @@ func (a *app) orderMenu(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
 	label := tr.ByVisitors()
-	if a.cfg.Sort == sortByName {
+	switch a.cfg.Sort {
+	case sortByViews:
+		label = tr.ByViews()
+	case sortByName:
 		label = tr.ByName()
 	}
 	return ui.Menu{
@@ -185,6 +210,8 @@ func (a *app) orderMenu(cx *core.Scope) core.Node {
 		Children: []core.Node{
 			ui.MenuItem{Text: tr.MostVisitorsFirst(), Checked: live(a, func() bool { return a.cfg.Sort == sortByVisitors }),
 				OnSelect: func() { a.setSort(sortByVisitors) }},
+			ui.MenuItem{Text: tr.MostViewsFirst(), Checked: live(a, func() bool { return a.cfg.Sort == sortByViews }),
+				OnSelect: func() { a.setSort(sortByViews) }},
 			ui.MenuItem{Text: tr.ByNameFirst(), Checked: live(a, func() bool { return a.cfg.Sort == sortByName }),
 				OnSelect: func() { a.setSort(sortByName) }},
 		},
@@ -198,7 +225,7 @@ func (a *app) siteList(cx *core.Scope) core.Node {
 	for i, s := range vis {
 		children = append(children, a.siteRow(cx, s, i))
 	}
-	return ui.ScrollView{Style: ui.FillRest, TestID: "sites",
+	return ui.ScrollView{Style: ui.FillRest, TestID: "sites", EdgeColor: edgeColor(cx),
 		ContentStyle: core.Style{Padding: core.All(gutter - inset)},
 		Children:     children}
 }
@@ -207,14 +234,7 @@ func (a *app) siteRow(cx *core.Scope, s *site, _ int) core.Node {
 	colors := ui.ColorsOf(cx)
 	id := s.ID
 	name := s.Name
-	domain := s.Domain
-	if domain == "" {
-		domain = "—"
-	}
-	left := column(1,
-		row(6, oneLine(ui.Text(name, 13, ui.Medium, colors.Text)), a.liveBadge(cx, s.active, false)),
-		caption(cx, domain),
-	)
+	left := row(6, oneLine(ui.Text(name, 13, ui.Medium, colors.Text)), a.liveBadge(cx, s.active, false))
 	left.Style = left.Style.Merge(core.Style{FlexGrow: 1, FlexShrink: 1, MinWidth: core.Pt(0)})
 	var spark core.Node
 	switch {
@@ -226,7 +246,7 @@ func (a *app) siteRow(cx *core.Scope, s *site, _ int) core.Node {
 		spark = a.sparkline(cx, s.visitors, 20, 56, false)
 	}
 	right := column(1, a.siteCount(cx, s)...)
-	right.Style = right.Style.Merge(core.Style{Width: core.Pt(58), AlignItems: core.AlignEnd})
+	right.Style = right.Style.Merge(core.Style{Width: core.Pt(countWidth), AlignItems: core.AlignEnd, FlexShrink: 0})
 	return base.Button{
 		Label: name, TestID: id,
 		OnPress: func(core.PressEvent) { a.openSite(id) },
@@ -243,17 +263,30 @@ func (a *app) siteRow(cx *core.Scope, s *site, _ int) core.Node {
 }
 
 func (a *app) siteCount(cx *core.Scope, s *site) []core.Node {
-	colors := ui.ColorsOf(cx)
 	if !s.loaded {
 		return []core.Node{
 			ui.SkeletonBlock{Width: core.Pt(32), Height: core.Pt(11), Style: core.Style{Margin: core.Symmetric(2, 0)}},
 			ui.SkeletonBlock{Width: core.Pt(24), Height: core.Pt(9), Style: core.Style{Margin: core.Symmetric(2, 0)}},
 		}
 	}
-	return []core.Node{
-		ui.Tabular(ui.Text(count(float64(s.cur.Visitors)), 13, ui.Semibold, colors.Text)),
-		a.delta(cx, float64(s.cur.Visitors), float64(s.prev.Visitors), false),
+	cur, prev := s.cur.Visitors, s.prev.Visitors
+	if a.cfg.Sort == sortByViews {
+		cur, prev = s.cur.Pageviews, s.prev.Pageviews
 	}
+	return []core.Node{
+		a.counts(cx, s.cur, 13, 11),
+		a.delta(cx, float64(cur), float64(prev), false),
+	}
+}
+
+// counts shows visitors and views as "visitors / views".
+func (a *app) counts(cx *core.Scope, st stats, size, viewsSize core.Points) core.Node {
+	colors := ui.ColorsOf(cx)
+	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignBaseline},
+		Children: []core.Node{
+			ui.Tabular(ui.Text(count(float64(st.Visitors)), size, ui.Semibold, colors.Text)),
+			ui.Tabular(ui.Text(" / "+count(float64(st.Pageviews)), viewsSize, ui.Regular, colors.Muted)),
+		}}
 }
 
 func (a *app) skeletonList(cx *core.Scope) core.Node {
@@ -280,7 +313,7 @@ func (a *app) summary(cx *core.Scope) core.Node {
 	var figure core.Node
 	if loaded && len(a.sites) > 0 {
 		figure = row(10,
-			ui.Tabular(ui.Text(count(float64(cur.Visitors)), 30, ui.Semibold, colors.Text)),
+			a.counts(cx, cur, 30, 13),
 			a.delta(cx, float64(cur.Visitors), float64(prev.Visitors), false),
 		)
 	} else {
@@ -288,7 +321,7 @@ func (a *app) summary(cx *core.Scope) core.Node {
 	}
 	return core.View{Style: core.Style{Padding: core.All(inset), Gap: 2, FlexShrink: 0},
 		Children: []core.Node{
-			row(6, ui.Text(tr.Visitors(), 12, ui.Medium, colors.Muted), ui.Spacer{}, a.liveBadge(cx, active, true)),
+			row(6, ui.Text(tr.Visitors()+" / "+tr.Views(), 12, ui.Medium, colors.Muted), ui.Spacer{}, a.liveBadge(cx, active, true)),
 			figure,
 			a.sparkline(cx, visitors, 40, 0, true),
 		}}

@@ -1,6 +1,6 @@
 # Umapp architecture
 
-Umapp is a native menu bar application that reads an Umami account and shows its websites and visitors in a panel. It is a single Go module under `source/`, built with NSGo's `ui` components in Onevra's look.
+Umapp is a native macOS menu bar application, built for Apple silicon alone, that reads an Umami account and shows its websites and visitors in a panel. It is a single Go module under `source/`, built with NSGo's `ui` components in Onevra's look.
 
 ## Code map
 
@@ -21,8 +21,8 @@ Umapp is a native menu bar application that reads an Umami account and shows its
 
 - Run network work off the UI thread. Apply results on the main thread and never start that work inside a builder.
 - Views follow the state through a revision: actions change plain data and call `invalidate`, and a region builds again only when its key changes.
-- Present Umapp as a menu bar app: the tray icon opens the panel on a left click and offers Quit on a right click. Where NSGo opens no panels or tray icons, the same view is the main window's.
-- Keep the API key in the macOS keychain. The config file on that platform stores the rest.
+- Present Umapp as a menu bar app: the tray icon opens the panel on a left click and offers Quit on a right click.
+- Keep the API key in the macOS keychain. The config file stores the rest.
 
 ## Core flows
 
@@ -30,11 +30,11 @@ Umapp is a native menu bar application that reads an Umami account and shows its
 
 **Refresh.** Loads every website the key can see, then each one's stats, series and visitors online for the range shown. Visitors online refresh every minute; the rest every five, or as the panel opens on numbers older than a minute.
 
-**Order.** Websites with the most visitors come first, or by name when the user chooses that.
+**Order.** Websites with the most visitors come first, or the most views, or by name, as the user chooses.
 
 ## Data and state
 
-Preferences live in `config.json` under the platform configuration directory. On macOS the API key is in the login keychain under `umapp: Umami API key`. Whether the app opens at login is the system's, read and changed through NSGo. The list of websites is held in memory only: each launch loads it again.
+Preferences live in `config.json` under `~/Library/Application Support/umapp`. The API key is in the login keychain under `umapp: Umami API key`. Whether the app opens at login is the system's, read and changed through NSGo. The list of websites is held in memory only: each launch loads it again.
 
 ## Verification
 

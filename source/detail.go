@@ -6,31 +6,54 @@ import (
 	"strings"
 	"time"
 
+	"github.com/oneo-me/nsgo/base"
 	"github.com/oneo-me/nsgo/base/plot"
 	"github.com/oneo-me/nsgo/core"
 	"github.com/oneo-me/nsgo/icons/lucide"
 	"github.com/oneo-me/nsgo/ui"
 )
 
+// detailHeader is the site's page's bar: back to the list, and to Umami.
+func (a *app) detailHeader(cx *core.Scope, s *site) core.Node {
+	tr := msgsOf(cx)
+	nav := []core.Node{a.backButton(cx), ui.Spacer{}}
+	if u := dashboardURL(a.cfg.Endpoint, s.ID); u != "" {
+		nav = append(nav, a.toolButton(cx, lucide.ExternalLink, tr.OpenUmami(), nil, func() { cx.OpenURL(u, nil) }, "open"))
+	}
+	return bar(cx, append(nav, a.refreshButton(cx))...)
+}
+
+// backButton returns to the list: a ghost button whose chevron sits close
+// to the bar's edge.
+func (a *app) backButton(cx *core.Scope) core.Node {
+	tr := msgsOf(cx)
+	colors := ui.ColorsOf(cx)
+	return base.Button{
+		Label: tr.Websites(), TestID: "back",
+		OnPress: func(core.PressEvent) { a.back() },
+		Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 2,
+			Height: core.Pt(ui.ButtonHeight), Padding: core.Edges{Left: 2, Right: inset}, CornerRadius: 6},
+		StyleFunc: func() core.Style {
+			return core.Style{
+				Hover:  &core.Style{Background: colors.Hover()},
+				Active: &core.Style{Background: colors.Pressed()},
+			}
+		},
+		Children: []core.Node{
+			ui.Icon(lucide.ChevronLeft, 16, colors.Muted),
+			ui.Text(tr.Websites(), 13, ui.Regular, colors.Text),
+		},
+	}
+}
+
 func (a *app) detail(cx *core.Scope, s *site) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
-	nav := []core.Node{
-		ui.Button{Text: tr.Websites(), Icon: lucide.ChevronLeft, Variant: ui.ButtonGhost, TestID: "back", OnPress: a.back},
-		ui.Spacer{},
-	}
-	if u := dashboardURL(a.cfg.Endpoint, s.ID); u != "" {
-		nav = append(nav, ui.Button{Text: tr.OpenUmami(), Icon: lucide.ExternalLink, Variant: ui.ButtonGhost, TestID: "open",
-			OnPress: func() { cx.OpenURL(u, nil) }})
-	}
-	return ui.ScrollView{Style: ui.FillRest, TestID: "detail-" + s.ID,
+	return ui.ScrollView{Style: ui.FillRest, TestID: "detail-" + s.ID, EdgeColor: edgeColor(cx),
 		ContentStyle: core.Style{Padding: core.All(gutter), Gap: 18},
 		Children: []core.Node{
-			row(0, nav...),
-			row(10, favicon(cx, s.Domain, 28), column(2,
-				row(8, oneLine(ui.Text(s.Name, 17, ui.Semibold, colors.Text)), a.liveBadge(cx, s.active, true)),
-				domainLine(cx, s.Domain),
-			)),
+			row(10, favicon(cx, s.Domain, 28),
+				row(8, oneLine(ui.Text(s.Name, 17, ui.Semibold, colors.Text)), a.liveBadge(cx, s.active, true))),
 			a.metricsGrid(cx, s),
 			a.chart(cx, s),
 			a.detailError(cx, s),
@@ -39,13 +62,6 @@ func (a *app) detail(cx *core.Scope, s *site) core.Node {
 				func(x string) core.Node { return favicon(cx, x, 14) }),
 			breakdown(cx, tr.Countries(), tr.Visitors(), "country", s.countries, s.pages == nil && s.detailErr == nil, flag),
 		}}
-}
-
-func domainLine(cx *core.Scope, domain string) core.Node {
-	if domain == "" {
-		return core.Group(nil)
-	}
-	return caption(cx, domain)
 }
 
 func (a *app) detailError(cx *core.Scope, s *site) core.Node {
