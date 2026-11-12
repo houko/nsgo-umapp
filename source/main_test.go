@@ -153,7 +153,7 @@ func names(sites []*site) []string {
 func TestList(t *testing.T) {
 	a := testApp(t, newFake())
 	a.refresh()
-	if v := a.visible(); v[0].ID != "c" || v[len(v)-1].ID != "e" {
+	if v := a.ordered(); v[0].ID != "c" || v[len(v)-1].ID != "e" {
 		t.Errorf("order %v", []string{v[0].ID, v[len(v)-1].ID})
 	}
 	if got := a.liveTotal(); got != 4+1+7 {
@@ -244,17 +244,12 @@ func TestSettings(t *testing.T) {
 	if a.page != pageSettings {
 		t.Fatalf("page %v", a.page)
 	}
-	v := tt.Find("id:settings")
-	if v.Content.Height <= v.Frame.Size.Height {
-		t.Fatalf("settings does not scroll: content %g, viewport %g", v.Content.Height, v.Frame.Size.Height)
-	}
-	tt.Press("Show Landing page")
-	if len(a.cfg.Hidden) != 1 || a.cfg.Hidden[0] != "c" {
-		t.Fatalf("hidden %q", a.cfg.Hidden)
+	if tt.hasText("Landing page") {
+		t.Error("settings lists websites")
 	}
 	tt.Press("back")
-	if tt.hasText("Landing page") {
-		t.Error("a hidden website is listed")
+	if !tt.hasText("Landing page") || !tt.hasText("acme.dev") {
+		t.Error("the list misses a website or its domain")
 	}
 }
 
@@ -410,22 +405,22 @@ func TestSort(t *testing.T) {
 	saved := 0
 	a.changed = func(config) { saved++ }
 	a.refresh()
-	if got := names(a.visible()); got[0] != "Landing page" || got[len(got)-1] != "Status" {
+	if got := names(a.ordered()); got[0] != "Landing page" || got[len(got)-1] != "Status" {
 		t.Errorf("by visitors %q", got)
 	}
 	a.setSort(sortByName)
-	got := names(a.visible())
+	got := names(a.ordered())
 	want := []string{"Acme Docs", "Changelog", "Landing page", "Personal blog", "Status"}
 	if !slices.Equal(got, want) || a.cfg.Sort != sortByName || saved == 0 {
 		t.Fatalf("by name %q, saved %d", got, saved)
 	}
 	a.setSort(sortByVisitors)
-	if a.cfg.Sort != sortByVisitors || a.visible()[0].Name != "Landing page" {
-		t.Errorf("by visitors again %q", names(a.visible()))
+	if a.cfg.Sort != sortByVisitors || a.ordered()[0].Name != "Landing page" {
+		t.Errorf("by visitors again %q", names(a.ordered()))
 	}
 	a.site("a").cur.Pageviews = 1e6
 	a.setSort(sortByViews)
-	if got := names(a.visible()); a.cfg.Sort != sortByViews || got[0] != "Acme Docs" || got[1] != "Landing page" {
+	if got := names(a.ordered()); a.cfg.Sort != sortByViews || got[0] != "Acme Docs" || got[1] != "Landing page" {
 		t.Errorf("by views %q", got)
 	}
 }

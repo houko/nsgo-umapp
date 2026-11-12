@@ -13,7 +13,7 @@ Umapp is a native macOS menu bar application, built for Apple silicon alone, tha
 | `source/config.go` | Config file and the macOS keychain. |
 | `source/view.go` | List, header, summary and sparklines. |
 | `source/detail.go` | One website's metrics, chart and breakdowns, with favicons and flags. |
-| `source/settings.go` | Connect, menu bar options and which websites to show. |
+| `source/settings.go` | Connect and menu bar options. |
 | `source/locales/` | NSGo message catalogs, and the accessors the `nsgo` tool writes from them. |
 | `source/assets/` | Icon sources. |
 

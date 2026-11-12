@@ -2,17 +2,20 @@ package main
 
 import (
 	"fmt"
-	"slices"
 
+	"github.com/oneo-me/nsgo/base"
 	"github.com/oneo-me/nsgo/core"
 	"github.com/oneo-me/nsgo/icons/lucide"
 	"github.com/oneo-me/nsgo/ui"
 )
 
+// sectionGap parts the settings' sections.
+const sectionGap = 22
+
 func (a *app) settings(cx *core.Scope) core.Node {
 	connected := a.configured()
 	body := core.Scroll{Style: ui.FillRest, TestID: "settings",
-		Children: []core.Node{core.View{Style: core.Style{Padding: core.All(gutter), Gap: 22},
+		Children: []core.Node{core.View{Style: core.Style{Padding: core.All(gutter), Gap: sectionGap},
 			Children: a.settingsBody(cx, connected)}}}
 	if !connected {
 		return body
@@ -51,126 +54,90 @@ func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 	if !connected {
 		title = ""
 	}
-	nodes = append(nodes, a.accountSection(cx, title, connected))
+	nodes = append(nodes, column(0, a.accountSection(cx, title, connected), a.region(func() string {
+		return fmt.Sprint(a.connecting, a.connectErr, connected, a.dirty())
+	}, func(cx *core.Scope) core.Node {
+		return a.accountStatus(cx, connected)
+	})))
 	if connected {
-		general := []core.Node{a.liveSwitch(cx)}
+		var general []core.Node
 		if a.canLaunchAtLogin {
-			general = append([]core.Node{a.loginSwitch(cx)}, general...)
+			general = append(general, a.loginSwitch(cx))
 		}
-		nodes = append(nodes, a.section(cx, tr.General(), general...))
-		if len(a.sites) > 0 {
-			nodes = append(nodes, a.websitesSection(cx))
-		}
+		general = append(general, a.liveSwitch(cx))
+		nodes = append(nodes,
+			ui.FormSection{Title: tr.General(), Footer: tr.LiveHint(), Children: general},
+			ui.FormSection{Children: []core.Node{
+				ui.FormRow{Title: tr.Disconnect(), Variant: ui.FormRowDanger, TestID: "disconnect", OnPress: a.disconnect},
+			}})
 	}
 	return nodes
 }
 
 func (a *app) accountSection(cx *core.Scope, title string, connected bool) core.Node {
 	tr := msgsOf(cx)
-	fields := []core.Node{
-		a.field(cx, tr.ApiEndpoint(), tr.ApiEndpointHint(), ui.Input{
-			Value: live(a, func() string { return a.editEndpoint }), Placeholder: cloudEndpoint, Label: tr.ApiEndpoint(),
-			Disabled: live(a, func() bool { return a.connecting }), TestID: "endpoint",
+	busy := live(a, func() bool { return a.connecting })
+	return ui.FormSection{Title: title, Footer: tr.ApiEndpointHint(), Children: []core.Node{
+		ui.FormField{Title: tr.ApiEndpoint(), Input: base.Input{
+			Value: live(a, func() string { return a.editEndpoint }), Placeholder: cloudEndpoint,
+			Disabled: busy, TestID: "endpoint",
 			OnChange: func(s string) { a.editEndpoint = s; a.invalidate() },
 			OnSubmit: func(string) { a.save() },
-		}),
-		a.field(cx, tr.ApiKey(), "", ui.Input{
-			Value: live(a, func() string { return a.editKey }), Placeholder: "api_…", Label: tr.ApiKey(),
-			Masked: true, AutoFocus: !connected, Disabled: live(a, func() bool { return a.connecting }), TestID: "key",
+		}},
+		ui.FormField{Title: tr.ApiKey(), Input: base.Input{
+			Value: live(a, func() string { return a.editKey }), Placeholder: "api_…",
+			Masked: true, AutoFocus: !connected, Disabled: busy, TestID: "key",
 			OnChange: func(s string) { a.editKey = s; a.invalidate() },
 			OnSubmit: func(string) { a.save() },
-		}),
-	}
-	fields = append(fields, a.region(func() string {
-		return fmt.Sprint(a.connecting, a.connectErr, connected)
-	}, func(cx *core.Scope) core.Node {
-		return a.accountStatus(cx, connected)
-	}))
-	return a.section(cx, title, fields...)
+		}},
+	}}
 }
 
+// accountStatus is what went wrong connecting, and the button that
+// connects or saves an edit.
 func (a *app) accountStatus(cx *core.Scope, connected bool) core.Node {
 	tr := msgsOf(cx)
-	colors := ui.ColorsOf(cx)
-	var nodes []core.Node
+	var rows []core.Node
 	if a.connectErr != "" {
-		nodes = append(nodes, row(6, ui.Icon(lucide.CircleAlert, 14, colors.Danger),
-			core.Text{Content: a.connectErr, Style: core.Style{FontSize: 12, FlexGrow: 1, LineHeight: 16},
-				StyleFunc: ui.Colored(colors.Danger)}))
+		rows = append(rows, ui.FormRow{Icon: lucide.CircleAlert, Title: a.connectErr, Variant: ui.FormRowDanger})
 	}
-	label := tr.Connect()
-	if connected {
-		label = tr.Save()
+	if !connected || a.dirty() || a.connecting {
+		label := tr.Connect()
+		if connected {
+			label = tr.Save()
+		}
+		row := ui.FormRow{Title: label, Variant: ui.FormRowAccent, TestID: "connect", OnPress: a.save,
+			Disabled: live(a, func() bool { return a.connecting || a.editKey == "" })}
+		if a.connecting {
+			row.Title, row.Control = tr.CheckingKey(), ui.Spinner{Size: 14}
+		}
+		rows = append(rows, row)
 	}
-	actions := []core.Node{
-		ui.Button{Text: label, TestID: "connect", OnPress: a.save,
-			Disabled: live(a, func() bool {
-				dirty := a.editKey != a.cfg.Key || normalizeEndpoint(a.editEndpoint) != a.cfg.Endpoint
-				return a.connecting || (connected && !dirty) || a.editKey == ""
-			})},
+	if rows == nil {
+		return core.View{}
 	}
-	if a.connecting {
-		actions = append(actions, ui.Spinner{Size: 14}, muted(cx, tr.CheckingKey(), 12))
-	}
-	actions = append(actions, ui.Spacer{})
-	if connected && !a.connecting {
-		actions = append(actions, ui.Button{Text: tr.Disconnect(), Variant: ui.ButtonGhost, TestID: "disconnect", OnPress: a.disconnect})
-	}
-	nodes = append(nodes, row(8, actions...))
-	return column(10, nodes...)
+	return ui.FormSection{Style: core.Style{Margin: core.Edges{Top: sectionGap}}, Children: rows}
+}
+
+// dirty reports whether the endpoint or key differs from the saved ones.
+func (a *app) dirty() bool {
+	return a.editKey != a.cfg.Key || normalizeEndpoint(a.editEndpoint) != a.cfg.Endpoint
 }
 
 func (a *app) liveSwitch(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
-	return a.switchRow(cx, tr.LiveLabel(), tr.LiveHint(), live(a, func() bool { return !a.cfg.HideLive }),
-		func(on bool) {
+	return ui.FormRow{Icon: lucide.Activity, Title: tr.LiveLabel(), Control: ui.Switch{Label: tr.LiveLabel(),
+		Checked: live(a, func() bool { return !a.cfg.HideLive }),
+		OnChange: func(on bool) {
 			a.cfg.HideLive = !on
 			a.commitCfg()
-		})
+		}}}
 }
 
 func (a *app) loginSwitch(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
-	return a.switchRow(cx, tr.LaunchAtLoginLabel(), "", live(a, func() bool { return a.launchAtLogin }), a.setLaunchAtLogin)
-}
-
-func (a *app) websitesSection(cx *core.Scope) core.Node {
-	tr := msgsOf(cx)
-	return a.section(cx, tr.Websites(),
-		a.region(func() string {
-			return fmt.Sprint(a.cfg.Sort, a.cfg.Hidden)
-		}, a.websiteRows),
-	)
-}
-
-func (a *app) websiteRows(cx *core.Scope) core.Node {
-	tr := msgsOf(cx)
-	sites := a.ordered()
-	rows := make([]core.Node, 0, len(sites))
-	for _, s := range sites {
-		text := column(1, body(cx, s.Name), caption(cx, s.Domain))
-		text.Style = text.Style.Merge(core.Style{FlexGrow: 1, FlexShrink: 1})
-		siteID := s.ID
-		rows = append(rows, core.View{
-			Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8,
-				Padding: core.All(6), CornerRadius: 8},
-			Children: []core.Node{
-				text,
-				ui.Switch{
-					Checked: live(a, func() bool { return !slices.Contains(a.cfg.Hidden, siteID) }),
-					Label:   tr.ShowSite(s.Name),
-					OnChange: func(on bool) {
-						hidden := slices.Contains(a.cfg.Hidden, siteID)
-						if on == !hidden {
-							return
-						}
-						a.toggleHidden(siteID)
-					},
-				},
-			},
-		})
-	}
-	return column(0, rows...)
+	return ui.FormRow{Icon: lucide.Power, Title: tr.LaunchAtLoginLabel(), Control: ui.Switch{Label: tr.LaunchAtLoginLabel(),
+		Checked: live(a, func() bool { return a.launchAtLogin }), OnChange: a.setLaunchAtLogin}}
 }
 
 func (a *app) save() {
@@ -178,34 +145,6 @@ func (a *app) save() {
 		return
 	}
 	a.connect(func(endpoint, key string) source { return newClient(endpoint, key) })
-}
-
-func (a *app) section(cx *core.Scope, title string, children ...core.Node) core.Node {
-	var nodes []core.Node
-	if title != "" {
-		nodes = append(nodes, ui.Text(title, 11, ui.Medium, ui.ColorsOf(cx).Faint))
-	}
-	nodes = append(nodes, children...)
-	return column(10, nodes...)
-}
-
-func (a *app) field(cx *core.Scope, label, hint string, input core.Node) core.Node {
-	colors := ui.ColorsOf(cx)
-	nodes := []core.Node{ui.Text(label, 12, ui.Medium, colors.Text), input}
-	if hint != "" {
-		nodes = append(nodes, core.Text{Content: hint, Style: core.Style{FontSize: 11, LineHeight: 15}, StyleFunc: ui.Colored(colors.Muted)})
-	}
-	return column(5, nodes...)
-}
-
-func (a *app) switchRow(cx *core.Scope, label, detail string, on func() bool, changed func(bool)) core.Node {
-	colors := ui.ColorsOf(cx)
-	text := column(1, oneLine(ui.Text(label, 13, ui.Regular, colors.Text)))
-	if detail != "" {
-		text.Children = append(text.Children, oneLine(ui.Text(detail, 11, ui.Regular, colors.Muted)))
-	}
-	text.Style = text.Style.Merge(core.Style{FlexGrow: 1, FlexShrink: 1})
-	return row(12, text, ui.Switch{Checked: on, OnChange: changed, Label: label})
 }
 
 func (a *app) mark(cx *core.Scope) core.Node {

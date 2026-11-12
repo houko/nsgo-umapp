@@ -279,17 +279,6 @@ func (a *app) ordered() []*site {
 	return out
 }
 
-// visible returns the sites shown, in order.
-func (a *app) visible() []*site {
-	var out []*site
-	for _, s := range a.ordered() {
-		if !slices.Contains(a.cfg.Hidden, s.ID) {
-			out = append(out, s)
-		}
-	}
-	return out
-}
-
 // setSort shows the sites by visitors, views or name.
 func (a *app) setSort(sort int) {
 	if sort == a.cfg.Sort || sort != sortByVisitors && sort != sortByViews && sort != sortByName {
@@ -302,7 +291,7 @@ func (a *app) setSort(sort int) {
 // totals sums the sites shown.
 func (a *app) totals() (cur, prev stats, visitors []float64, active int, loaded bool) {
 	loaded = true
-	for _, s := range a.visible() {
+	for _, s := range a.ordered() {
 		if !s.loaded {
 			loaded = false
 		}
@@ -326,7 +315,7 @@ func (a *app) totals() (cur, prev stats, visitors []float64, active int, loaded 
 // liveTotal is the count of visitors on the sites shown now.
 func (a *app) liveTotal() int {
 	n := 0
-	for _, s := range a.visible() {
+	for _, s := range a.ordered() {
 		n += s.active
 	}
 	return n
@@ -625,16 +614,6 @@ func (a *app) disconnect() {
 	a.resetSettings()
 	a.page = pageSettings
 	a.commitCfg()
-}
-
-func (a *app) toggleHidden(id string) {
-	if i := slices.Index(a.cfg.Hidden, id); i >= 0 {
-		a.cfg.Hidden = slices.Delete(a.cfg.Hidden, i, i+1)
-	} else {
-		a.cfg.Hidden = append(a.cfg.Hidden, id)
-	}
-	a.commitCfg()
-	a.onLive(a.liveTotal())
 }
 
 // change is how much cur grew from prev, as a fraction, and whether there

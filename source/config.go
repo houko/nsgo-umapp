@@ -14,11 +14,10 @@ import (
 // config is what the app remembers between launches. The API key is kept
 // in the macOS keychain, elsewhere in the file, readable by the user alone.
 type config struct {
-	Endpoint string   `json:"endpoint"`
-	Key      string   `json:"key,omitempty"`
-	Range    int      `json:"range"`
-	HideLive bool     `json:"hideLive,omitempty"` // no count of live visitors in the menu bar
-	Hidden   []string `json:"hidden,omitempty"`   // IDs of websites not shown
+	Endpoint string `json:"endpoint"`
+	Key      string `json:"key,omitempty"`
+	Range    int    `json:"range"`
+	HideLive bool   `json:"hideLive,omitempty"` // no count of live visitors in the menu bar
 	// Sort is how the list orders websites: by visitors, views or name.
 	Sort int `json:"sort,omitempty"`
 }

@@ -156,11 +156,8 @@ func (a *app) list(cx *core.Scope) core.Node {
 	case len(a.sites) == 0 && a.loading > 0:
 		return core.View{Style: core.Style{Padding: core.All(gutter - inset)},
 			Children: []core.Node{a.summary(cx), a.skeletonList(cx)}}
-	case len(a.visible()) == 0:
-		if len(a.sites) == 0 {
-			return a.problem(cx, tr.NoSitesTitle(), tr.NoSitesBody())
-		}
-		return a.problem(cx, tr.AllHiddenTitle(), tr.AllHiddenBody())
+	case len(a.sites) == 0:
+		return a.problem(cx, tr.NoSitesTitle(), tr.NoSitesBody())
 	}
 	return a.region(a.listKey, a.siteList)
 }
@@ -168,7 +165,7 @@ func (a *app) list(cx *core.Scope) core.Node {
 func (a *app) listKey() string {
 	var b string
 	b += fmt.Sprint(a.cfg.Sort, a.cfg.Range, a.loading, a.gen)
-	for _, s := range a.visible() {
+	for _, s := range a.ordered() {
 		b += fmt.Sprintf("%s:%v:%d:%g:%g;", s.ID, s.loaded, s.active, s.cur.Visitors, s.cur.Pageviews)
 	}
 	return b
@@ -219,7 +216,7 @@ func (a *app) orderMenu(cx *core.Scope) core.Node {
 }
 
 func (a *app) siteList(cx *core.Scope) core.Node {
-	vis := a.visible()
+	vis := a.ordered()
 	children := make([]core.Node, 0, len(vis)+2)
 	children = append(children, a.summary(cx), a.listHeading(cx))
 	for i, s := range vis {
@@ -234,7 +231,10 @@ func (a *app) siteRow(cx *core.Scope, s *site, _ int) core.Node {
 	colors := ui.ColorsOf(cx)
 	id := s.ID
 	name := s.Name
-	left := row(6, oneLine(ui.Text(name, 13, ui.Medium, colors.Text)), a.liveBadge(cx, s.active, false))
+	left := column(1, row(6, oneLine(ui.Text(name, 13, ui.Medium, colors.Text)), a.liveBadge(cx, s.active, false)))
+	if s.Domain != "" {
+		left.Children = append(left.Children, caption(cx, s.Domain))
+	}
 	left.Style = left.Style.Merge(core.Style{FlexGrow: 1, FlexShrink: 1, MinWidth: core.Pt(0)})
 	var spark core.Node
 	switch {

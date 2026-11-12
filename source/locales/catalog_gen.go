@@ -37,7 +37,6 @@ func For(cx *core.Scope) Messages { return In(i18n.Language(cx)) }
 // its method, for the TSX declarations of the messages
 // (tsx.RegisterMessages).
 var Parameters = map[string][]string{
-	"ShowSite":    {"Name"},
 	"Online":      {"Count"},
 	"LiveTooltip": {"Count", "Unit"},
 	"TrayTooltip": {"Count", "Unit"},
@@ -49,7 +48,6 @@ var Parameters = map[string][]string{
 // catalog.
 type Translation struct {
 	Texts       map[string]string
-	ShowSite    func(Name string) string
 	Online      func(Count int) string
 	LiveTooltip func(Count int, Unit string) string
 	TrayTooltip func(Count int, Unit string) string
@@ -92,8 +90,6 @@ const (
 	textTryAgain
 	textNoSitesTitle
 	textNoSitesBody
-	textAllHiddenTitle
-	textAllHiddenBody
 	textRange24h
 	textRange7d
 	textRange30d
@@ -156,8 +152,6 @@ var keyOfText = [numTexts]string{
 	"tryAgain",
 	"noSitesTitle",
 	"noSitesBody",
-	"allHiddenTitle",
-	"allHiddenBody",
 	"range24h",
 	"range7d",
 	"range30d",
@@ -218,8 +212,6 @@ var textsEn = i18n.NewTexts(""+
 	"Try again"+
 	"No websites yet"+
 	"Add a website in Umami, and it shows up here."+
-	"Every website is hidden"+
-	"Choose the websites to show in Settings."+
 	"24H"+
 	"7D"+
 	"30D"+
@@ -277,8 +269,6 @@ var textsEn = i18n.NewTexts(""+
 		9,
 		15,
 		45,
-		23,
-		40,
 		3,
 		2,
 		3,
@@ -339,8 +329,6 @@ var textsZhHans = i18n.NewTexts(""+
 	"重试"+
 	"还没有网站"+
 	"在 Umami 中添加网站后，就会出现在这里。"+
-	"所有网站都已隐藏"+
-	"在设置中选择要显示的网站。"+
 	"24H"+
 	"7D"+
 	"30D"+
@@ -398,8 +386,6 @@ var textsZhHans = i18n.NewTexts(""+
 		6,
 		15,
 		55,
-		24,
-		39,
 		3,
 		2,
 		3,
@@ -479,9 +465,6 @@ func Supply(lang string, t Translation) {
 		}
 	}
 	s := supplied[lang]
-	if t.ShowSite != nil {
-		s.ShowSite = t.ShowSite
-	}
 	if t.Online != nil {
 		s.Online = t.Online
 	}
@@ -637,28 +620,6 @@ func Order(cx *core.Scope) string { return For(cx).Order() }
 // Order is the package's Order in the language of msgs.
 func (msgs Messages) Order() string { return msgs.text(textOrder) }
 
-// ShowSite says "Show {Name}"
-// in the language the app shows under cx.
-func ShowSite(cx *core.Scope, Name string) string { return For(cx).ShowSite(Name) }
-
-// ShowSite is the package's ShowSite in the language of msgs.
-func (msgs Messages) ShowSite(Name string) string {
-	if i18n.IsPseudo(msgs.lang) {
-		return i18n.Pseudo(msgs.lang, Messages{lang: Source, mark: true}.ShowSite(Name))
-	}
-	for lang := msgs.lang; ; lang = i18n.Parent(lang) {
-		if f := supplied[lang].ShowSite; f != nil {
-			return f(Name)
-		}
-		switch lang {
-		case "", "en":
-			return "Show " + msgs.arg(Name)
-		case "zh-Hans":
-			return "显示 " + Name
-		}
-	}
-}
-
 // Quit says "Quit"
 // in the language the app shows under cx.
 func Quit(cx *core.Scope) string { return For(cx).Quit() }
@@ -756,20 +717,6 @@ func NoSitesBody(cx *core.Scope) string { return For(cx).NoSitesBody() }
 
 // NoSitesBody is the package's NoSitesBody in the language of msgs.
 func (msgs Messages) NoSitesBody() string { return msgs.text(textNoSitesBody) }
-
-// AllHiddenTitle says "Every website is hidden"
-// in the language the app shows under cx.
-func AllHiddenTitle(cx *core.Scope) string { return For(cx).AllHiddenTitle() }
-
-// AllHiddenTitle is the package's AllHiddenTitle in the language of msgs.
-func (msgs Messages) AllHiddenTitle() string { return msgs.text(textAllHiddenTitle) }
-
-// AllHiddenBody says "Choose the websites to show in Settings."
-// in the language the app shows under cx.
-func AllHiddenBody(cx *core.Scope) string { return For(cx).AllHiddenBody() }
-
-// AllHiddenBody is the package's AllHiddenBody in the language of msgs.
-func (msgs Messages) AllHiddenBody() string { return msgs.text(textAllHiddenBody) }
 
 // Range24h says "24H"
 // in the language the app shows under cx.
