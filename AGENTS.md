@@ -1,6 +1,6 @@
 # Umapp
 
-Umapp is a native menu bar app that shows the websites of an Umami account and their visitors. Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing code.
+Umapp is a native menu bar app, and an iPhone app, that shows the websites of an Umami account and their visitors. Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing code.
 
 ## Principles
 
@@ -10,8 +10,8 @@ Umapp is a native menu bar app that shows the websites of an Umami account and t
 - Use NSGo's `ui` components and its default theme; build reusable UI in NSGo rather than here.
 - Pad every side of a bar, page or row alike: `gutter` for bars and pages, `inset` for rows.
 - Run Umami requests off the UI thread. Apply results on the main thread and never start that work inside a builder.
-- Target macOS on Apple silicon alone (`macos_arm64`).
-- Keep the API key in the macOS keychain.
+- Target macOS on Apple silicon (`macos_arm64`) and iOS (`ios`); test iOS on the iPhone 18 Pro simulator.
+- Keep the API key in the macOS keychain; on iOS it stays in the app's sandboxed config file.
 
 ## Working with the user
 

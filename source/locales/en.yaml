@@ -1,7 +1,7 @@
 appName: "Umapp"
 title: "Umapp"
 connectTitle: "Connect to Umami"
-connectBody: "Your websites and their visitors, a click away in the menu bar. Create an API key in Umami under Settings → API keys, and paste it here."
+connectBody: "Your websites and their visitors at a glance. Create an API key in Umami under Settings → API keys, and paste it here."
 settingsTitle: "Settings"
 account: "Account"
 apiEndpoint: "API endpoint"

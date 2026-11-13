@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/oneo-me/nsgo"
-	"github.com/oneo-me/nsgo/core"
-	"github.com/oneo-me/nsgo/desktop"
-	menus "github.com/oneo-me/nsgo/desktop/locales"
+	"github.com/nsgo-dev/nsgo"
+	"github.com/nsgo-dev/nsgo/core"
+	"github.com/nsgo-dev/nsgo/desktop"
+	menus "github.com/nsgo-dev/nsgo/desktop/locales"
 )
 
 const version = "0.1.0"
@@ -96,7 +96,22 @@ func (s *shell) createTray(cx *core.Scope) {
 	s.panel = desktop.OpenPanel(cx, desktop.PanelOptions{Width: panelWidth, Height: panelHeight, HideOnBlur: true,
 		Material: desktop.WindowMaterialPopover}, s.a.root)
 	if s.panel == nil {
+		// No panels here, as on iOS: the panel's content fills the app,
+		// and loads again as the app comes back on numbers gone stale.
+		s.a.noTray = true
 		nsgo.SetMainView(cx, s.a.root)
+		active := true
+		cx.Effect(func() {
+			was := active
+			active = cx.Env().Lifecycle() == core.LifecycleActive
+			if active && !was {
+				cx.Untrack(func() {
+					if s.a.stale() && s.a.loading == 0 {
+						s.a.refresh()
+					}
+				})
+			}
+		})
 		return
 	}
 	s.tray = desktop.NewTray(cx, desktop.TrayOptions{

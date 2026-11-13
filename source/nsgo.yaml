@@ -11,4 +11,4 @@ dev:
 
 build:
   output: ../dist
-  targets: [macos_arm64]
+  targets: [macos_arm64, ios]

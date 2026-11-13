@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  A native menu bar app that shows the websites of an <a href="https://umami.is">Umami</a> account and their visitors. It is built with <a href="https://github.com/oneo-me/nsgo">NSGo</a>, in Onevra's look.
+  A native menu bar app, and an iPhone app, that shows the websites of an <a href="https://umami.is">Umami</a> account and their visitors. It is built with <a href="https://github.com/nsgo-dev/nsgo">NSGo</a>, in Onevra's look.
 </p>
 
 ## Features
@@ -28,6 +28,7 @@
 - Connect to Umami Cloud or a server of your own, and sort the websites, each with its domain, by visitors, views or name.
 - Show the count of visitors online beside the icon, or hide it.
 - Open at login.
+- Run on iPhone, the panel filling the screen.
 
 ## Install
 
@@ -36,7 +37,7 @@ No release is published yet. Build from source with the [Development](#developme
 Requirements:
 
 - Go 1.27 or later.
-- macOS on Apple silicon.
+- macOS on Apple silicon, with Xcode to build for iPhone.
 
 ## Getting started
 
@@ -45,7 +46,7 @@ Requirements:
 3. Browse the websites, change the range, or open one for its breakdown.
 4. Right-click the icon to quit.
 
-The key is kept in the login keychain.
+On iPhone, the app opens straight to the panel. The key is kept in the login keychain on macOS, and in the app's own storage on iPhone.
 
 ## Development
 
@@ -54,6 +55,8 @@ The Go module and the packaging configuration, `nsgo.yaml`, live in `source/`. N
 ```sh
 cd source
 go tool nsgo dev
+go tool nsgo dev -target ios_simulator
+go tool nsgo dev -target ios
 go tool nsgo build
 GOWORK=off go test ./...
 ```

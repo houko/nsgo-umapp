@@ -1,7 +1,7 @@
 appName: "Umapp"
 title: "Umapp"
 connectTitle: "连接到 Umami"
-connectBody: "菜单栏里一键查看网站与访客。在 Umami 的设置 → API 密钥中创建密钥，粘贴到这里。"
+connectBody: "一眼看清网站与访客。在 Umami 的设置 → API 密钥中创建密钥，粘贴到这里。"
 settingsTitle: "设置"
 account: "账户"
 apiEndpoint: "API 地址"

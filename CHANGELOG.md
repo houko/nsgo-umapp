@@ -9,4 +9,5 @@
 - Open a website for bounce rate, duration, a chart with counts on hover, and the top pages, referrers and countries with favicons and flags.
 - Show the count of visitors online beside the menu bar icon.
 - Open at login.
-- Build for macOS on Apple silicon alone.
+- Run on iPhone, the panel filling the screen.
+- Build for macOS on Apple silicon and iOS.

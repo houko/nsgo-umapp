@@ -5,11 +5,11 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/oneo-me/nsgo/base"
-	"github.com/oneo-me/nsgo/core"
-	"github.com/oneo-me/nsgo/desktop"
-	"github.com/oneo-me/nsgo/icons/lucide"
-	"github.com/oneo-me/nsgo/ui"
+	"github.com/nsgo-dev/nsgo/base"
+	"github.com/nsgo-dev/nsgo/core"
+	"github.com/nsgo-dev/nsgo/desktop"
+	"github.com/nsgo-dev/nsgo/icons/lucide"
+	"github.com/nsgo-dev/nsgo/ui"
 )
 
 const (
@@ -49,7 +49,11 @@ func (a *app) root(cx *core.Scope) core.Node {
 		}
 	})
 	colors := ui.ColorsOf(cx)
-	return core.View{Style: ui.FillRest.Merge(core.Style{FontSize: 13, Overflow: core.Hidden}),
+	style := ui.FillRest.Merge(core.Style{FontSize: 13, Overflow: core.Hidden})
+	if a.noTray {
+		style.PaddingEnv = core.EnvAll(core.EnvSafeArea)
+	}
+	return core.View{Style: style,
 		StyleFunc: func() core.Style {
 			if desktop.ShowsMaterial(cx) {
 				return core.Style{Color: colors.Text()}

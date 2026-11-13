@@ -2,7 +2,7 @@ module github.com/oneo-me/umapp/source
 
 go 1.27.3
 
-require github.com/oneo-me/nsgo v0.0.0
+require github.com/nsgo-dev/nsgo v0.0.0
 
 require (
 	github.com/andybalholm/brotli v1.2.6 // indirect
@@ -19,6 +19,6 @@ require (
 	rsc.io/qr v0.2.0 // indirect
 )
 
-tool github.com/oneo-me/nsgo/cmd/nsgo
+tool github.com/nsgo-dev/nsgo/cmd/nsgo
 
-replace github.com/oneo-me/nsgo => ../../nsgo
+replace github.com/nsgo-dev/nsgo => ../../nsgo

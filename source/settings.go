@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/oneo-me/nsgo/base"
-	"github.com/oneo-me/nsgo/core"
-	"github.com/oneo-me/nsgo/icons/lucide"
-	"github.com/oneo-me/nsgo/ui"
+	"github.com/nsgo-dev/nsgo/base"
+	"github.com/nsgo-dev/nsgo/core"
+	"github.com/nsgo-dev/nsgo/icons/lucide"
+	"github.com/nsgo-dev/nsgo/ui"
 )
 
 // sectionGap parts the settings' sections.
@@ -15,7 +15,8 @@ const sectionGap = 22
 func (a *app) settings(cx *core.Scope) core.Node {
 	connected := a.configured()
 	body := core.Scroll{Style: ui.FillRest, TestID: "settings",
-		Children: []core.Node{core.View{Style: core.Style{Padding: core.All(gutter), Gap: sectionGap},
+		Children: []core.Node{core.View{Style: core.Style{Padding: core.All(gutter), Gap: sectionGap,
+			PaddingEnv: core.EnvEdges{Bottom: core.EnvKeyboard}},
 			Children: a.settingsBody(cx, connected)}}}
 	if !connected {
 		return body
@@ -64,12 +65,17 @@ func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 		if a.canLaunchAtLogin {
 			general = append(general, a.loginSwitch(cx))
 		}
-		general = append(general, a.liveSwitch(cx))
-		nodes = append(nodes,
-			ui.FormSection{Title: tr.General(), Footer: tr.LiveHint(), Children: general},
-			ui.FormSection{Children: []core.Node{
-				ui.FormRow{Title: tr.Disconnect(), Variant: ui.FormRowDanger, TestID: "disconnect", OnPress: a.disconnect},
-			}})
+		footer := ""
+		if !a.noTray {
+			general = append(general, a.liveSwitch(cx))
+			footer = tr.LiveHint()
+		}
+		if general != nil {
+			nodes = append(nodes, ui.FormSection{Title: tr.General(), Footer: footer, Children: general})
+		}
+		nodes = append(nodes, ui.FormSection{Children: []core.Node{
+			ui.FormRow{Title: tr.Disconnect(), Variant: ui.FormRowDanger, TestID: "disconnect", OnPress: a.disconnect},
+		}})
 	}
 	return nodes
 }

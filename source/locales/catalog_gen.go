@@ -3,8 +3,8 @@
 package locales
 
 import (
-	"github.com/oneo-me/nsgo/core"
-	"github.com/oneo-me/nsgo/i18n"
+	"github.com/nsgo-dev/nsgo/core"
+	"github.com/nsgo-dev/nsgo/i18n"
 )
 
 // Source is the language the messages are written in.
@@ -182,7 +182,7 @@ var textsEn = i18n.NewTexts(""+
 	"Umapp"+
 	"Umapp"+
 	"Connect to Umami"+
-	"Your websites and their visitors, a click away in the menu bar. Create an API key in Umami under Settings → API keys, and paste it here."+
+	"Your websites and their visitors at a glance. Create an API key in Umami under Settings → API keys, and paste it here."+
 	"Settings"+
 	"Account"+
 	"API endpoint"+
@@ -239,7 +239,7 @@ var textsEn = i18n.NewTexts(""+
 		5,
 		5,
 		16,
-		138,
+		120,
 		8,
 		7,
 		12,
@@ -299,7 +299,7 @@ var textsZhHans = i18n.NewTexts(""+
 	"Umapp"+
 	"Umapp"+
 	"连接到 Umami"+
-	"菜单栏里一键查看网站与访客。在 Umami 的设置 → API 密钥中创建密钥，粘贴到这里。"+
+	"一眼看清网站与访客。在 Umami 的设置 → API 密钥中创建密钥，粘贴到这里。"+
 	"设置"+
 	"账户"+
 	"API 地址"+
@@ -356,7 +356,7 @@ var textsZhHans = i18n.NewTexts(""+
 		5,
 		5,
 		15,
-		112,
+		100,
 		6,
 		6,
 		10,
@@ -508,7 +508,7 @@ func ConnectTitle(cx *core.Scope) string { return For(cx).ConnectTitle() }
 // ConnectTitle is the package's ConnectTitle in the language of msgs.
 func (msgs Messages) ConnectTitle() string { return msgs.text(textConnectTitle) }
 
-// ConnectBody says "Your websites and their visitors, a click away in the menu bar. Create an API key in Umami under Settings → API keys, and paste it here."
+// ConnectBody says "Your websites and their visitors at a glance. Create an API key in Umami under Settings → API keys, and paste it here."
 // in the language the app shows under cx.
 func ConnectBody(cx *core.Scope) string { return For(cx).ConnectBody() }
 

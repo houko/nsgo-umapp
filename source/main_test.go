@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oneo-me/nsgo/core"
-	"github.com/oneo-me/nsgo/nsgotest"
+	"github.com/nsgo-dev/nsgo/core"
+	"github.com/nsgo-dev/nsgo/nsgotest"
 )
 
 type fake struct {
@@ -268,6 +268,27 @@ func TestLaunchAtLogin(t *testing.T) {
 	tt.Press("Open at login")
 	if a.launchAtLogin || !slices.Equal(set, []bool{false}) {
 		t.Fatalf("on %v, set %v", a.launchAtLogin, set)
+	}
+}
+
+func TestPhone(t *testing.T) {
+	a := testApp(t, newFake())
+	a.noTray = true
+	a.refresh()
+	tt := &tester{App: nsgotest.Start(t, func(cx *core.Scope) core.Node {
+		cx.SetLocale("en")
+		a.attach(cx)
+		return a.root(cx)
+	}, nsgotest.Size(390, 844), nsgotest.Environment(core.Environment{OS: core.OSIOS, Idiom: core.IdiomPhone, Locale: "en-US"})), a: a}
+	if !tt.hasText("Acme Docs") {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	tt.Press("settings")
+	if tt.hasText("Visitors online") || tt.hasText("General") {
+		t.Errorf("settings offer the menu bar's options: %q", tt.Texts())
+	}
+	if !tt.hasText("Disconnect") {
+		t.Errorf("texts %q", tt.Texts())
 	}
 }
 

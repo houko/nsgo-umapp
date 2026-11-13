@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/oneo-me/nsgo/core"
+	"github.com/nsgo-dev/nsgo/core"
 )
 
 // source is what the app reads from Umami: *client, or a fake in tests.
@@ -182,6 +182,10 @@ type app struct {
 	launchAtLogin    bool
 	readLogin        func(done func(on bool))
 	setLogin         func(on bool)
+
+	// noTray is set where the panel fills the app, as on iOS, with no
+	// menu bar icon to count visitors beside.
+	noTray bool
 
 	// cx is the app's scope, nil until attach; rev counts the changes to
 	// the state, which the views follow.

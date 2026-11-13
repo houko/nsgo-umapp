@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  一个原生菜单栏应用，显示 <a href="https://umami.is">Umami</a> 账户下的网站和访客。基于 <a href="https://github.com/oneo-me/nsgo">NSGo</a> 构建，采用 Onevra 的外观。
+  一个原生菜单栏应用和 iPhone 应用，显示 <a href="https://umami.is">Umami</a> 账户下的网站和访客。基于 <a href="https://github.com/nsgo-dev/nsgo">NSGo</a> 构建，采用 Onevra 的外观。
 </p>
 
 ## 功能
@@ -28,6 +28,7 @@
 - 连接 Umami Cloud 或自建服务器，并按访客、浏览或名称为网站排序，每个网站都附上域名。
 - 在图标旁显示在线访客数，也可以关掉。
 - 开机时启动。
+- 在 iPhone 上运行，面板铺满屏幕。
 
 ## 安装
 
@@ -36,7 +37,7 @@
 要求：
 
 - Go 1.27 或更高版本。
-- Apple 芯片的 macOS。
+- Apple 芯片的 macOS；为 iPhone 构建还需要 Xcode。
 
 ## 快速开始
 
@@ -45,7 +46,7 @@
 3. 浏览网站、切换时间范围，或打开某个网站查看明细。
 4. 右键点击图标可以退出。
 
-密钥保存在登录钥匙串中。
+在 iPhone 上，应用直接打开面板。密钥在 macOS 上保存在登录钥匙串中，在 iPhone 上保存在应用自己的存储中。
 
 ## 开发
 
@@ -54,6 +55,8 @@ Go 模块和打包配置 `nsgo.yaml` 位于 `source/`。NSGo 来自与本仓库�
 ```sh
 cd source
 go tool nsgo dev
+go tool nsgo dev -target ios_simulator
+go tool nsgo dev -target ios
 go tool nsgo build
 GOWORK=off go test ./...
 ```
