@@ -180,10 +180,11 @@ func (s stats) visitDuration() time.Duration {
 }
 
 // stats returns a website's totals over [from, to] and over the range
-// before it, of the same length.
-func (cl *client) stats(ctx context.Context, id string, from, to time.Time) (cur, prev stats, err error) {
+// before it, of the same length, of the events tagged tag, or all of them
+// when it is empty.
+func (cl *client) stats(ctx context.Context, id string, from, to time.Time, tag string) (cur, prev stats, err error) {
 	var raw map[string]json.RawMessage
-	if err := cl.get(ctx, "/websites/"+url.PathEscape(id)+"/stats", rangeQuery(from, to), &raw); err != nil {
+	if err := cl.get(ctx, "/websites/"+url.PathEscape(id)+"/stats", rangeQuery(from, to, tag), &raw); err != nil {
 		return cur, prev, err
 	}
 	b, _ := json.Marshal(raw)
@@ -237,10 +238,10 @@ type point struct {
 }
 
 // series returns the pageviews and the visitors of a website in each unit
-// of time from from to to, in the time zone tz. Units without any are
-// missing.
-func (cl *client) series(ctx context.Context, id string, from, to time.Time, unit, tz string) (views, visitors []point, err error) {
-	q := rangeQuery(from, to)
+// of time from from to to, in the time zone tz, of the events tagged tag
+// when it is set. Units without any are missing.
+func (cl *client) series(ctx context.Context, id string, from, to time.Time, unit, tz, tag string) (views, visitors []point, err error) {
+	q := rangeQuery(from, to, tag)
 	q.Set("unit", unit)
 	if tz != "" {
 		q.Set("timezone", tz)
@@ -262,9 +263,9 @@ type metric struct {
 }
 
 // metrics returns the top values of a breakdown: "path", "referrer",
-// "country", "browser" and so on.
-func (cl *client) metrics(ctx context.Context, id, kind string, from, to time.Time, limit int) ([]metric, error) {
-	q := rangeQuery(from, to)
+// "country", "tag" and so on, of the events tagged tag when it is set.
+func (cl *client) metrics(ctx context.Context, id, kind string, from, to time.Time, limit int, tag string) ([]metric, error) {
+	q := rangeQuery(from, to, tag)
 	q.Set("type", kind)
 	q.Set("limit", strconv.Itoa(limit))
 	var res []metric
@@ -272,16 +273,22 @@ func (cl *client) metrics(ctx context.Context, id, kind string, from, to time.Ti
 	var ae *apiError
 	if kind == "path" && errors.As(err, &ae) && ae.status == http.StatusBadRequest {
 		// Umami 2 named it "url".
-		return cl.metrics(ctx, id, "url", from, to, limit)
+		return cl.metrics(ctx, id, "url", from, to, limit, tag)
 	}
 	return res, err
 }
 
-func rangeQuery(from, to time.Time) url.Values {
-	return url.Values{
+// rangeQuery asks for [from, to], and for the events tagged tag when it
+// is set.
+func rangeQuery(from, to time.Time, tag string) url.Values {
+	q := url.Values{
 		"startAt": {strconv.FormatInt(from.UnixMilli(), 10)},
 		"endAt":   {strconv.FormatInt(to.UnixMilli(), 10)},
 	}
+	if tag != "" {
+		q.Set("tag", tag)
+	}
+	return q
 }
 
 // dashboardURL is where a website's page is in Umami's own interface.

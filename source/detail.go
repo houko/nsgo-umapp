@@ -1,8 +1,10 @@
 package main
 
 import (
+	"cmp"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 	"time"
 
@@ -54,8 +56,9 @@ func (a *app) detail(cx *core.Scope, s *site) core.Node {
 		Children: []core.Node{
 			row(10, favicon(cx, s.Domain, 28),
 				row(8, oneLine(ui.Text(s.Name, 17, ui.Semibold, colors.Text)), a.liveBadge(cx, s.active, true))),
-			a.metricsGrid(cx, s),
-			a.chart(cx, s),
+			a.tagFilter(cx, s),
+			a.metricsGrid(cx, a.shown(s)),
+			a.chart(cx, a.shown(s)),
 			a.detailError(cx, s),
 			breakdown(cx, tr.Pages(), tr.Views(), "path", s.pages, s.detailGen == a.gen && s.pages == nil && s.detailErr == nil, nil),
 			breakdown(cx, tr.Referrers(), tr.Visitors(), "referrer", s.referrers, s.pages == nil && s.detailErr == nil,
@@ -73,7 +76,71 @@ func (a *app) detailError(cx *core.Scope, s *site) core.Node {
 		core.Text{Content: s.detailErr.Error(), Style: core.Style{FontSize: 12, FlexGrow: 1}, StyleFunc: ui.Colored(colors.Muted)})
 }
 
-func (a *app) metricsGrid(cx *core.Scope, s *site) core.Node {
+// tagFilter lists the site's tags, each with its visitors, of which
+// pressing one shows only its events, where the site has any.
+func (a *app) tagFilter(cx *core.Scope, s *site) core.Node {
+	tags := slices.Clone(s.tags)
+	if a.tag != "" && !slices.ContainsFunc(tags, func(m metric) bool { return m.X == a.tag }) {
+		tags = append(tags, metric{X: a.tag, Y: -1})
+	}
+	if len(tags) == 0 {
+		return core.Group(nil)
+	}
+	all := num(-1)
+	if s.loaded {
+		all = s.cur.Visitors
+	}
+	chips := []core.Node{a.tagChip(cx, msgsOf(cx).AllTags(), "", all)}
+	for _, m := range tags {
+		chips = append(chips, a.tagChip(cx, m.X, m.X, m.Y))
+	}
+	return core.View{Style: core.Style{Direction: core.Row, Wrap: core.Wrap, AlignItems: core.AlignCenter, Gap: 6},
+		Children: chips}
+}
+
+// tagChip is a small tag the site's page filters by, the empty one for all
+// events, with its visitors when known (n >= 0). Pressing the chosen one
+// shows all events again.
+func (a *app) tagChip(cx *core.Scope, label, tag string, n num) core.Node {
+	colors := ui.ColorsOf(cx)
+	on := live(a, func() bool { return a.tag == tag })
+	ink := func() core.Color {
+		if on() {
+			return colors.OnAccent()
+		}
+		return colors.Text()
+	}
+	children := []core.Node{oneLine(ui.Text(label, 12, ui.Regular, ink))}
+	if n >= 0 {
+		children = append(children, ui.Tabular(ui.Text(count(float64(n)), 11, ui.Regular, func() core.Color {
+			if on() {
+				return ui.Alpha(colors.OnAccent(), 0.75)
+			}
+			return colors.Muted()
+		})))
+	}
+	return base.Toggle{Label: label, TestID: "tag-" + cmp.Or(tag, "all"), Pressed: on,
+		OnChange: func(pressed bool) {
+			if pressed {
+				a.setTag(tag)
+			} else {
+				a.setTag("")
+			}
+		},
+		Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 5, MinWidth: core.Pt(0),
+			Height: core.Pt(22), Padding: core.Symmetric(0, 8), CornerRadius: 11, BorderWidth: 1},
+		StyleFunc: func() core.Style {
+			if on() {
+				return core.Style{Background: colors.Accent(), BorderColor: colors.Accent()}
+			}
+			return core.Style{BorderColor: colors.Line(),
+				Hover:  &core.Style{Background: colors.Hover()},
+				Active: &core.Style{Background: colors.Pressed()}}
+		},
+		Children: children}
+}
+
+func (a *app) metricsGrid(cx *core.Scope, s figures) core.Node {
 	tr := msgsOf(cx)
 	perVisit := func(st stats) float64 {
 		if st.Visits == 0 {
@@ -120,7 +187,7 @@ func (a *app) metricCell(cx *core.Scope, loaded bool, label, value string, cur, 
 	return column(3, inner...)
 }
 
-func (a *app) chart(cx *core.Scope, s *site) core.Node {
+func (a *app) chart(cx *core.Scope, s figures) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
 	n := len(a.buckets)

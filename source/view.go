@@ -92,7 +92,8 @@ func (a *app) detailKey() string {
 	if s == nil {
 		return a.open
 	}
-	return fmt.Sprint(a.cfg.Range, a.loading, a.gen, s.detailGen, len(s.pages), len(s.referrers), len(s.countries), s.detailErr, s.loaded)
+	return fmt.Sprint(a.cfg.Range, a.loading, a.gen, s.detailGen, a.tag, s.detailTag, len(s.tags), s.tagged.loaded,
+		len(s.pages), len(s.referrers), len(s.countries), s.detailErr, s.loaded)
 }
 
 func (a *app) header(cx *core.Scope) core.Node {
@@ -251,6 +252,9 @@ func (a *app) siteRow(cx *core.Scope, s *site, _ int) core.Node {
 	}
 	right := column(1, a.siteCount(cx, s)...)
 	right.Style = right.Style.Merge(core.Style{Width: core.Pt(countWidth), AlignItems: core.AlignEnd, FlexShrink: 0})
+	lead := core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 10,
+		FlexGrow: 1, FlexShrink: 1, MinWidth: core.Pt(0)},
+		Children: []core.Node{favicon(cx, s.Domain, 20), left}}
 	return base.Button{
 		Label: name, TestID: id,
 		OnPress: func(core.PressEvent) { a.openSite(id) },
@@ -262,7 +266,7 @@ func (a *app) siteRow(cx *core.Scope, s *site, _ int) core.Node {
 				Active: &core.Style{Background: colors.Pressed()},
 			}
 		},
-		Children: []core.Node{left, spark, right},
+		Children: []core.Node{lead, spark, right},
 	}
 }
 

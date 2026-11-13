@@ -20,6 +20,7 @@ import (
 type fake struct {
 	sites  []website
 	scale  map[string]float64
+	tags   map[string]float64 // the share of each tag's events
 	err    error
 	calls  int
 	mu     sync.Mutex
@@ -36,7 +37,16 @@ func newFake() *fake {
 			{ID: "e", Name: "Status", Domain: "status.acme.dev"},
 		},
 		scale: map[string]float64{"a": 120, "b": 46, "c": 210, "d": 9, "e": 0},
+		tags:  map[string]float64{"website": 0.75, "gallery-web": 0.25},
 	}
+}
+
+// k is a site's scale, for the events of tag when it is set.
+func (f *fake) k(id, tag string) float64 {
+	if tag == "" {
+		return f.scale[id]
+	}
+	return f.scale[id] * f.tags[tag]
 }
 
 func (f *fake) websites(context.Context) ([]website, error) {
@@ -49,8 +59,8 @@ func (f *fake) websites(context.Context) ([]website, error) {
 	return f.sites, f.err
 }
 
-func (f *fake) stats(_ context.Context, id string, from, to time.Time) (cur, prev stats, err error) {
-	k := f.scale[id] * to.Sub(from).Hours() / 24
+func (f *fake) stats(_ context.Context, id string, from, to time.Time, tag string) (cur, prev stats, err error) {
+	k := f.k(id, tag) * to.Sub(from).Hours() / 24
 	cur = stats{Pageviews: num(k * 3.1), Visitors: num(k), Visits: num(k * 1.3), Bounces: num(k * 0.55), Totaltime: num(k * 1.3 * 94)}
 	p := k * (0.8 + 0.1*float64(len(id)+int(id[0])%4))
 	prev = stats{Pageviews: num(p * 3), Visitors: num(p), Visits: num(p * 1.25), Bounces: num(p * 0.6), Totaltime: num(p * 1.25 * 80)}
@@ -61,15 +71,15 @@ func (f *fake) active(_ context.Context, id string) (int, error) {
 	return int(f.scale[id] / 30), nil
 }
 
-func (f *fake) series(_ context.Context, id string, from, to time.Time, unit, _ string) (views, visitors []point, err error) {
+func (f *fake) series(_ context.Context, id string, from, to time.Time, unit, _, tag string) (views, visitors []point, err error) {
 	step := 24 * time.Hour
 	if unit == "hour" {
 		step = time.Hour
 	}
 	for t, i := from, 0; !t.After(to); t, i = t.Add(step), i+1 {
-		v := f.scale[id] / 24
+		v := f.k(id, tag) / 24
 		if unit == "day" {
-			v = f.scale[id] * (1 + 0.25*math.Sin(float64(i)/2.3))
+			v = f.k(id, tag) * (1 + 0.25*math.Sin(float64(i)/2.3))
 		} else {
 			v *= 1 + 0.8*math.Sin(float64(t.Hour()-9)/24*2*math.Pi)
 		}
@@ -84,8 +94,8 @@ func (f *fake) series(_ context.Context, id string, from, to time.Time, unit, _ 
 	return views, visitors, nil
 }
 
-func (f *fake) metrics(_ context.Context, id, kind string, _, _ time.Time, limit int) ([]metric, error) {
-	k := f.scale[id]
+func (f *fake) metrics(_ context.Context, id, kind string, _, _ time.Time, limit int, tag string) ([]metric, error) {
+	k := f.k(id, tag)
 	var rows []metric
 	switch kind {
 	case "path":
@@ -94,6 +104,8 @@ func (f *fake) metrics(_ context.Context, id, kind string, _, _ time.Time, limit
 		rows = []metric{{"", num(k)}, {"www.google.com", num(k * 0.7)}, {"github.com", num(k * 0.4)}, {"news.ycombinator.com", num(k * 0.2)}}
 	case "country":
 		rows = []metric{{"US", num(k * 0.9)}, {"DE", num(k * 0.4)}, {"JP", num(k * 0.3)}, {"CN", num(k * 0.2)}}
+	case "tag":
+		rows = []metric{{"website", num(k * f.tags["website"])}, {"gallery-web", num(k * f.tags["gallery-web"])}, {"", num(k * 0.1)}}
 	}
 	if k == 0 {
 		rows = nil
@@ -205,6 +217,38 @@ func TestDetail(t *testing.T) {
 	tt.Key("escape")
 	if a.page != pageSites {
 		t.Errorf("page %v after Escape", a.page)
+	}
+}
+
+func TestTagFilter(t *testing.T) {
+	a := testApp(t, newFake())
+	a.cfg.Range = 1
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("Acme Docs")
+	tt.WaitUntil(2*time.Second, func() bool { return a.loading == 0 && len(a.site("a").tags) > 0 })
+	s := a.site("a")
+	if got := len(s.tags); got != 2 || !tt.hasText("gallery-web") || !tt.hasText("All") || !tt.hasText("90") {
+		t.Fatalf("%d tags, texts %q", got, tt.Texts())
+	}
+	all := a.shown(s).cur.Visitors
+	tt.Press("tag-gallery-web")
+	tt.WaitUntil(2*time.Second, func() bool { return a.loading == 0 && s.tagged.loaded })
+	if got := a.shown(s).cur.Visitors; a.tag != "gallery-web" || got != all*0.25 {
+		t.Fatalf("tag %q, visitors %v of %v", a.tag, got, all)
+	}
+	if s.pages[0].Y != num(120*0.25*2) {
+		t.Errorf("pages %v not filtered", s.pages)
+	}
+	tt.Press("tag-all")
+	tt.WaitUntil(2*time.Second, func() bool { return a.loading == 0 })
+	if a.tag != "" || a.shown(s).cur.Visitors != all || s.pages[0].Y != 240 {
+		t.Errorf("tag %q, visitors %v after All", a.tag, a.shown(s).cur.Visitors)
+	}
+	tt.Key("escape")
+	tt.Press("Personal blog")
+	if a.tag != "" {
+		t.Errorf("tag %q carried to another site", a.tag)
 	}
 }
 
@@ -390,6 +434,12 @@ func TestClient(t *testing.T) {
 			w.Write([]byte(`{"pageviews":30,"visitors":10,"visits":12,"bounces":6,"totaltime":1200,"comparison":{"pageviews":20,"visitors":8,"visits":9,"bounces":5,"totaltime":900}}`))
 		case "/api/websites/a/active":
 			w.Write([]byte(`{"visitors":3}`))
+		case "/api/websites/a/pageviews":
+			if r.URL.Query().Get("tag") != "app" {
+				w.WriteHeader(400)
+				return
+			}
+			w.Write([]byte(`{"pageviews":[{"x":"2026-10-12 15:00:00","y":4}],"sessions":[]}`))
 		case "/api/websites/a/metrics":
 			if r.URL.Query().Get("type") == "path" {
 				w.WriteHeader(400)
@@ -405,15 +455,18 @@ func TestClient(t *testing.T) {
 	if err != nil || len(list) != 1 || list[0].Domain != "a.dev" {
 		t.Fatalf("websites %v %v", list, err)
 	}
-	cur, prev, err := cl.stats(ctx, "a", time.Now().Add(-time.Hour), time.Now())
+	cur, prev, err := cl.stats(ctx, "a", time.Now().Add(-time.Hour), time.Now(), "")
 	if err != nil || cur.Visitors != 10 || prev.Visitors != 8 || cur.visitDuration() != 100*time.Second {
 		t.Errorf("stats %+v %+v %v", cur, prev, err)
 	}
 	if n, err := cl.active(ctx, "a"); n != 3 || err != nil {
 		t.Errorf("active %d %v", n, err)
 	}
-	if m, err := cl.metrics(ctx, "a", "path", time.Now(), time.Now(), 5); len(m) != 1 || err != nil {
+	if m, err := cl.metrics(ctx, "a", "path", time.Now(), time.Now(), 5, ""); len(m) != 1 || err != nil {
 		t.Errorf("metrics %v %v", m, err)
+	}
+	if v, _, err := cl.series(ctx, "a", time.Now(), time.Now(), "hour", "", "app"); len(v) != 1 || err != nil {
+		t.Errorf("tagged series %v %v", v, err)
 	}
 	_, err = newClient(srv.URL+"/api", "wrong").websites(ctx)
 	if err == nil || err.Error() != "The API key was rejected." {

@@ -18,11 +18,12 @@ func init() {
 	i18n.SetApp(Catalog)
 }
 
-// Messages say the messages in one language; with mark, the source's
-// with their arguments marked, which a pseudo locale transforms.
+// Messages say the messages in one language, their times in the hour
+// cycle hc the user set; with mark, the source's with their arguments
+// marked, which a pseudo locale transforms.
 type Messages struct {
-	lang string
-	mark bool
+	lang, hc string
+	mark     bool
 }
 
 // In returns the messages in the catalog's language that suits locale
@@ -30,8 +31,13 @@ type Messages struct {
 func In(locale string) Messages { return Messages{lang: Catalog.Match(locale)} }
 
 // For returns the messages in the language the app shows under cx
-// (i18n.Language); a binding that says them follows it as it changes.
-func For(cx *core.Scope) Messages { return In(i18n.Language(cx)) }
+// (i18n.Language), their times as the user reads them; a binding that
+// says them follows both as they change.
+func For(cx *core.Scope) Messages {
+	msgs := In(i18n.Language(cx))
+	msgs.hc = cx.Env().LocaleSettings().HourCycle
+	return msgs
+}
 
 // Parameters names the parameters of each message that has some, by
 // its method, for the TSX declarations of the messages
@@ -104,6 +110,7 @@ const (
 	textPages
 	textReferrers
 	textCountries
+	textAllTags
 	textNothingInRange
 	textChartByHour
 	textChartByDay
@@ -166,6 +173,7 @@ var keyOfText = [numTexts]string{
 	"pages",
 	"referrers",
 	"countries",
+	"allTags",
 	"nothingInRange",
 	"chartByHour",
 	"chartByDay",
@@ -226,6 +234,7 @@ var textsEn = i18n.NewTexts(""+
 	"Pages"+
 	"Referrers"+
 	"Countries"+
+	"All"+
 	"Nothing in this range"+
 	"Visitors and views by hour"+
 	"Visitors and views by day"+
@@ -283,6 +292,7 @@ var textsEn = i18n.NewTexts(""+
 		5,
 		9,
 		9,
+		3,
 		21,
 		26,
 		25,
@@ -343,6 +353,7 @@ var textsZhHans = i18n.NewTexts(""+
 	"页面"+
 	"来源"+
 	"国家/地区"+
+	"全部"+
 	"这段时间没有数据"+
 	"按小时的访客与浏览"+
 	"按天的访客与浏览"+
@@ -400,6 +411,7 @@ var textsZhHans = i18n.NewTexts(""+
 		6,
 		6,
 		13,
+		6,
 		24,
 		27,
 		24,
@@ -815,6 +827,13 @@ func Countries(cx *core.Scope) string { return For(cx).Countries() }
 
 // Countries is the package's Countries in the language of msgs.
 func (msgs Messages) Countries() string { return msgs.text(textCountries) }
+
+// AllTags says "All"
+// in the language the app shows under cx.
+func AllTags(cx *core.Scope) string { return For(cx).AllTags() }
+
+// AllTags is the package's AllTags in the language of msgs.
+func (msgs Messages) AllTags() string { return msgs.text(textAllTags) }
 
 // NothingInRange says "Nothing in this range"
 // in the language the app shows under cx.

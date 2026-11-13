@@ -17,10 +17,10 @@ import (
 // source is what the app reads from Umami: *client, or a fake in tests.
 type source interface {
 	websites(ctx context.Context) ([]website, error)
-	stats(ctx context.Context, id string, from, to time.Time) (cur, prev stats, err error)
+	stats(ctx context.Context, id string, from, to time.Time, tag string) (cur, prev stats, err error)
 	active(ctx context.Context, id string) (int, error)
-	series(ctx context.Context, id string, from, to time.Time, unit, tz string) (views, visitors []point, err error)
-	metrics(ctx context.Context, id, kind string, from, to time.Time, limit int) ([]metric, error)
+	series(ctx context.Context, id string, from, to time.Time, unit, tz, tag string) (views, visitors []point, err error)
+	metrics(ctx context.Context, id, kind string, from, to time.Time, limit int, tag string) ([]metric, error)
 }
 
 // span is a range of time the app shows, with its buckets.
@@ -119,18 +119,27 @@ func localZone() string {
 	return "UTC"
 }
 
-// site is a website and what the app knows of it.
-type site struct {
-	website
+// figures are a website's numbers over the range the app shows.
+type figures struct {
 	cur, prev stats
 	views     []float64 // per bucket
 	visitors  []float64
-	active    int
 	loaded    bool
-	err       error
+}
 
-	// What its page shows besides, for the range the app shows.
+// site is a website and what the app knows of it.
+type site struct {
+	website
+	figures
+	active int
+	err    error
+
+	// What its page shows besides, for the range the app shows and the
+	// tag it filters by.
 	detailGen int
+	detailTag string
+	tags      []metric // every tag, whatever the filter
+	tagged    figures  // the figures of detailTag, when it is set
 	pages     []metric
 	referrers []metric
 	countries []metric
@@ -162,6 +171,7 @@ type app struct {
 
 	page     page
 	open     string // the ID of the site its page shows
+	tag      string // the tag the site's page filters by, or empty for all
 	sites    []*site
 	listErr  error
 	loading  int // loads under way
@@ -407,10 +417,10 @@ func (a *app) loadSite(ctx context.Context, src source, gen int, id string, sp s
 		wg              sync.WaitGroup
 	)
 	wg.Add(3)
-	go func() { defer wg.Done(); cur, prev, errs[0] = src.stats(ctx, id, from, to) }()
+	go func() { defer wg.Done(); cur, prev, errs[0] = src.stats(ctx, id, from, to, "") }()
 	go func() {
 		defer wg.Done()
-		views, visitors, errs[1] = src.series(ctx, id, from, to, sp.unit(), a.tz)
+		views, visitors, errs[1] = src.series(ctx, id, from, to, sp.unit(), a.tz, "")
 	}()
 	go func() { defer wg.Done(); active, errs[2] = src.active(ctx, id) }()
 	wg.Wait()
@@ -476,9 +486,31 @@ func (a *app) refreshActive() {
 
 // openSite shows a site's page.
 func (a *app) openSite(id string) {
-	a.page, a.open, a.selected = pageSite, id, -1
+	a.page, a.open, a.tag, a.selected = pageSite, id, "", -1
 	a.invalidate()
 	a.loadDetail()
+}
+
+// setTag shows the site's page for the events of a tag, or for all of them
+// when it is empty.
+func (a *app) setTag(tag string) {
+	if tag == a.tag {
+		return
+	}
+	a.tag, a.selected = tag, -1
+	a.invalidate()
+	a.loadDetail()
+}
+
+// shown is what the site's page shows: the site's figures, or the tag's.
+func (a *app) shown(s *site) figures {
+	if a.tag == "" {
+		return s.figures
+	}
+	if s.detailTag != a.tag {
+		return figures{}
+	}
+	return s.tagged
 }
 
 func (a *app) back() {
@@ -489,38 +521,60 @@ func (a *app) back() {
 	a.invalidate()
 }
 
-// loadDetail loads the breakdowns the site's page shows, once per range.
+// loadDetail loads the tags and the breakdowns the site's page shows, once
+// per range and tag, and the tag's figures when it filters by one.
 func (a *app) loadDetail() {
 	s := a.site(a.open)
-	if s == nil || s.detailGen == a.gen {
+	if s == nil || s.detailGen == a.gen && s.detailTag == a.tag {
 		return
 	}
-	s.detailGen, s.detailErr = a.gen, nil
+	s.detailGen, s.detailTag, s.detailErr = a.gen, a.tag, nil
 	s.pages, s.referrers, s.countries = nil, nil, nil
-	gen, id, src := a.gen, s.ID, a.src
-	from, to, _ := a.span().window(a.now())
+	s.tagged = figures{}
+	gen, tag, id, src := a.gen, a.tag, s.ID, a.src
+	sp := a.span()
+	from, to, buckets := sp.window(a.now())
 	a.loading++
 	a.invalidate()
 	a.spawn(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		var (
-			res  [3][]metric
-			errs [3]error
-			wg   sync.WaitGroup
+			res             [3][]metric
+			errs            [5]error
+			tags            []metric
+			cur, prev       stats
+			views, visitors []point
+			wg              sync.WaitGroup
 		)
 		for i, kind := range []string{"path", "referrer", "country"} {
 			wg.Add(1)
-			go func() { defer wg.Done(); res[i], errs[i] = src.metrics(ctx, id, kind, from, to, 6) }()
+			go func() { defer wg.Done(); res[i], errs[i] = src.metrics(ctx, id, kind, from, to, 6, tag) }()
+		}
+		// Servers without tags refuse to list them: show no filter.
+		wg.Add(1)
+		go func() { defer wg.Done(); tags, _ = src.metrics(ctx, id, "tag", from, to, 50, "") }()
+		if tag != "" {
+			wg.Add(2)
+			go func() { defer wg.Done(); cur, prev, errs[3] = src.stats(ctx, id, from, to, tag) }()
+			go func() {
+				defer wg.Done()
+				views, visitors, errs[4] = src.series(ctx, id, from, to, sp.unit(), a.tz, tag)
+			}()
 		}
 		wg.Wait()
 		a.post(func() {
 			a.loading--
 			s := a.site(id)
-			if s == nil || s.detailGen != gen {
+			if s == nil || s.detailGen != gen || s.detailTag != tag {
 				return
 			}
+			s.tags = slices.DeleteFunc(tags, func(m metric) bool { return m.X == "" })
 			s.pages, s.referrers, s.countries = res[0], res[1], res[2]
+			if tag != "" {
+				s.tagged = figures{cur: cur, prev: prev, loaded: true,
+					views: bucketize(views, buckets, sp.hours), visitors: bucketize(visitors, buckets, sp.hours)}
+			}
 			for _, err := range errs {
 				if err != nil {
 					s.detailErr = err

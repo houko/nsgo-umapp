@@ -12,7 +12,7 @@ Umapp is a native macOS menu bar application, built for Apple silicon, and an iP
 | `source/umami.go` | Umami HTTP client for Cloud and self-hosted servers. |
 | `source/config.go` | Config file and the macOS keychain. |
 | `source/view.go` | List, header, summary and sparklines. |
-| `source/detail.go` | One website's metrics, chart and breakdowns, with favicons and flags. |
+| `source/detail.go` | One website's tag filter, metrics, chart and breakdowns, with favicons and flags. |
 | `source/settings.go` | Connect and menu bar options. |
 | `source/locales/` | NSGo message catalogs, and the accessors the `nsgo` tool writes from them. |
 | `source/assets/` | Icon sources. |
@@ -29,6 +29,8 @@ Umapp is a native macOS menu bar application, built for Apple silicon, and an iP
 **Connect.** Settings sends the endpoint and key to `/websites`. If Umami takes them, they are saved and the list loads.
 
 **Refresh.** Loads every website the key can see, then each one's stats, series and visitors online for the range shown. Visitors online refresh every minute; the rest every five, or as the panel opens, or the iPhone app becomes active again, on numbers older than a minute.
+
+**Tags.** A website's page lists the tags of its events in the range. Choosing one loads that tag's totals, series and breakdowns, while the list keeps every event's; opening a website starts on all of them.
 
 **Order.** Websites with the most visitors come first, or the most views, or by name, as the user chooses.
 
