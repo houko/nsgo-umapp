@@ -28,7 +28,7 @@ Umapp is a native macOS menu bar application, built for Apple silicon, and an iP
 
 **Connect.** Settings sends the endpoint and key to `/websites`. If Umami takes them, they are saved and the list loads.
 
-**Refresh.** Loads every website the key can see, then each one's stats, series and visitors online for the range shown. Visitors online refresh every minute; the rest every five, or as the panel opens, or the iPhone app becomes active again, on numbers older than a minute.
+**Refresh.** Loads every website the key can see, then each one's stats, series and visitors online for the range shown. Visitors online refresh every minute, and on a website's page so do the tags, pages and countries they are on, counted over Umami's same five minutes and marked beside each one's count; the rest every five, or as the panel opens, or the iPhone app becomes active again, on numbers older than a minute.
 
 **Tags.** A website's page lists the tags of its events in the range. Choosing one loads that tag's totals, series and breakdowns, while the list keeps every event's; opening a website starts on all of them.
 

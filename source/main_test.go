@@ -94,8 +94,12 @@ func (f *fake) series(_ context.Context, id string, from, to time.Time, unit, _,
 	return views, visitors, nil
 }
 
-func (f *fake) metrics(_ context.Context, id, kind string, _, _ time.Time, limit int, tag string) ([]metric, error) {
+func (f *fake) metrics(_ context.Context, id, kind string, from, to time.Time, limit int, tag string) ([]metric, error) {
 	k := f.k(id, tag)
+	if to.Sub(from) <= liveWindow {
+		// Who is on the site now: its visitors online.
+		k = math.Floor(f.k(id, tag) / 30)
+	}
 	var rows []metric
 	switch kind {
 	case "path":
@@ -217,6 +221,37 @@ func TestDetail(t *testing.T) {
 	tt.Key("escape")
 	if a.page != pageSites {
 		t.Errorf("page %v after Escape", a.page)
+	}
+}
+
+func TestOnlineNow(t *testing.T) {
+	f := newFake()
+	a := testApp(t, f)
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("Acme Docs")
+	s := a.site("a")
+	tt.WaitUntil(2*time.Second, func() bool { return a.loading == 0 && s.livePages != nil })
+	if online(s.livePages, "/") != 8 || online(s.liveTags, "website") != 3 || online(s.liveCountries, "US") != 3 {
+		t.Fatalf("pages %v, tags %v, countries %v", s.livePages, s.liveTags, s.liveCountries)
+	}
+	// Each with its visitors online over its count: tags, pages, countries.
+	for _, text := range []string{"/117", "/90", "/240", "/108"} {
+		if !tt.hasText(text) {
+			t.Errorf("no %q in %q", text, tt.Texts())
+		}
+	}
+	tt.Press("tag-gallery-web")
+	tt.WaitUntil(2*time.Second, func() bool { return a.loading == 0 && s.liveTag == "gallery-web" })
+	if online(s.livePages, "/") != 2 || online(s.liveTags, "website") != 3 {
+		t.Errorf("pages %v not filtered, or tags %v", s.livePages, s.liveTags)
+	}
+}
+
+func TestWithOnline(t *testing.T) {
+	got := withOnline([]metric{{"/", 9}}, []metric{{"/", 2}, {"/new", 1}, {"/gone", 0}})
+	if want := []metric{{"/", 9}, {"/new", -1}}; !slices.Equal(got, want) {
+		t.Errorf("got %v", got)
 	}
 }
 

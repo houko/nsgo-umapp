@@ -144,6 +144,13 @@ type site struct {
 	referrers []metric
 	countries []metric
 	detailErr error
+
+	// Who is on it now, as its page shows: the visitors in the last five
+	// minutes of each tag, and of each page and country of liveTag.
+	liveTag       string
+	liveTags      []metric
+	livePages     []metric
+	liveCountries []metric
 }
 
 type page int
@@ -179,6 +186,7 @@ type app struct {
 	loadedAt time.Time
 	buckets  []time.Time
 	selected int // the bucket the pointer is over in the site's chart, or -1
+	liveSeq  int // increments with each load of who is on the site's page now
 
 	// The settings' fields, until saved.
 	editEndpoint string
@@ -388,6 +396,7 @@ func (a *app) refresh() {
 	})
 	if a.page == pageSite {
 		a.loadDetail()
+		a.loadLive()
 	}
 }
 
@@ -482,6 +491,71 @@ func (a *app) refreshActive() {
 			a.onLive(a.liveTotal())
 		})
 	})
+	if a.page == pageSite {
+		a.loadLive()
+	}
+}
+
+// liveWindow is how far back Umami counts visitors online.
+const liveWindow = 5 * time.Minute
+
+// loadLive loads who is on the open site now, over the window Umami counts
+// visitors online in: each tag's, and the pages and countries of the tag
+// the page filters by.
+func (a *app) loadLive() {
+	s := a.site(a.open)
+	if s == nil || !a.configured() {
+		return
+	}
+	a.liveSeq++
+	seq, id, tag, src := a.liveSeq, s.ID, a.tag, a.src
+	to := a.now()
+	from := to.Add(-liveWindow)
+	a.spawn(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		var (
+			tags, pages, countries []metric
+			errs                   [2]error
+			wg                     sync.WaitGroup
+		)
+		wg.Add(3)
+		// Servers without tags refuse to list them: show none.
+		go func() { defer wg.Done(); tags, _ = src.metrics(ctx, id, "tag", from, to, 50, "") }()
+		go func() { defer wg.Done(); pages, errs[0] = src.metrics(ctx, id, "path", from, to, 20, tag) }()
+		go func() { defer wg.Done(); countries, errs[1] = src.metrics(ctx, id, "country", from, to, 20, tag) }()
+		wg.Wait()
+		a.post(func() {
+			s := a.site(id)
+			if s == nil || seq != a.liveSeq || errs[0] != nil || errs[1] != nil {
+				return
+			}
+			s.liveTag, s.liveTags, s.livePages, s.liveCountries = tag, tags, pages, countries
+		})
+	})
+}
+
+// online is how many visitors are on x now, of a breakdown in the last
+// five minutes.
+func online(live []metric, x string) int {
+	for _, m := range live {
+		if m.X == x {
+			return int(m.Y)
+		}
+	}
+	return 0
+}
+
+// withOnline adds to the top values of a breakdown those that visitors
+// are on now beyond them, whose count over the range is unknown (-1).
+func withOnline(rows, live []metric) []metric {
+	out := slices.Clone(rows)
+	for _, m := range live {
+		if m.Y > 0 && !slices.ContainsFunc(rows, func(r metric) bool { return r.X == m.X }) {
+			out = append(out, metric{X: m.X, Y: -1})
+		}
+	}
+	return out
 }
 
 // openSite shows a site's page.
@@ -489,6 +563,7 @@ func (a *app) openSite(id string) {
 	a.page, a.open, a.tag, a.selected = pageSite, id, "", -1
 	a.invalidate()
 	a.loadDetail()
+	a.loadLive()
 }
 
 // setTag shows the site's page for the events of a tag, or for all of them
@@ -500,6 +575,7 @@ func (a *app) setTag(tag string) {
 	a.tag, a.selected = tag, -1
 	a.invalidate()
 	a.loadDetail()
+	a.loadLive()
 }
 
 // shown is what the site's page shows: the site's figures, or the tag's.

@@ -60,11 +60,20 @@ func (a *app) detail(cx *core.Scope, s *site) core.Node {
 			a.metricsGrid(cx, a.shown(s)),
 			a.chart(cx, a.shown(s)),
 			a.detailError(cx, s),
-			breakdown(cx, tr.Pages(), tr.Views(), "path", s.pages, s.detailGen == a.gen && s.pages == nil && s.detailErr == nil, nil),
-			breakdown(cx, tr.Referrers(), tr.Visitors(), "referrer", s.referrers, s.pages == nil && s.detailErr == nil,
+			breakdown(cx, tr.Pages(), tr.Views(), "path", s.pages, a.liveOf(s, s.livePages), s.detailGen == a.gen && s.pages == nil && s.detailErr == nil, nil),
+			breakdown(cx, tr.Referrers(), tr.Visitors(), "referrer", s.referrers, nil, s.pages == nil && s.detailErr == nil,
 				func(x string) core.Node { return favicon(cx, x, 14) }),
-			breakdown(cx, tr.Countries(), tr.Visitors(), "country", s.countries, s.pages == nil && s.detailErr == nil, flag),
+			breakdown(cx, tr.Countries(), tr.Visitors(), "country", s.countries, a.liveOf(s, s.liveCountries), s.pages == nil && s.detailErr == nil, flag),
 		}}
+}
+
+// liveOf is who is on the site now of a breakdown, while it is of the tag
+// the page filters by.
+func (a *app) liveOf(s *site, live []metric) []metric {
+	if s.liveTag != a.tag {
+		return nil
+	}
+	return live
 }
 
 func (a *app) detailError(cx *core.Scope, s *site) core.Node {
@@ -90,18 +99,18 @@ func (a *app) tagFilter(cx *core.Scope, s *site) core.Node {
 	if s.loaded {
 		all = s.cur.Visitors
 	}
-	chips := []core.Node{a.tagChip(cx, msgsOf(cx).AllTags(), "", all)}
+	chips := []core.Node{a.tagChip(cx, msgsOf(cx).AllTags(), "", all, s.active)}
 	for _, m := range tags {
-		chips = append(chips, a.tagChip(cx, m.X, m.X, m.Y))
+		chips = append(chips, a.tagChip(cx, m.X, m.X, m.Y, online(s.liveTags, m.X)))
 	}
 	return core.View{Style: core.Style{Direction: core.Row, Wrap: core.Wrap, AlignItems: core.AlignCenter, Gap: 6},
 		Children: chips}
 }
 
 // tagChip is a small tag the site's page filters by, the empty one for all
-// events, with its visitors when known (n >= 0). Pressing the chosen one
-// shows all events again.
-func (a *app) tagChip(cx *core.Scope, label, tag string, n num) core.Node {
+// events, with its visitors when known (n >= 0), after those online now
+// where there are any. Pressing the chosen one shows all events again.
+func (a *app) tagChip(cx *core.Scope, label, tag string, n num, now int) core.Node {
 	colors := ui.ColorsOf(cx)
 	on := live(a, func() bool { return a.tag == tag })
 	ink := func() core.Color {
@@ -111,13 +120,20 @@ func (a *app) tagChip(cx *core.Scope, label, tag string, n num) core.Node {
 		return colors.Text()
 	}
 	children := []core.Node{oneLine(ui.Text(label, 12, ui.Regular, ink))}
-	if n >= 0 {
-		children = append(children, ui.Tabular(ui.Text(count(float64(n)), 11, ui.Regular, func() core.Color {
+	quiet := func() core.Color {
+		if on() {
+			return ui.Alpha(colors.OnAccent(), 0.75)
+		}
+		return colors.Muted()
+	}
+	if n >= 0 || now > 0 {
+		live := func() core.Color {
 			if on() {
-				return ui.Alpha(colors.OnAccent(), 0.75)
+				return colors.OnAccent()
 			}
-			return colors.Muted()
-		})))
+			return colors.Up()
+		}
+		children = append(children, onlineCount(now, n, 11, live, quiet))
 	}
 	return base.Toggle{Label: label, TestID: "tag-" + cmp.Or(tag, "all"), Pressed: on,
 		OnChange: func(pressed bool) {
@@ -312,8 +328,9 @@ func legend(cx *core.Scope, color func() core.Color, label string) core.Node {
 }
 
 // breakdown lists the top values of a kind, each with what icon draws for
-// it when icon is set.
-func breakdown(cx *core.Scope, title, unit, kind string, rows []metric, loading bool, icon func(x string) core.Node) core.Node {
+// it when icon is set, and with the visitors on it now of live, those it
+// misses after them.
+func breakdown(cx *core.Scope, title, unit, kind string, rows, live []metric, loading bool, icon func(x string) core.Node) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
 	head := core.View{Style: core.Style{Direction: core.Row},
@@ -334,15 +351,16 @@ func breakdown(cx *core.Scope, title, unit, kind string, rows []metric, loading 
 		body = ui.Text(tr.NothingInRange(), 12, ui.Regular, colors.Faint)
 	default:
 		top := math.Max(float64(rows[0].Y), 1)
+		rows = withOnline(rows, live)
 		items := make([]core.Node, 0, len(rows))
 		for _, m := range rows {
-			share := float32(float64(m.Y) / top * 100)
+			share := float32(max(float64(m.Y), 0) / top * 100)
 			label := pathLabel(kind, m.X)
 			cells := []core.Node{oneLine(ui.Text(label, 12, ui.Regular, colors.Text))}
 			if icon != nil {
 				cells = append([]core.Node{icon(m.X)}, cells...)
 			}
-			cells = append(cells, ui.Spacer{}, ui.Tabular(ui.Text(count(float64(m.Y)), 12, ui.Regular, colors.Muted)))
+			cells = append(cells, ui.Spacer{}, onlineCount(online(live, m.X), m.Y, 12, colors.Up, colors.Muted))
 			items = append(items, core.View{Style: core.Style{Height: core.Pt(28)}, Children: []core.Node{
 				core.View{Style: core.Style{Position: core.Absolute, Top: core.Pt(0), Bottom: core.Pt(0), Left: core.Pt(0),
 					Width: core.Pct(share), CornerRadius: 5},
@@ -355,6 +373,26 @@ func breakdown(cx *core.Scope, title, unit, kind string, rows []metric, loading 
 		body = column(0, items...)
 	}
 	return column(4, head, body)
+}
+
+// onlineCount is a count over the range, n, after the visitors on its
+// value now with a dot where there are any, as "● 2/40"; n < 0 is unknown.
+func onlineCount(now int, n num, size core.Points, live, quiet func() core.Color) core.Node {
+	var children []core.Node
+	if now > 0 {
+		children = append(children,
+			core.View{Style: core.Style{Width: core.Pt(5), Height: core.Pt(5), CornerRadius: 2.5, Margin: core.Edges{Right: 4}},
+				StyleFunc: ui.Filled(live)},
+			ui.Tabular(ui.Text(count(float64(now)), size, ui.Medium, live)))
+	}
+	if n >= 0 {
+		total := count(float64(n))
+		if now > 0 {
+			total = "/" + total
+		}
+		children = append(children, ui.Tabular(ui.Text(total, size, ui.Regular, quiet)))
+	}
+	return row(0, children...)
 }
 
 // favicon is a website's icon from the service Umami shows them from, at a

@@ -93,7 +93,7 @@ func (a *app) detailKey() string {
 		return a.open
 	}
 	return fmt.Sprint(a.cfg.Range, a.loading, a.gen, s.detailGen, a.tag, s.detailTag, len(s.tags), s.tagged.loaded,
-		len(s.pages), len(s.referrers), len(s.countries), s.detailErr, s.loaded)
+		len(s.pages), len(s.referrers), len(s.countries), s.detailErr, s.loaded, s.active, s.liveTag, s.liveTags, s.livePages, s.liveCountries)
 }
 
 func (a *app) header(cx *core.Scope) core.Node {
