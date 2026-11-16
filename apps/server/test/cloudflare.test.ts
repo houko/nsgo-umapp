@@ -116,7 +116,7 @@ describe("the Cloudflare accounts' sites", () => {
     const bindings = Object.fromEntries(relay.metadata.bindings.map((b: any) => [b.name, b.text]));
     expect(JSON.parse(bindings.SITES)).toEqual({ "other.app": added.body.id });
     expect(bindings.SERVER).toBe("https://umapp-server.someone.workers.dev");
-    expect(relay.source).toMatch(/^export default \{ fetch: /);
+    expect(relay.source).toContain("export default { fetch: ");
     expect(cf.routes.get("z3")!.map((r) => [r.pattern, r.script])).toEqual([
       ["other.app/*", RELAY],
       ["www.other.app/*", RELAY],
@@ -186,5 +186,7 @@ describe("the relay", () => {
   it("uploads as a module of its own", () => {
     expect(relaySource()).toContain("HTMLRewriter");
     expect(relaySource()).not.toMatch(/\bimport\b/);
+    // The bundle Wrangler deploys wraps inner functions in __name, which the module must define.
+    expect(relaySource()).toMatch(/^const __name = /);
   });
 });
