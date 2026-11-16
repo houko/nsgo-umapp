@@ -2,9 +2,12 @@
 
 ## [Unreleased]
 
-- Track the websites of the server's own Cloudflare account with nothing to embed, chosen when deploying, and connect Umapp on the Mac that deploys through a link it fills its settings from (#7, #8 by @houko).
-- Deploy the server to Cloudflare with `npm run deploy` (#5 by @houko).
-- Add a server on Cloudflare Workers and D1 that counts the visitors of websites embedding its script, for Umapp to connect to as to Umami (#4 by @houko).
+## [0.2026.2] - 2026-11-16
+
+Umapp gets a server of its own on Cloudflare, which counts the visitors of your websites without Umami, and manages the websites it shows.
+
+- Add a server on Cloudflare Workers and D1, deployed with `npm run deploy`, that counts the visitors of websites for Umapp to connect to as to Umami, and tracks the websites of its own Cloudflare account with nothing to embed (#4, #5, #7, #9 by @houko).
+- Connect Umapp on the Mac that deploys through a link that fills in its settings (#8 by @houko).
 - Manage websites in the app: add, rename or delete one, copy its tracking code and check that its visits arrive, from settings or its page (#4, #6 by @houko).
 - Count Umapp's use on Umami: the web build and product site always, the apps unless turned off in Settings.
 - Run in a browser, deployed to Cloudflare Workers (#1 by @houko).
