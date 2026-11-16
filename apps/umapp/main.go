@@ -69,6 +69,12 @@ func (s *shell) ready(cx *core.Scope) {
 		})
 	})
 	s.createTray(cx)
+	// umapp://connect links, as npm run deploy opens, fill in the settings for the user to confirm.
+	desktop.OnOpenLinks(cx, func(links []string) {
+		if len(links) > 0 && a.openLink(links[len(links)-1]) {
+			s.showPanel()
+		}
+	})
 	a.refresh()
 	go s.tick()
 }

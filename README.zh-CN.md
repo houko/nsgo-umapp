@@ -103,7 +103,7 @@ wrangler deploy
 git clone https://github.com/oneo-me/nsgo-umapp && cd nsgo-umapp && npm install && npm run deploy
 ```
 
-它会在需要时登录 Cloudflare，有多个账号时询问部署到哪个（或读取 `CLOUDFLARE_ACCOUNT_ID`），创建 D1 数据库、执行迁移，并用新生成的 API 密钥部署 Worker。最后打印用来连接 Umapp 的地址和密钥；请保存好密钥，Cloudflare 之后不会再显示它。在 Mac 上它还会提议直接帮你连接 Umapp。
+它会在需要时登录 Cloudflare，有多个账号时询问部署到哪个（或读取 `CLOUDFLARE_ACCOUNT_ID`），创建 D1 数据库、执行迁移，并用新生成的 API 密钥部署 Worker。最后打印用来连接 Umapp 的地址和密钥；请保存好密钥，Cloudflare 之后不会再显示它。在 Mac 上它会打开 Umapp 并填好这两项，由你确认后连接。
 
 它还会列出同一个 Cloudflare 账号下的网站，你选中的网站无需嵌入任何代码就会被统计：它们的请求会经过 Worker，由 Worker 给页面加上跟踪代码，Worker 出错时请求照常到达网站。每个请求都计入账号的 Workers 请求数，免费版每天 10 万次。没有终端时，把 `UMAPP_SITES` 设为它们的主机名、`all` 或 `none`。不在这个账号里的网站，仍需嵌入添加网站时 Umapp 给出的跟踪代码。
 

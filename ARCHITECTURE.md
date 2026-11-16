@@ -45,7 +45,7 @@ Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone
 
 ## Core flows
 
-**Connect.** Settings sends the endpoint and key to `/websites`. If Umami takes them, they are saved and the list loads.
+**Connect.** Settings sends the endpoint and key to `/websites`. If Umami takes them, they are saved and the list loads. A link `umapp://connect?endpoint=…&key=…`, which `npm run deploy` opens on a Mac, only fills them in and shows settings, marked as from a link: anyone can make one, so nothing connects until the user does. Older versions without the scheme get the endpoint written into `config.json` and the key into the keychain instead.
 
 **Refresh.** Loads every website the key can see, then each one's stats, series and visitors online for the range shown. Visitors online refresh every minute, and on a website's page so do the tags, pages and countries they are on, counted over Umami's same five minutes and marked beside each one's count; the rest every five, or as the panel opens, or the iPhone app becomes active again, on numbers older than a minute.
 

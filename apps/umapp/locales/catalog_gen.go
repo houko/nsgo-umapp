@@ -157,6 +157,8 @@ const (
 	textAutoTracked
 	textAutoTrackedHint
 	textNoDataYetAutoHint
+	textFromLink
+	textFromLinkHint
 	numTexts
 )
 
@@ -251,6 +253,8 @@ var keyOfText = [numTexts]string{
 	"autoTracked",
 	"autoTrackedHint",
 	"noDataYetAutoHint",
+	"fromLink",
+	"fromLinkHint",
 }
 
 // textsEn are the messages without arguments in en.
@@ -342,7 +346,9 @@ var textsEn = i18n.NewTexts(""+
 	"Deleting…"+
 	"Added automatically"+
 	"Umapp's server adds the tracker to this website's pages through Cloudflare, so there is nothing to embed."+
-	"Visit the website once.",
+	"Visit the website once."+
+	"Filled in from a link"+
+	"Check that the endpoint is your server, then connect.",
 	[]uint16{
 		5,
 		5,
@@ -432,6 +438,8 @@ var textsEn = i18n.NewTexts(""+
 		19,
 		105,
 		23,
+		21,
+		53,
 	})
 
 // textsZhHans are the messages without arguments in zh-Hans.
@@ -523,7 +531,9 @@ var textsZhHans = i18n.NewTexts(""+
 	"正在删除…"+
 	"已自动添加"+
 	"Umapp 服务端通过 Cloudflare 给这个网站的页面自动加上了跟踪代码，无需手动嵌入。"+
-	"访问一次网站即可。",
+	"访问一次网站即可。"+
+	"已从链接填入"+
+	"确认地址是你自己的服务器后再连接。",
 	[]uint16{
 		5,
 		5,
@@ -613,6 +623,8 @@ var textsZhHans = i18n.NewTexts(""+
 		15,
 		108,
 		27,
+		18,
+		51,
 	})
 
 // texts returns the messages without arguments in lang, nil for a
@@ -1451,3 +1463,17 @@ func NoDataYetAutoHint(cx *core.Scope) string { return For(cx).NoDataYetAutoHint
 
 // NoDataYetAutoHint is the package's NoDataYetAutoHint in the language of msgs.
 func (msgs Messages) NoDataYetAutoHint() string { return msgs.text(textNoDataYetAutoHint) }
+
+// FromLink says "Filled in from a link"
+// in the language the app shows under cx.
+func FromLink(cx *core.Scope) string { return For(cx).FromLink() }
+
+// FromLink is the package's FromLink in the language of msgs.
+func (msgs Messages) FromLink() string { return msgs.text(textFromLink) }
+
+// FromLinkHint says "Check that the endpoint is your server, then connect."
+// in the language the app shows under cx.
+func FromLinkHint(cx *core.Scope) string { return For(cx).FromLinkHint() }
+
+// FromLinkHint is the package's FromLinkHint in the language of msgs.
+func (msgs Messages) FromLinkHint() string { return msgs.text(textFromLinkHint) }

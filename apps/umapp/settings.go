@@ -59,6 +59,11 @@ func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 	if !connected {
 		title = ""
 	}
+	if a.fromLink {
+		nodes = append(nodes, ui.FormSection{Children: []core.Node{
+			ui.FormRow{Icon: lucide.Link, Title: tr.FromLink(), Detail: tr.FromLinkHint(), TestID: "from-link"},
+		}})
+	}
 	nodes = append(nodes, column(0, a.accountSection(cx, title, connected), a.region(func() string {
 		return fmt.Sprint(a.connecting, a.connectErr, connected, a.dirty())
 	}, func(cx *core.Scope) core.Node {

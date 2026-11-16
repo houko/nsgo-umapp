@@ -5,6 +5,7 @@ import { test } from "node:test";
 import {
   apiHeaders,
   autoTrackSql,
+  connectLink,
   conflictFor,
   describeInactive,
   hasMorePages,
@@ -369,4 +370,13 @@ test("website statements run on the server's schema: inserts once, marks what th
   assert.equal(db.prepare("SELECT sum(auto_track) AS n FROM website").get().n, 0);
   db.exec(updateWebsiteSql("d", "manual.example"));
   assert.equal(db.prepare("SELECT domain FROM website WHERE id = 'd'").get().domain, "manual.example");
+});
+
+test("connectLink carries the endpoint and key so the app reads them back", () => {
+  const link = connectLink("https://umapp-server.example.workers.dev/api", "umapp_a+b/c=");
+  const u = new URL(link);
+  assert.equal(u.protocol, "umapp:");
+  assert.equal(u.host, "connect");
+  assert.equal(u.searchParams.get("endpoint"), "https://umapp-server.example.workers.dev/api");
+  assert.equal(u.searchParams.get("key"), "umapp_a+b/c=");
 });
