@@ -72,6 +72,9 @@ func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 			footer = tr.LiveHint()
 		}
 		nodes = append(nodes, ui.FormSection{Title: tr.General(), Footer: footer, Children: general})
+		if a.sendView != nil {
+			nodes = append(nodes, ui.FormSection{Footer: tr.AnalyticsHint(), Children: []core.Node{a.analyticsSwitch(cx)}})
+		}
 		if a.checkUpdates != nil {
 			footer := ""
 			if v := core.App().Version; v != "" {
@@ -144,6 +147,19 @@ func (a *app) liveSwitch(cx *core.Scope) core.Node {
 		Checked: live(a, func() bool { return !a.cfg.HideLive }),
 		OnChange: func(on bool) {
 			a.cfg.HideLive = !on
+			a.commitCfg()
+		}}}
+}
+
+func (a *app) analyticsSwitch(cx *core.Scope) core.Node {
+	tr := msgsOf(cx)
+	return ui.FormRow{Icon: lucide.ChartColumn, Title: tr.AnalyticsLabel(), Control: ui.Switch{Label: tr.AnalyticsLabel(), TestID: "analytics",
+		Checked: live(a, func() bool { return !a.cfg.NoAnalytics }),
+		OnChange: func(on bool) {
+			a.cfg.NoAnalytics = !on
+			if on {
+				a.tracked = -1
+			}
 			a.commitCfg()
 		}}}
 }

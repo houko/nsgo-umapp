@@ -22,6 +22,8 @@ versionLabel:
 launchAtLoginLabel: "Open at login"
 liveLabel: "Visitors online"
 liveHint: "Show by the menu bar icon how many people are on your websites now."
+analyticsLabel: "Share usage statistics"
+analyticsHint: "Send Umapp anonymous counts of the pages you open, never your websites or key."
 websites: "Websites"
 order: "Order"
 quit: "Quit"

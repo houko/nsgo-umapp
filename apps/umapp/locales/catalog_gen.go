@@ -85,6 +85,8 @@ const (
 	textLaunchAtLoginLabel
 	textLiveLabel
 	textLiveHint
+	textAnalyticsLabel
+	textAnalyticsHint
 	textWebsites
 	textOrder
 	textQuit
@@ -162,6 +164,8 @@ var keyOfText = [numTexts]string{
 	"launchAtLoginLabel",
 	"liveLabel",
 	"liveHint",
+	"analyticsLabel",
+	"analyticsHint",
 	"websites",
 	"order",
 	"quit",
@@ -237,6 +241,8 @@ var textsEn = i18n.NewTexts(""+
 	"Open at login"+
 	"Visitors online"+
 	"Show by the menu bar icon how many people are on your websites now."+
+	"Share usage statistics"+
+	"Send Umapp anonymous counts of the pages you open, never your websites or key."+
 	"Websites"+
 	"Order"+
 	"Quit"+
@@ -309,6 +315,8 @@ var textsEn = i18n.NewTexts(""+
 		13,
 		15,
 		67,
+		22,
+		78,
 		8,
 		5,
 		4,
@@ -384,6 +392,8 @@ var textsZhHans = i18n.NewTexts(""+
 	"开机时启动"+
 	"在线访客"+
 	"在菜单栏显示当前有多少人在浏览网站。"+
+	"分享使用统计"+
+	"向 Umapp 匿名发送你打开了哪些页面，不含你的网站和密钥。"+
 	"网站"+
 	"排序"+
 	"退出"+
@@ -456,6 +466,8 @@ var textsZhHans = i18n.NewTexts(""+
 		15,
 		12,
 		54,
+		18,
+		79,
 		6,
 		6,
 		6,
@@ -749,6 +761,20 @@ func LiveHint(cx *core.Scope) string { return For(cx).LiveHint() }
 
 // LiveHint is the package's LiveHint in the language of msgs.
 func (msgs Messages) LiveHint() string { return msgs.text(textLiveHint) }
+
+// AnalyticsLabel says "Share usage statistics"
+// in the language the app shows under cx.
+func AnalyticsLabel(cx *core.Scope) string { return For(cx).AnalyticsLabel() }
+
+// AnalyticsLabel is the package's AnalyticsLabel in the language of msgs.
+func (msgs Messages) AnalyticsLabel() string { return msgs.text(textAnalyticsLabel) }
+
+// AnalyticsHint says "Send Umapp anonymous counts of the pages you open, never your websites or key."
+// in the language the app shows under cx.
+func AnalyticsHint(cx *core.Scope) string { return For(cx).AnalyticsHint() }
+
+// AnalyticsHint is the package's AnalyticsHint in the language of msgs.
+func (msgs Messages) AnalyticsHint() string { return msgs.text(textAnalyticsHint) }
 
 // Websites says "Websites"
 // in the language the app shows under cx.

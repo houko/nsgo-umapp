@@ -363,6 +363,27 @@ func TestLaunchAtLogin(t *testing.T) {
 	}
 }
 
+func TestAnalytics(t *testing.T) {
+	a := testApp(t, newFake())
+	var sent []string
+	a.sendView = func(path string) { sent = append(sent, path) }
+	a.tracked = -1
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("settings")
+	tt.Press("analytics")
+	if !a.cfg.NoAnalytics {
+		t.Fatal("the switch leaves analytics on")
+	}
+	tt.Press("back")
+	tt.Press("settings")
+	tt.Press("analytics")
+	tt.Press("back")
+	if want := []string{"/", "/settings", "/settings", "/"}; !slices.Equal(sent, want) {
+		t.Fatalf("sent %q, want %q", sent, want)
+	}
+}
+
 func TestPhone(t *testing.T) {
 	a := testApp(t, newFake())
 	a.noTray = true

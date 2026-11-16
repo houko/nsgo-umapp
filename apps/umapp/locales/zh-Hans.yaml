@@ -22,6 +22,8 @@ versionLabel:
 launchAtLoginLabel: "开机时启动"
 liveLabel: "在线访客"
 liveHint: "在菜单栏显示当前有多少人在浏览网站。"
+analyticsLabel: "分享使用统计"
+analyticsHint: "向 Umapp 匿名发送你打开了哪些页面，不含你的网站和密钥。"
 websites: "网站"
 order: "排序"
 quit: "退出"

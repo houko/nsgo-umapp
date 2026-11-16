@@ -5,6 +5,7 @@
 - Deploy the server to Cloudflare with `npm run deploy` (#5 by @houko).
 - Add a server on Cloudflare Workers and D1 that counts the visitors of websites embedding its script, for Umapp to connect to as to Umami (#4 by @houko).
 - Add a website and copy its tracking code in the app (#4 by @houko).
+- Count Umapp's use on Umami: the web build and product site always, the apps unless turned off in Settings.
 - Run in a browser, deployed to Cloudflare Workers (#1 by @houko).
 - Add Umapp's product site in English and Simplified Chinese, light and dark, at <https://oneo-me.github.io/nsgo-umapp/>.
 

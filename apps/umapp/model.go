@@ -223,6 +223,12 @@ type app struct {
 	// menu bar icon to count visitors beside.
 	noTray bool
 
+	// sendView counts a page view of path on Umapp's Umami; nil where the
+	// app has no switch for it, as on the web. tracked is the page
+	// counted last.
+	sendView func(path string)
+	tracked  page
+
 	// cx is the app's scope, nil until attach; rev counts the changes to
 	// the state, which the views follow.
 	cx       *core.Scope
@@ -273,6 +279,7 @@ func (a *app) attach(cx *core.Scope) {
 
 // invalidate bumps the revision the views follow after state changed.
 func (a *app) invalidate() {
+	a.trackPage()
 	a.revision++
 	if a.rev != nil {
 		a.rev.Set(a.revision)

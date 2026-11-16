@@ -48,6 +48,9 @@ func (s *shell) ready(cx *core.Scope) {
 	}
 	cx.SetLocale(cfg.Language)
 	a.attach(cx)
+	a.tracked = -1
+	a.sendView = startAnalytics(func() string { return core.Untracked(cx, cx.Env().Language) })
+	a.trackPage()
 	if runtime.GOOS == "darwin" {
 		a.checkUpdates = func() { updater.Check(cx) }
 		a.canLaunchAtLogin = true

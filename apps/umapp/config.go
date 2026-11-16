@@ -16,6 +16,8 @@ type config struct {
 	// Language is the catalog the app shows, such as "zh-Hans"; "" follows
 	// the system.
 	Language string `json:"language,omitempty"`
+	// NoAnalytics stops the app counting its own use (analytics.go).
+	NoAnalytics bool `json:"noAnalytics,omitempty"`
 }
 
 // The orders of the list.
