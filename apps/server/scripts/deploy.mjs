@@ -1,4 +1,4 @@
-// Deploys the server to the Cloudflare account Wrangler is signed in to, signing in first if it is not and asking which account when there are several, unless CLOUDFLARE_ACCOUNT_ID says: creates the D1 database the first time, applies its migrations, and deploys the Worker, with a new API key when it has none and with SERVER_HOSTS naming the custom domains it answers Umapp at. It prints the endpoint and, when it made one, the key to connect Umapp with. Then it offers the account's sites to track, whose traffic Worker routes bring through the Worker so it adds the tracker to their pages, or as UMAPP_SITES lists them, which a run without a terminal needs, and on a Mac offers to connect Umapp itself. Running it again deploys the current code and keeps the database, the key and the sites.
+// Deploys the server to the Cloudflare account Wrangler is signed in to, signing in first if it is not and asking which account when there are several, unless CLOUDFLARE_ACCOUNT_ID says: creates the D1 database the first time, applies its migrations, and deploys the Worker, with a new API key when it has none and with SERVER_HOSTS naming the custom domains it answers Umapp at. It prints the endpoint and, when it made one, the key to connect Umapp with. It asks once for a Cloudflare token, made from a link with its permissions filled in, with which Umapp lists and adds the sites of every account the user manages. Then it offers the account's sites to track, whose traffic Worker routes bring through the Worker so it adds the tracker to their pages, or as UMAPP_SITES lists them, which a run without a terminal needs, and on a Mac offers to connect Umapp itself. Running it again deploys the current code and keeps the database, the key and the sites.
 
 import { spawnSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -30,6 +30,8 @@ import {
   planRoutes,
   planWebsites,
   serverHosts,
+  tokenLink,
+  trackedElsewhere,
   updateWebsiteSql,
 } from "./sites.mjs";
 
@@ -186,18 +188,65 @@ if (accountId) {
 const SERVER_HOSTS = serverHosts(config.vars?.SERVER_HOSTS, config.routes, customDomains);
 console.log(SERVER_HOSTS ? `  ${SERVER_HOSTS.split(",").join(", ")}` : "  None: the Worker answers at its workers.dev address.");
 
-step("Deploying the Worker");
 const secrets = run(["secret", "list", "--format", "json"], { capture: true, check: false });
-const hasKey = secrets.status === 0 && jsonArray(secrets.stdout).some((s) => s.name === "API_KEY");
+const secretNames = new Set(secrets.status === 0 ? jsonArray(secrets.stdout).map((s) => s.name) : []);
+const hasKey = secretNames.has("API_KEY");
+
+/** cloudflareToken is a new token for the server to list and add the sites of every Cloudflare account the user manages, from UMAPP_CF_TOKEN or pasted in the terminal, checked by listing zones with it; "" when the Worker keeps the one it has or goes without. Wrangler's own login can't make one, so the user creates it once from a link with its permissions filled in. */
+async function cloudflareToken() {
+  step("Giving the server a Cloudflare token");
+  const fromEnv = process.env.UMAPP_CF_TOKEN?.trim();
+  if (!fromEnv && secretNames.has("CF_API_TOKEN")) {
+    console.log("  The one set before; set UMAPP_CF_TOKEN to replace it.");
+    return "";
+  }
+  let token = fromEnv;
+  if (!token) {
+    if (!stdin.isTTY) {
+      console.log("  None: Umapp adds sites only as UMAPP_SITES lists them here. To add them from Umapp, set UMAPP_CF_TOKEN to a token made at:");
+      console.log(`  ${tokenLink("Umapp server")}`);
+      return "";
+    }
+    console.log("  With a token, Umapp's + lists the sites of every Cloudflare account you manage and adds one with a tap. Create it once at this link, whose permissions are filled in, then paste it here:");
+    console.log(`\n  ${tokenLink("Umapp server")}\n`);
+  }
+  for (;;) {
+    token ||= (await ask("  Token (Enter to go without): ")).trim();
+    if (!token) return "";
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      const zones = await pages(headers, "/zones", { status: "active", per_page: 50 });
+      const accounts = new Set(zones.map((z) => z.account?.name).filter(Boolean));
+      if (zones.length) await api(headers, "GET", `/zones/${zones[0].id}/workers/routes`);
+      console.log(`  ✓ It sees ${zones.length} site${zones.length === 1 ? "" : "s"} in ${accounts.size} account${accounts.size === 1 ? "" : "s"}${accounts.size ? `: ${[...accounts].join(", ")}` : ""}.`);
+      return token;
+    } catch (e) {
+      console.error(`  ✗ Cloudflare refused it: ${e.message}`);
+      if (fromEnv || !stdin.isTTY) process.exit(1);
+      token = "";
+    }
+  }
+}
+const cfToken = await cloudflareToken();
+
+step("Deploying the Worker");
 let key = "";
 const args = ["deploy"];
 if (SERVER_HOSTS) args.push("--var", `SERVER_HOSTS:${SERVER_HOSTS}`);
+// The server routes a site of its own account to itself by name, and one of another account to the relay it puts there.
+if (accountId) args.push("--var", `CF_ACCOUNT_ID:${accountId}`, "--var", `SCRIPT_NAME:${SCRIPT}`);
 let secretsDir = "";
+const newSecrets = {};
 if (!hasKey) {
   key = "umapp_" + randomBytes(24).toString("base64url");
+  newSecrets.API_KEY = key;
+}
+if (cfToken) newSecrets.CF_API_TOKEN = cfToken;
+if (Object.keys(newSecrets).length) {
+  // Secrets left out of the file stay as they are.
   secretsDir = mkdtempSync(join(tmpdir(), "umapp-"));
   const file = join(secretsDir, "secrets.json");
-  writeFileSync(file, JSON.stringify({ API_KEY: key }), { mode: 0o600 });
+  writeFileSync(file, JSON.stringify(newSecrets), { mode: 0o600 });
   args.push("--secrets-file", file);
 }
 let deployed;
@@ -307,7 +356,7 @@ async function trackSites() {
   const routesByZone = await listRoutes(headers, zones);
   const ownHosts = SERVER_HOSTS ? SERVER_HOSTS.split(",") : [];
   // A site counts as tracked only while its website is there: one deleted in Umapp isn't kept, so its routes go.
-  const rows = d1("SELECT id, domain FROM website");
+  const rows = d1("SELECT id, domain, auto_track FROM website");
   const websites = new Set(rows.filter((r) => typeof r.domain === "string").map((r) => normalizeDomain(r.domain)));
   const sites = listSites(zones, routesByZone, SCRIPT, ownHosts, websites);
 
@@ -373,7 +422,7 @@ async function trackSites() {
 
   const owned = all.map((s) => ({ site: s, patterns: s.patterns.filter((p) => (p.route && !removed.has(p.route.pattern)) || added.has(p.pattern)) }));
   // Umapp shows the tracker to embed only for websites the Worker doesn't track.
-  d1(autoTrackSql(owned.filter((o) => o.patterns.length).map((o) => o.site.domain)));
+  d1(autoTrackSql([...owned.filter((o) => o.patterns.length).map((o) => o.site.domain), ...trackedElsewhere(rows, zones)]));
   return owned.map(({ site: s, patterns }) => {
     const skipped = plan.skip.filter((k) => k.domain === s.domain).map((k) => `without ${k.pattern}, as ${k.reason}`);
     const missing = s.patterns.filter((p) => failed.has(p.pattern)).map((p) => `${p.pattern} failed`);

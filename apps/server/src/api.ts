@@ -1,5 +1,6 @@
 // The part of Umami's API Umapp reads, answered in Umami 3's form, and the websites it manages.
 
+import { addCloudflareSite, CloudflareError, listCloudflareSites, removeCloudflareSite } from "./cloudflare";
 import { type Env, forget } from "./collect";
 import { buckets, type Unit, validZone } from "./zone";
 
@@ -224,24 +225,56 @@ async function updateWebsite(env: Env, id: string, request: Request): Promise<We
   return website(env, id);
 }
 
-async function deleteWebsite(env: Env, id: string) {
-  await website(env, id);
+async function deleteWebsite(env: Env, id: string, f: typeof fetch) {
+  const w = await website(env, id);
+  // A website the Worker tracks loses its routes first, so its site no longer passes through the Worker for nothing; a failure there leaves them for the next deploy to take away.
+  let warning = "";
+  if (w.autoTrack) {
+    try {
+      await removeCloudflareSite(env, f, w.domain);
+    } catch (e) {
+      warning = e instanceof Error ? e.message : String(e);
+    }
+  }
   await env.DB.batch([
     env.DB.prepare("DELETE FROM event WHERE website_id = ?").bind(id),
     env.DB.prepare("DELETE FROM website WHERE id = ?").bind(id),
   ]);
   forget(id);
-  return { ok: true };
+  return warning ? { ok: true, warning } : { ok: true };
+}
+
+/** ownHosts are the hostnames the server answers Umapp at: SERVER_HOSTS and the one this request came to. */
+function ownHosts(env: Env, request: Request): string[] {
+  return [...(env.SERVER_HOSTS ?? "").split(","), new URL(request.url).hostname].map((h) => h.trim().toLowerCase()).filter(Boolean);
+}
+
+/** cloudflare answers /cloudflare: the accounts' sites, and adding one. */
+async function cloudflare(env: Env, request: Request, parts: string[], f: typeof fetch, now: number): Promise<Response> {
+  const m = request.method;
+  if (parts.length === 1 && m === "GET") return json({ sites: await listCloudflareSites(env, f, ownHosts(env, request)) });
+  if (parts.length === 2 && parts[1] === "sites" && m === "POST") {
+    let body: { domain?: unknown };
+    try {
+      body = await request.json();
+    } catch {
+      throw new HTTPError(400, "The site isn't JSON.");
+    }
+    const id = await addCloudflareSite(env, f, typeof body.domain === "string" ? body.domain : "", new URL(request.url).origin, ownHosts(env, request), now);
+    return json(await website(env, id));
+  }
+  throw new HTTPError(parts.length > 2 ? 404 : 405, parts.length > 2 ? "Not found." : "Method not allowed.");
 }
 
 /** api answers path, under /api, of an authorized request. */
-export async function api(request: Request, env: Env, path: string, now = Date.now()): Promise<Response> {
+export async function api(request: Request, env: Env, path: string, now = Date.now(), f: typeof fetch = fetch): Promise<Response> {
   if (!env.API_KEY) return json({ message: "The server has no API_KEY." }, 500);
   if (!(await authorized(request, env.API_KEY))) return json({ message: "The API key was rejected." }, 401);
   const q = new URL(request.url).searchParams;
   const m = request.method;
   const parts = path.split("/").filter(Boolean);
   try {
+    if (parts[0] === "cloudflare") return await cloudflare(env, request, parts, f, now);
     if (parts[0] !== "websites") throw new HTTPError(404, "Not found.");
     const [, rawID, sub] = parts;
     if (parts.length > 3) throw new HTTPError(404, "Not found.");
@@ -254,7 +287,7 @@ export async function api(request: Request, env: Env, path: string, now = Date.n
     if (!sub) {
       if (m === "GET") return json(await website(env, id));
       if (m === "POST") return json(await updateWebsite(env, id, request));
-      if (m === "DELETE") return json(await deleteWebsite(env, id));
+      if (m === "DELETE") return json(await deleteWebsite(env, id, f));
       throw new HTTPError(405, "Method not allowed.");
     }
     if (m !== "GET") throw new HTTPError(405, "Method not allowed.");
@@ -271,7 +304,7 @@ export async function api(request: Request, env: Env, path: string, now = Date.n
     }
     throw new HTTPError(404, "Not found.");
   } catch (e) {
-    if (e instanceof HTTPError) return json({ message: e.message }, e.status);
+    if (e instanceof HTTPError || e instanceof CloudflareError) return json({ message: e.message }, e.status);
     throw e;
   }
 }
