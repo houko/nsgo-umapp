@@ -992,3 +992,75 @@ func TestClientKnowsOwnServer(t *testing.T) {
 		t.Errorf("Umami taken for Umapp's server: %v", err)
 	}
 }
+
+func buildWindow(t *testing.T, a *app) *tester {
+	t.Helper()
+	return &tester{App: nsgotest.Start(t, func(cx *core.Scope) core.Node {
+		cx.SetLocale("en")
+		a.attach(cx)
+		return a.windowRoot(cx)
+	}, nsgotest.Size(windowWidth, windowHeight)), a: a}
+}
+
+func TestWindowShowsWebsitesBesideTheirPages(t *testing.T) {
+	a := testApp(t, newFake())
+	a.refresh()
+	tt := buildWindow(t, a)
+	for _, s := range []string{"Overview", "Acme Docs", "Landing page", "Visitors / Views"} {
+		if !tt.hasText(s) {
+			t.Errorf("no %q in %q", s, tt.Texts())
+		}
+	}
+	tt.Press("window-site-b")
+	tt.WaitUntil(5*time.Second, func() bool { return a.page == pageSite && a.loading == 0 })
+	if a.open != "b" || len(tt.Query("detail-b")) == 0 {
+		t.Fatalf("page %v, open %q", a.page, a.open)
+	}
+	if !tt.hasText("Personal blog") || !tt.hasText("Pages") {
+		t.Errorf("the site's page is missing: %q", tt.Texts())
+	}
+	tt.Press("window-manage")
+	if a.page != pageManage || a.managed.ID != "b" || len(tt.Query("manage")) == 0 {
+		t.Errorf("manage: page %v, managed %+v", a.page, a.managed)
+	}
+	tt.Press("window-overview")
+	if a.page != pageSites || len(tt.Query("sites")) == 0 {
+		t.Errorf("overview: page %v", a.page)
+	}
+	tt.Press("window-settings")
+	if a.page != pageSettings || len(tt.Query("settings")) == 0 {
+		t.Errorf("settings: page %v", a.page)
+	}
+	tt.Press("window-add")
+	if a.page != pageAdd || len(tt.Query("add")) == 0 {
+		t.Errorf("add: page %v", a.page)
+	}
+}
+
+func TestWindowBeforeConnectingShowsTheConnectForm(t *testing.T) {
+	a := testApp(t, nil)
+	tt := buildWindow(t, a)
+	if len(tt.Query("key")) == 0 || !tt.hasText("Connect to Umami") {
+		t.Errorf("texts %q", tt.Texts())
+	}
+	if tt.hasText("Overview") {
+		t.Error("the sidebar lists websites before connecting")
+	}
+}
+
+func TestPanelOffersTheWindow(t *testing.T) {
+	a := testApp(t, newFake())
+	opened := 0
+	a.openWindow = func() { opened++ }
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("open-window")
+	if opened != 1 {
+		t.Errorf("opened %d", opened)
+	}
+	b := testApp(t, newFake())
+	b.refresh()
+	if len(build(t, b).Query("open-window")) != 0 {
+		t.Error("a panel without a window offers one")
+	}
+}

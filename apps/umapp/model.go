@@ -238,6 +238,8 @@ type app struct {
 	// checkUpdates asks the platform's updater for a newer version and
 	// shows what it finds; nil where the app does not update itself.
 	checkUpdates func()
+	// openWindow shows the main window, where the app has one: nil on iOS and the web.
+	openWindow func()
 
 	// noTray is set where the panel fills the app, as on iOS, with no
 	// menu bar icon to count visitors beside.

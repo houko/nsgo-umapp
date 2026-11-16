@@ -11,17 +11,18 @@ import (
 
 // addPage adds a website to the account; its page then shows the tracking code it embeds (manage.go).
 func (a *app) addPage(cx *core.Scope) core.Node {
-	tr := msgsOf(cx)
+	return core.View{Style: ui.FillRest, Children: []core.Node{a.pageHeader(cx, msgsOf(cx).AddWebsite()), a.addContent(cx)}}
+}
+
+// addContent is the add page without its bar, which the window shows under its own.
+func (a *app) addContent(cx *core.Scope) core.Node {
 	body := a.region(func() string {
 		return fmt.Sprint(a.adding, a.addErr)
 	}, func(cx *core.Scope) core.Node {
 		return core.View{Style: core.Style{Padding: core.All(gutter), Gap: sectionGap,
 			PaddingEnv: core.EnvEdges{Bottom: core.EnvKeyboard}}, Children: []core.Node{a.addForm(cx), a.addStatus(cx)}}
 	})
-	return core.View{Style: ui.FillRest, Children: []core.Node{
-		a.pageHeader(cx, tr.AddWebsite()),
-		core.Scroll{Style: ui.FillRest, TestID: "add", Children: []core.Node{body}},
-	}}
+	return core.Scroll{Style: ui.FillRest, TestID: "add", Children: []core.Node{body}}
 }
 
 func (a *app) addForm(cx *core.Scope) core.Node {

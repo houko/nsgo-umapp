@@ -49,23 +49,37 @@ func (a *app) backButton(cx *core.Scope) core.Node {
 	}
 }
 
-func (a *app) detail(cx *core.Scope, s *site) core.Node {
+func (a *app) detail(cx *core.Scope, s *site) core.Node { return a.detailView(cx, s, false) }
+
+// detailView is a site's page: in the panel one column, in the window (wide) its breakdowns side by side, wrapping as the window narrows.
+func (a *app) detailView(cx *core.Scope, s *site, wide bool) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
+	breakdowns := []core.Node{
+		breakdown(cx, tr.Pages(), tr.Views(), "path", s.pages, a.liveOf(s, s.livePages), s.detailGen == a.gen && s.pages == nil && s.detailErr == nil, nil),
+		breakdown(cx, tr.Referrers(), tr.Visitors(), "referrer", s.referrers, nil, s.pages == nil && s.detailErr == nil,
+			func(x string) core.Node { return favicon(cx, x, 14) }),
+		breakdown(cx, tr.Countries(), tr.Visitors(), "country", s.countries, a.liveOf(s, s.liveCountries), s.pages == nil && s.detailErr == nil, flag),
+	}
+	children := []core.Node{
+		row(10, favicon(cx, s.Domain, 28),
+			row(8, oneLine(ui.Text(s.Name, 17, ui.Semibold, colors.Text)), a.liveBadge(cx, s.active, true))),
+		a.tagFilter(cx, s),
+		a.metricsGrid(cx, a.shown(s)),
+		a.chart(cx, a.shown(s)),
+		a.detailError(cx, s),
+	}
+	if wide {
+		for i, b := range breakdowns {
+			breakdowns[i] = core.View{Style: core.Style{FlexGrow: 1, FlexBasis: core.Pt(240), MinWidth: core.Pt(240)}, Children: []core.Node{b}}
+		}
+		children = append(children, core.View{Style: core.Style{Direction: core.Row, Wrap: core.Wrap, Gap: 18, AlignItems: core.AlignStart}, Children: breakdowns})
+	} else {
+		children = append(children, breakdowns...)
+	}
 	return ui.ScrollView{Style: ui.FillRest, TestID: "detail-" + s.ID, EdgeColor: edgeColor(cx),
 		ContentStyle: core.Style{Padding: core.All(gutter), Gap: 18},
-		Children: []core.Node{
-			row(10, favicon(cx, s.Domain, 28),
-				row(8, oneLine(ui.Text(s.Name, 17, ui.Semibold, colors.Text)), a.liveBadge(cx, s.active, true))),
-			a.tagFilter(cx, s),
-			a.metricsGrid(cx, a.shown(s)),
-			a.chart(cx, a.shown(s)),
-			a.detailError(cx, s),
-			breakdown(cx, tr.Pages(), tr.Views(), "path", s.pages, a.liveOf(s, s.livePages), s.detailGen == a.gen && s.pages == nil && s.detailErr == nil, nil),
-			breakdown(cx, tr.Referrers(), tr.Visitors(), "referrer", s.referrers, nil, s.pages == nil && s.detailErr == nil,
-				func(x string) core.Node { return favicon(cx, x, 14) }),
-			breakdown(cx, tr.Countries(), tr.Visitors(), "country", s.countries, a.liveOf(s, s.liveCountries), s.pages == nil && s.detailErr == nil, flag),
-		}}
+		Children:     children}
 }
 
 // liveOf is who is on the site now of a breakdown, while it is of the tag

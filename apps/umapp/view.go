@@ -26,28 +26,7 @@ const (
 
 func (a *app) root(cx *core.Scope) core.Node {
 	base.SetScrollbarTheme(cx, ui.ScrollbarTheme(cx))
-	cx.OnKey("mod+r", func() {
-		if a.configured() {
-			a.refresh()
-		}
-	})
-	cx.OnKey("mod+1", func() { a.setRange(0) })
-	cx.OnKey("mod+2", func() { a.setRange(1) })
-	cx.OnKey("mod+3", func() { a.setRange(2) })
-	cx.OnKey("mod+4", func() { a.setRange(3) })
-	cx.OnKey("mod+,", func() {
-		if !a.configured() {
-			return
-		}
-		a.resetSettings()
-		a.page = pageSettings
-		a.invalidate()
-	})
-	cx.OnKey("escape", func() {
-		if a.page != pageSites && a.configured() {
-			a.back()
-		}
-	})
+	a.bindKeys(cx)
 	colors := ui.ColorsOf(cx)
 	style := ui.FillRest.Merge(core.Style{FontSize: 13, Overflow: core.Hidden})
 	if a.noTray {
@@ -83,6 +62,35 @@ func (a *app) root(cx *core.Scope) core.Node {
 		}}
 }
 
+// bindKeys binds the shortcuts the panel and the window share: refresh, the ranges, settings, and Escape back.
+func (a *app) bindKeys(cx *core.Scope) {
+	cx.OnKey("mod+r", func() {
+		if a.configured() {
+			a.refresh()
+		}
+	})
+	cx.OnKey("mod+1", func() { a.setRange(0) })
+	cx.OnKey("mod+2", func() { a.setRange(1) })
+	cx.OnKey("mod+3", func() { a.setRange(2) })
+	cx.OnKey("mod+4", func() { a.setRange(3) })
+	cx.OnKey("mod+,", a.showSettings)
+	cx.OnKey("escape", func() {
+		if a.page != pageSites && a.configured() {
+			a.back()
+		}
+	})
+}
+
+// showSettings opens the settings, once connected.
+func (a *app) showSettings() {
+	if !a.configured() {
+		return
+	}
+	a.resetSettings()
+	a.page = pageSettings
+	a.invalidate()
+}
+
 func (a *app) pageKey() string {
 	return fmt.Sprint(a.page, a.open, a.configured(), a.fromLink)
 }
@@ -101,17 +109,21 @@ func (a *app) detailKey() string {
 }
 
 func (a *app) header(cx *core.Scope) core.Node {
-	return bar(cx,
+	tools := []core.Node{
 		a.rangeControl(cx),
 		ui.Spacer{},
 		a.toolButton(cx, lucide.Plus, a.msgs().AddWebsite(), nil, a.startAdd, "add"),
 		a.refreshButton(cx),
-		a.toolButton(cx, lucide.Settings, a.msgs().Settings(), nil, func() {
-			a.resetSettings()
-			a.page = pageSettings
-			a.invalidate()
-		}, "settings"),
-	)
+	}
+	if a.openWindow != nil {
+		tools = append(tools, a.toolButton(cx, lucide.Maximize2, a.msgs().OpenWindow(), nil, a.openWindow, "open-window"))
+	}
+	tools = append(tools, a.toolButton(cx, lucide.Settings, a.msgs().Settings(), nil, func() {
+		a.resetSettings()
+		a.page = pageSettings
+		a.invalidate()
+	}, "settings"))
+	return bar(cx, tools...)
 }
 
 // bar is the strip across the top of a page.

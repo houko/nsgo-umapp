@@ -152,6 +152,16 @@ func (a *app) deleteWebsite() {
 
 // managePage builds its sections apart, so that typing in the fields rebuilds none of them.
 func (a *app) managePage(cx *core.Scope) core.Node {
+	return core.View{Style: ui.FillRest, Children: []core.Node{
+		a.region(func() string { return a.managed.Name }, func(cx *core.Scope) core.Node {
+			return a.pageHeader(cx, a.managed.Name)
+		}),
+		a.manageContent(cx),
+	}}
+}
+
+// manageContent is the website's page without its bar, which the window shows under its own.
+func (a *app) manageContent(cx *core.Scope) core.Node {
 	body := a.region(func() string { return a.managed.ID }, func(cx *core.Scope) core.Node {
 		return core.View{Style: core.Style{Padding: core.All(gutter), Gap: sectionGap,
 			PaddingEnv: core.EnvEdges{Bottom: core.EnvKeyboard}},
@@ -166,12 +176,7 @@ func (a *app) managePage(cx *core.Scope) core.Node {
 				a.region(func() string { return fmt.Sprint(a.deleting) }, a.deleteSection),
 			}}
 	})
-	return core.View{Style: ui.FillRest, Children: []core.Node{
-		a.region(func() string { return a.managed.Name }, func(cx *core.Scope) core.Node {
-			return a.pageHeader(cx, a.managed.Name)
-		}),
-		core.Scroll{Style: ui.FillRest, TestID: "manage", Children: []core.Node{body}},
-	}}
+	return core.Scroll{Style: ui.FillRest, TestID: "manage", Children: []core.Node{body}}
 }
 
 // siteFields edit the website's name and domain.
