@@ -69,7 +69,7 @@ func (a *app) sidebarSite(cx *core.Scope, s *site) core.Node {
 	id := s.ID
 	name := oneLine(ui.Text(s.Name, 13, ui.Regular, colors.Text))
 	name.Style = name.Style.Merge(core.Style{FlexGrow: 1})
-	return base.Button{Label: s.Name, TestID: "window-site-" + id,
+	row := base.Button{Label: s.Name, TestID: "window-site-" + id,
 		Selected: func() bool { return a.page == pageSite && a.open == id },
 		OnPress:  func(core.PressEvent) { a.openSite(id) },
 		Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 8, MinHeight: core.Pt(32), MinWidth: core.Pt(0),
@@ -79,6 +79,25 @@ func (a *app) sidebarSite(cx *core.Scope, s *site) core.Node {
 		},
 		Children: []core.Node{favicon(cx, s.Domain, 16), name, a.liveBadge(cx, s.active, false)},
 	}
+	return ui.ContextMenu{Trigger: row, Children: a.siteMenu(cx, s), TestID: "window-site-menu-" + id}
+}
+
+// siteMenu is what a secondary click on a website in the sidebar offers: its settings, the website itself, its Umami page when the server has one, and deleting it.
+func (a *app) siteMenu(cx *core.Scope, s *site) []core.Node {
+	tr := msgsOf(cx)
+	id, domain := s.ID, s.Domain
+	items := []core.Node{
+		ui.MenuItem{Text: tr.WebsiteSettings(), Icon: lucide.SlidersHorizontal, OnSelect: func() { a.manageSite(id) }},
+	}
+	if domain != "" {
+		items = append(items, ui.MenuItem{Text: tr.OpenWebsite(), Icon: lucide.Globe, OnSelect: func() { cx.OpenURL("https://"+domain, nil) }})
+	}
+	if u := dashboardURL(a.cfg.Endpoint, id); u != "" && a.src != nil && a.src.hasDashboard() {
+		items = append(items, ui.MenuItem{Text: tr.OpenUmami(), Icon: lucide.ExternalLink, OnSelect: func() { cx.OpenURL(u, nil) }})
+	}
+	return append(items, ui.MenuSeparator{},
+		ui.MenuItem{Text: tr.DeleteWebsite(), Icon: lucide.Trash, Variant: ui.MenuItemDanger,
+			Disabled: live(a, func() bool { return a.deleting }), OnSelect: func() { a.confirmDeleteSite(cx, id) }})
 }
 
 // showOverview shows every website, as the panel's list does.

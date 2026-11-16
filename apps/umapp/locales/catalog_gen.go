@@ -114,6 +114,7 @@ const (
 	textRefresh
 	textSettings
 	textOpenUmami
+	textOpenWebsite
 	textVisits
 	textViewsPerVisit
 	textBounceRate
@@ -219,6 +220,7 @@ var keyOfText = [numTexts]string{
 	"refresh",
 	"settings",
 	"openUmami",
+	"openWebsite",
 	"visits",
 	"viewsPerVisit",
 	"bounceRate",
@@ -322,6 +324,7 @@ var textsEn = i18n.NewTexts(""+
 	"Refresh"+
 	"Settings"+
 	"Open in Umami"+
+	"Open website"+
 	"Visits"+
 	"Views per visit"+
 	"Bounce rate"+
@@ -422,6 +425,7 @@ var textsEn = i18n.NewTexts(""+
 		7,
 		8,
 		13,
+		12,
 		6,
 		15,
 		11,
@@ -525,6 +529,7 @@ var textsZhHans = i18n.NewTexts(""+
 	"刷新"+
 	"设置"+
 	"在 Umami 中打开"+
+	"打开网站"+
 	"访问"+
 	"每次访问浏览"+
 	"跳出率"+
@@ -625,6 +630,7 @@ var textsZhHans = i18n.NewTexts(""+
 		6,
 		6,
 		19,
+		12,
 		6,
 		18,
 		9,
@@ -1102,6 +1108,13 @@ func OpenUmami(cx *core.Scope) string { return For(cx).OpenUmami() }
 
 // OpenUmami is the package's OpenUmami in the language of msgs.
 func (msgs Messages) OpenUmami() string { return msgs.text(textOpenUmami) }
+
+// OpenWebsite says "Open website"
+// in the language the app shows under cx.
+func OpenWebsite(cx *core.Scope) string { return For(cx).OpenWebsite() }
+
+// OpenWebsite is the package's OpenWebsite in the language of msgs.
+func (msgs Messages) OpenWebsite() string { return msgs.text(textOpenWebsite) }
 
 // Visits says "Visits"
 // in the language the app shows under cx.
