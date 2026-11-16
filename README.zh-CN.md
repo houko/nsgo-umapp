@@ -63,9 +63,10 @@ curl -fsSL https://github.com/oneo-me/nsgo-umapp/releases/latest/download/instal
 
 ## 开发
 
-Go 模块和打包配置 `nsgo.yaml` 位于仓库根目录。NSGo 来自与本仓库并列的检出，由 `go.mod` 的 replace 指向。请在根目录下运行 Go 和 NSGo 命令：
+仓库把每个应用放在 `apps/` 下。Umapp 应用的 Go 模块和打包配置 `nsgo.yaml` 位于 `apps/umapp`。NSGo 来自与本仓库并列的检出，由 `go.mod` 的 replace 指向。请在 `apps/umapp` 下运行 Go 和 NSGo 命令：
 
 ```sh
+cd apps/umapp
 go tool nsgo dev
 go tool nsgo dev -target ios_simulator
 go tool nsgo dev -target ios
@@ -75,7 +76,7 @@ GOWORK=off go test ./...
 
 `go tool nsgo test -target macos -run TestScreenshots` 和 `-target ios_simulator` 会用虚构的数据把截图保存到 `.nsgo/test/screenshots/`。
 
-发布时，在 `main` 上把 `nsgo.yaml` 的版本和 `CHANGELOG.md` 的 `## [Unreleased]` 改为新版本，再推送标签 `vX.Y.Z`。[发布工作流](.github/workflows/release.yml)会构建 macOS 应用，用 `NSGO_UPDATES_KEY` 密钥为自动更新签名，并以该版本的更新记录发布 GitHub Release。
+发布时，在 `main` 上把 `apps/umapp/nsgo.yaml` 的版本和 `CHANGELOG.md` 的 `## [Unreleased]` 改为新版本，再推送标签 `vX.Y.Z`。[发布工作流](.github/workflows/release.yml)会构建 macOS 应用，用 `NSGO_UPDATES_KEY` 密钥为自动更新签名，并以该版本的更新记录发布 GitHub Release。
 
 布局见 [ARCHITECTURE.md](ARCHITECTURE.md)，协作规则见 [AGENTS.md](AGENTS.md)。
 

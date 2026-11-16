@@ -29,4 +29,4 @@ require (
 
 tool github.com/nsgo-dev/nsgo/cmd/nsgo
 
-replace github.com/nsgo-dev/nsgo => ../nsgo
+replace github.com/nsgo-dev/nsgo => ../../../nsgo

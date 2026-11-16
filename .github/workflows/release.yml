@@ -1,6 +1,6 @@
 name: Release
 
-# Publishes a GitHub release when a version tag is pushed. A maintainer sets nsgo.yaml's version, turns CHANGELOG.md's `## [Unreleased]` into `## [X.Y.Z] - YYYY-MM-DD` above a fresh `## [Unreleased]`, merges that to main, then pushes the tag vX.Y.Z on main's commit. This workflow refuses a tag that is not on main, does not match nsgo.yaml or has no changelog section, builds the macOS app against NSGo's latest main, signs the installers with the NSGO_UPDATES_KEY secret for the appcasts, and publishes the section as the release's notes.
+# Publishes a GitHub release when a version tag is pushed. A maintainer sets apps/umapp/nsgo.yaml's version, turns CHANGELOG.md's `## [Unreleased]` into `## [X.Y.Z] - YYYY-MM-DD` above a fresh `## [Unreleased]`, merges that to main, then pushes the tag vX.Y.Z on main's commit. This workflow refuses a tag that is not on main, does not match apps/umapp/nsgo.yaml or has no changelog section, builds the macOS app against NSGo's latest main, signs the installers with the NSGO_UPDATES_KEY secret for the appcasts, and publishes the section as the release's notes.
 #
 # Assets upload one at a time: the install scripts of the systems the release has installers for, each installer followed by its checksum, then the appcasts the apps check for updates. The release page lists them by name whatever the order.
 
@@ -30,7 +30,7 @@ jobs:
           path: nsgo-umapp
           persist-credentials: false
           fetch-depth: 0
-      # go.mod replaces NSGo with ../nsgo.
+      # apps/umapp/go.mod replaces NSGo with ../../../nsgo: this checkout, beside Umapp's.
       - name: Check out NSGo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -47,9 +47,9 @@ jobs:
             exit 1
           fi
           version=${GITHUB_REF_NAME#v}
-          declared=$(sed -n 's/^version:[[:space:]]*//p' nsgo.yaml | tr -d "\"'[:space:]")
+          declared=$(sed -n 's/^version:[[:space:]]*//p' apps/umapp/nsgo.yaml | tr -d "\"'[:space:]")
           if [ "$declared" != "$version" ]; then
-            echo "::error::nsgo.yaml's version is $declared, not $version. Set it on main before tagging."
+            echo "::error::apps/umapp/nsgo.yaml's version is $declared, not $version. Set it on main before tagging."
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -72,21 +72,21 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: nsgo-umapp/go.mod
+          go-version-file: nsgo-umapp/apps/umapp/go.mod
           cache: false
       - name: Build
-        working-directory: nsgo-umapp
+        working-directory: nsgo-umapp/apps/umapp
         env:
           NSGO_UPDATES_KEY: ${{ secrets.NSGO_UPDATES_KEY }}
         run: |
           set -euo pipefail
           if [ -z "$NSGO_UPDATES_KEY" ]; then
-            echo "::error::Set the NSGO_UPDATES_KEY secret to the secret key of nsgo.yaml's updates.key, which signs the appcasts."
+            echo "::error::Set the NSGO_UPDATES_KEY secret to the secret key of apps/umapp/nsgo.yaml's updates.key, which signs the appcasts."
             exit 1
           fi
           go tool nsgo build -target macos_arm64
       - name: Publish the release
-        working-directory: nsgo-umapp/dist/releases
+        working-directory: nsgo-umapp/apps/umapp/dist/releases
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -107,7 +107,7 @@ jobs:
           assets=(${scripts[@]+"${scripts[@]}"} "${installers[@]}")
           assets+=(appcast-*.xml)
           for file in "${assets[@]}"; do
-            [ -f "$file" ] || { echo "::error::dist/releases has no $file."; exit 1; }
+            [ -f "$file" ] || { echo "::error::apps/umapp/dist/releases has no $file."; exit 1; }
           done
           prerelease=false
           case "$VERSION" in *-*) prerelease=true ;; esac
