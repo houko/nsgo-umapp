@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -115,6 +116,18 @@ func (f *fake) metrics(_ context.Context, id, kind string, from, to time.Time, l
 		rows = nil
 	}
 	return rows[:min(limit, len(rows))], nil
+}
+
+func (f *fake) addWebsite(_ context.Context, name, domain string) (website, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.err != nil {
+		return website{}, f.err
+	}
+	w := website{ID: fmt.Sprintf("new%d", len(f.sites)), Name: name, Domain: domain}
+	f.sites = append(f.sites, w)
+	f.scale[w.ID] = 0
+	return w, nil
 }
 
 func testApp(t *testing.T, f *fake) *app {
@@ -587,5 +600,108 @@ func TestCheckForUpdates(t *testing.T) {
 	tt.Press("check-updates")
 	if checks != 1 {
 		t.Fatalf("checks %d", checks)
+	}
+}
+
+func TestAddWebsite(t *testing.T) {
+	f := newFake()
+	a := testApp(t, f)
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("add")
+	if a.page != pageAdd {
+		t.Fatalf("page %v", a.page)
+	}
+	tt.Type("domain", "https://Shop.Acme.dev/cart")
+	tt.Press("add-website")
+	tt.Settle()
+	if a.added == nil || a.added.Domain != "shop.acme.dev" || a.added.Name != "shop.acme.dev" {
+		t.Fatalf("added %+v", a.added)
+	}
+	want := `<script defer src="https://cloud.umami.is/script.js" data-website-id="` + a.added.ID + `"></script>`
+	if !tt.hasText(want) {
+		t.Errorf("no tracking code in %q", tt.Texts())
+	}
+	tt.Press("copy")
+	if tt.Clipboard != want {
+		t.Errorf("clipboard %q", tt.Clipboard)
+	}
+	if !tt.hasText("Copied") {
+		t.Error("no sign of the copy")
+	}
+	tt.Press("done")
+	if a.page != pageSites || !tt.hasText("shop.acme.dev") {
+		t.Errorf("page %v, texts %q", a.page, tt.Texts())
+	}
+}
+
+func TestAddWebsiteError(t *testing.T) {
+	f := newFake()
+	a := testApp(t, f)
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("add")
+	f.err = &apiError{status: 400, msg: "The domain is missing or isn't a domain."}
+	tt.Type("domain", "example.com")
+	tt.Press("add-website")
+	tt.Settle()
+	if a.added != nil || !tt.hasText("The domain is missing") {
+		t.Errorf("added %+v, texts %q", a.added, tt.Texts())
+	}
+}
+
+func TestCopyTrackingCode(t *testing.T) {
+	a := testApp(t, newFake())
+	a.refresh()
+	tt := build(t, a)
+	a.openSite("a")
+	tt.Settle()
+	tt.Press("copy-code")
+	if !strings.Contains(tt.Clipboard, `data-website-id="a"`) {
+		t.Errorf("clipboard %q", tt.Clipboard)
+	}
+}
+
+func TestTrackingCode(t *testing.T) {
+	for endpoint, src := range map[string]string{
+		cloudEndpoint:                           "https://cloud.umami.is/script.js",
+		"https://stats.example.com/api":         "https://stats.example.com/script.js",
+		"https://example.com/umami/api":         "https://example.com/umami/script.js",
+		"https://umapp.example.workers.dev/api": "https://umapp.example.workers.dev/script.js",
+	} {
+		want := `<script defer src="` + src + `" data-website-id="w"></script>`
+		if got := trackingCode(endpoint, "w"); got != want {
+			t.Errorf("%s: %s", endpoint, got)
+		}
+	}
+}
+
+func TestBareDomain(t *testing.T) {
+	for in, want := range map[string]string{
+		"example.com":                  "example.com",
+		" https://Blog.Example.com/a ": "blog.example.com",
+		"example.com:8080/x":           "example.com",
+		"":                             "",
+	} {
+		if got := bareDomain(in); got != want {
+			t.Errorf("%q: %q", in, got)
+		}
+	}
+}
+
+func TestClientAddWebsite(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]string
+		if r.Method != http.MethodPost || r.URL.Path != "/api/websites" || r.Header.Get("Authorization") != "Bearer k" ||
+			r.Header.Get("Content-Type") != "application/json" || json.NewDecoder(r.Body).Decode(&body) != nil {
+			w.WriteHeader(400)
+			return
+		}
+		json.NewEncoder(w).Encode(website{ID: "n", Name: body["name"], Domain: body["domain"]})
+	}))
+	defer srv.Close()
+	got, err := newClient(srv.URL+"/api", "k").addWebsite(context.Background(), "Shop", "shop.acme.dev")
+	if err != nil || got != (website{ID: "n", Name: "Shop", Domain: "shop.acme.dev"}) {
+		t.Errorf("%+v, %v", got, err)
 	}
 }

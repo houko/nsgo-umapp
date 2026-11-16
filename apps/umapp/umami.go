@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -54,15 +55,31 @@ func (e *apiError) Error() string {
 }
 
 func (cl *client) get(ctx context.Context, path string, q url.Values, out any) error {
+	return cl.call(ctx, http.MethodGet, path, q, nil, out)
+}
+
+// call sends a request of method to path, with in as its JSON body unless it is nil, and decodes the answer into out.
+func (cl *client) call(ctx context.Context, method, path string, q url.Values, in, out any) error {
 	u := cl.endpoint + path
 	if len(q) > 0 {
 		u += "?" + q.Encode()
 	}
-	req, err := apiRequest(ctx, u)
+	var reqBody io.Reader
+	if in != nil {
+		b, err := json.Marshal(in)
+		if err != nil {
+			return err
+		}
+		reqBody = bytes.NewReader(b)
+	}
+	req, err := apiRequest(ctx, method, u, reqBody)
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Accept", "application/json")
+	if in != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	// Umami takes a bearer token; Umami Cloud's first API took this header.
 	req.Header.Set("Authorization", "Bearer "+cl.key)
 	req.Header.Set("x-umami-api-key", cl.key)
@@ -124,6 +141,16 @@ func (cl *client) websites(ctx context.Context) ([]website, error) {
 			return all, nil
 		}
 	}
+}
+
+// addWebsite adds a website of domain, named name, to the account, as Umami and Umapp's server both take it.
+func (cl *client) addWebsite(ctx context.Context, name, domain string) (website, error) {
+	var w website
+	err := cl.call(ctx, http.MethodPost, "/websites", nil, map[string]string{"name": name, "domain": domain}, &w)
+	if err == nil && w.ID == "" {
+		err = errors.New("The server's answer isn't Umami's.")
+	}
+	return w, err
 }
 
 // num decodes a count however the server writes it: a number, a string (as
@@ -289,6 +316,15 @@ func rangeQuery(from, to time.Time, tag string) url.Values {
 		q.Set("tag", tag)
 	}
 	return q
+}
+
+// trackingCode is the script tag a site embeds to count its visitors on the server at endpoint: Umami Cloud's script, or the one a server of one's own serves beside its /api, as Umami and Umapp's server both do.
+func trackingCode(endpoint, id string) string {
+	src := "https://cloud.umami.is/script.js"
+	if u, err := url.Parse(strings.TrimRight(endpoint, "/")); err == nil && u.Host != "" && u.Host != "api.umami.is" {
+		src = u.Scheme + "://" + u.Host + strings.TrimSuffix(u.Path, "/api") + "/script.js"
+	}
+	return fmt.Sprintf(`<script defer src="%s" data-website-id="%s"></script>`, src, id)
 }
 
 // dashboardURL is where a website's page is in Umami's own interface.

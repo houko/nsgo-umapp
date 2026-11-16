@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"syscall/js"
@@ -55,10 +56,10 @@ const (
 	proxyHeader = "X-Umami-URL"
 )
 
-// apiRequest is a GET of u, an Umami endpoint's URL, made through the site's proxy.
-func apiRequest(ctx context.Context, u string) (*http.Request, error) {
+// apiRequest is a request of method to u, an Umami endpoint's URL, made through the site's proxy.
+func apiRequest(ctx context.Context, method, u string, body io.Reader) (*http.Request, error) {
 	origin := js.Global().Get("location").Get("origin").String()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, origin+proxyPath, nil)
+	req, err := http.NewRequestWithContext(ctx, method, origin+proxyPath, body)
 	if err != nil {
 		return nil, err
 	}

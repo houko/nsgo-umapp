@@ -125,6 +125,17 @@ const (
 	textViewsUnit
 	textNew
 	textDash
+	textAddWebsite
+	textWebsiteName
+	textDomain
+	textAdd
+	textAdding
+	textTrackingCode
+	textTrackingCodeHint
+	textCopy
+	textCopied
+	textCopyTrackingCode
+	textDone
 	numTexts
 )
 
@@ -191,6 +202,17 @@ var keyOfText = [numTexts]string{
 	"viewsUnit",
 	"new",
 	"dash",
+	"addWebsite",
+	"websiteName",
+	"domain",
+	"add",
+	"adding",
+	"trackingCode",
+	"trackingCodeHint",
+	"copy",
+	"copied",
+	"copyTrackingCode",
+	"done",
 }
 
 // textsEn are the messages without arguments in en.
@@ -230,7 +252,7 @@ var textsEn = i18n.NewTexts(""+
 	"Couldn't load your websites"+
 	"Try again"+
 	"No websites yet"+
-	"Add a website in Umami, and it shows up here."+
+	"Add a website, and it shows up here."+
 	"24H"+
 	"7D"+
 	"30D"+
@@ -254,7 +276,18 @@ var textsEn = i18n.NewTexts(""+
 	"view"+
 	"views"+
 	"new"+
-	"—",
+	"—"+
+	"Add website"+
+	"Name"+
+	"Domain"+
+	"Add"+
+	"Adding…"+
+	"Tracking code"+
+	"Paste it into the <head> of every page of the website."+
+	"Copy"+
+	"Copied"+
+	"Copy tracking code"+
+	"Done",
 	[]uint16{
 		5,
 		5,
@@ -291,7 +324,7 @@ var textsEn = i18n.NewTexts(""+
 		27,
 		9,
 		15,
-		45,
+		36,
 		3,
 		2,
 		3,
@@ -316,6 +349,17 @@ var textsEn = i18n.NewTexts(""+
 		5,
 		3,
 		3,
+		11,
+		4,
+		6,
+		3,
+		9,
+		13,
+		54,
+		4,
+		6,
+		18,
+		4,
 	})
 
 // textsZhHans are the messages without arguments in zh-Hans.
@@ -355,7 +399,7 @@ var textsZhHans = i18n.NewTexts(""+
 	"无法加载网站"+
 	"重试"+
 	"还没有网站"+
-	"在 Umami 中添加网站后，就会出现在这里。"+
+	"添加网站后，就会出现在这里。"+
 	"24H"+
 	"7D"+
 	"30D"+
@@ -379,7 +423,18 @@ var textsZhHans = i18n.NewTexts(""+
 	"次浏览"+
 	"次浏览"+
 	"新"+
-	"—",
+	"—"+
+	"添加网站"+
+	"名称"+
+	"域名"+
+	"添加"+
+	"正在添加…"+
+	"跟踪代码"+
+	"粘贴到网站每个页面的 <head> 中。"+
+	"复制"+
+	"已复制"+
+	"复制跟踪代码"+
+	"完成",
 	[]uint16{
 		5,
 		5,
@@ -416,7 +471,7 @@ var textsZhHans = i18n.NewTexts(""+
 		18,
 		6,
 		15,
-		55,
+		42,
 		3,
 		2,
 		3,
@@ -441,6 +496,17 @@ var textsZhHans = i18n.NewTexts(""+
 		9,
 		3,
 		3,
+		12,
+		6,
+		6,
+		6,
+		15,
+		12,
+		44,
+		6,
+		9,
+		18,
+		6,
 	})
 
 // texts returns the messages without arguments in lang, nil for a
@@ -789,7 +855,7 @@ func NoSitesTitle(cx *core.Scope) string { return For(cx).NoSitesTitle() }
 // NoSitesTitle is the package's NoSitesTitle in the language of msgs.
 func (msgs Messages) NoSitesTitle() string { return msgs.text(textNoSitesTitle) }
 
-// NoSitesBody says "Add a website in Umami, and it shows up here."
+// NoSitesBody says "Add a website, and it shows up here."
 // in the language the app shows under cx.
 func NoSitesBody(cx *core.Scope) string { return For(cx).NoSitesBody() }
 
@@ -1033,3 +1099,80 @@ func Dash(cx *core.Scope) string { return For(cx).Dash() }
 
 // Dash is the package's Dash in the language of msgs.
 func (msgs Messages) Dash() string { return msgs.text(textDash) }
+
+// AddWebsite says "Add website"
+// in the language the app shows under cx.
+func AddWebsite(cx *core.Scope) string { return For(cx).AddWebsite() }
+
+// AddWebsite is the package's AddWebsite in the language of msgs.
+func (msgs Messages) AddWebsite() string { return msgs.text(textAddWebsite) }
+
+// WebsiteName says "Name"
+// in the language the app shows under cx.
+func WebsiteName(cx *core.Scope) string { return For(cx).WebsiteName() }
+
+// WebsiteName is the package's WebsiteName in the language of msgs.
+func (msgs Messages) WebsiteName() string { return msgs.text(textWebsiteName) }
+
+// Domain says "Domain"
+// in the language the app shows under cx.
+func Domain(cx *core.Scope) string { return For(cx).Domain() }
+
+// Domain is the package's Domain in the language of msgs.
+func (msgs Messages) Domain() string { return msgs.text(textDomain) }
+
+// Add says "Add"
+// in the language the app shows under cx.
+func Add(cx *core.Scope) string { return For(cx).Add() }
+
+// Add is the package's Add in the language of msgs.
+func (msgs Messages) Add() string { return msgs.text(textAdd) }
+
+// Adding says "Adding…"
+// in the language the app shows under cx.
+func Adding(cx *core.Scope) string { return For(cx).Adding() }
+
+// Adding is the package's Adding in the language of msgs.
+func (msgs Messages) Adding() string { return msgs.text(textAdding) }
+
+// TrackingCode says "Tracking code"
+// in the language the app shows under cx.
+func TrackingCode(cx *core.Scope) string { return For(cx).TrackingCode() }
+
+// TrackingCode is the package's TrackingCode in the language of msgs.
+func (msgs Messages) TrackingCode() string { return msgs.text(textTrackingCode) }
+
+// TrackingCodeHint says "Paste it into the <head> of every page of the website."
+// in the language the app shows under cx.
+func TrackingCodeHint(cx *core.Scope) string { return For(cx).TrackingCodeHint() }
+
+// TrackingCodeHint is the package's TrackingCodeHint in the language of msgs.
+func (msgs Messages) TrackingCodeHint() string { return msgs.text(textTrackingCodeHint) }
+
+// Copy says "Copy"
+// in the language the app shows under cx.
+func Copy(cx *core.Scope) string { return For(cx).Copy() }
+
+// Copy is the package's Copy in the language of msgs.
+func (msgs Messages) Copy() string { return msgs.text(textCopy) }
+
+// Copied says "Copied"
+// in the language the app shows under cx.
+func Copied(cx *core.Scope) string { return For(cx).Copied() }
+
+// Copied is the package's Copied in the language of msgs.
+func (msgs Messages) Copied() string { return msgs.text(textCopied) }
+
+// CopyTrackingCode says "Copy tracking code"
+// in the language the app shows under cx.
+func CopyTrackingCode(cx *core.Scope) string { return For(cx).CopyTrackingCode() }
+
+// CopyTrackingCode is the package's CopyTrackingCode in the language of msgs.
+func (msgs Messages) CopyTrackingCode() string { return msgs.text(textCopyTrackingCode) }
+
+// Done says "Done"
+// in the language the app shows under cx.
+func Done(cx *core.Scope) string { return For(cx).Done() }
+
+// Done is the package's Done in the language of msgs.
+func (msgs Messages) Done() string { return msgs.text(textDone) }

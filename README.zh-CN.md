@@ -35,8 +35,9 @@
 - 从菜单栏打开面板，查看该 API 密钥能看到的每个网站，以及当前有多少人在浏览。
 - 按 24 小时、7 天、30 天或 90 天显示访客/浏览和趋势，并与上一段对比。
 - 打开单个网站，查看跳出率、访问时长、指针悬停显示数量的图表，以及带图标和国旗的热门页面、来源和国家/地区，可看全部或只看某个标签。
-- 连接 Umami Cloud 或自建服务器，并按访客、浏览或名称为网站排序，每个网站都附上图标和域名。
+- 连接 Umami Cloud、自建 Umami，或部署在 Cloudflare Workers 上的 Umapp 自有服务端，并按访客、浏览或名称为网站排序，每个网站都附上图标和域名。
 - 在图标旁显示在线访客数，也可以关掉。
+- 在列表或网站页面中添加网站，并复制要嵌入的跟踪代码。
 - 开机时启动。
 - 显示英文或简体中文，默认跟随系统，也可以手动选择。
 - 在 macOS 上自动更新，也可以在右键菜单和设置中“检查更新…”。
@@ -90,6 +91,20 @@ wrangler deploy
 ```
 
 能打开该站点的任何人都可以用自己的密钥使用它。要只供自己使用，请在前面加上 [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/)。
+
+### 服务端
+
+`apps/server` 是 Umapp 自己的服务端：一个使用 D1 的 Cloudflare Worker，统计嵌入了它 `/script.js` 的网站的访客，并像 Umami 服务器一样响应 Umapp。用你设置的密钥把 Umapp 连接到它的 `/api`。登录 [Wrangler](https://developers.cloudflare.com/workers/wrangler/) 后，在仓库根目录下：
+
+```sh
+npm install
+cd apps/server
+npx wrangler d1 create umapp      # 把输出的 database_id 填进 wrangler.jsonc
+npx wrangler secret put API_KEY   # Umapp 连接时使用的密钥
+npm run deploy
+```
+
+使用 `npm run dev` 时，在 `apps/server/.dev.vars` 中设置 `API_KEY`。`npm test` 会在 workerd 和 D1 中运行测试。
 
 布局见 [ARCHITECTURE.md](ARCHITECTURE.md)，协作规则见 [AGENTS.md](AGENTS.md)。
 
