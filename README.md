@@ -17,7 +17,17 @@
 </p>
 
 <p align="center">
-  A native menu bar app, and an iPhone app, that shows the websites of an <a href="https://umami.is">Umami</a> account and their visitors. It is built with <a href="https://github.com/nsgo-dev/nsgo">NSGo</a>, in Onevra's look.
+  A native menu bar app, and an iPhone app, that shows the websites of an <a href="https://umami.is">Umami</a> account and their visitors. It is built with <a href="https://github.com/nsgo-dev/nsgo">NSGo</a>.
+</p>
+
+<p align="center">
+  <img src="screenshots/macos-list-en.png" alt="Umapp's panel on macOS: the websites and their visitors" width="360">
+  <img src="screenshots/macos-site-en.png" alt="A website's page on macOS" width="360">
+</p>
+
+<p align="center">
+  <img src="screenshots/ios-list-en.png" alt="Umapp on iPhone" width="280">
+  <img src="screenshots/ios-site-en.png" alt="A website's page on iPhone" width="280">
 </p>
 
 ## Features
@@ -60,6 +70,8 @@ go tool nsgo dev -target ios
 go tool nsgo build
 GOWORK=off go test ./...
 ```
+
+`go tool nsgo test -target macos -run TestScreenshots` and `-target ios_simulator` save the screenshots, with made-up data, under `source/.nsgo/test/screenshots/`.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the layout and [AGENTS.md](AGENTS.md) for the working rules.
 

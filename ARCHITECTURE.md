@@ -1,6 +1,6 @@
 # Umapp architecture
 
-Umapp is a native macOS menu bar application, built for Apple silicon, and an iPhone app, that reads an Umami account and shows its websites and visitors in a panel. It is a single Go module under `source/`, built with NSGo's `ui` components in Onevra's look.
+Umapp is a native macOS menu bar application, built for Apple silicon, and an iPhone app, that reads an Umami account and shows its websites and visitors in a panel. It is a single Go module under `source/`, built with NSGo's `ui` components in its default theme.
 
 ## Code map
 
@@ -14,6 +14,7 @@ Umapp is a native macOS menu bar application, built for Apple silicon, and an iP
 | `source/view.go` | List, header, summary and sparklines. |
 | `source/detail.go` | One website's tag filter, metrics, chart and breakdowns, with favicons and flags. |
 | `source/settings.go` | Connect and menu bar options. |
+| `source/screenshots_test.go` | The README's screenshots, on a made-up account. |
 | `source/locales/` | NSGo message catalogs, and the accessors the `nsgo` tool writes from them. |
 | `source/assets/` | Icon sources. |
 

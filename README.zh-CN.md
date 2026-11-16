@@ -17,7 +17,17 @@
 </p>
 
 <p align="center">
-  一个原生菜单栏应用和 iPhone 应用，显示 <a href="https://umami.is">Umami</a> 账户下的网站和访客。基于 <a href="https://github.com/nsgo-dev/nsgo">NSGo</a> 构建，采用 Onevra 的外观。
+  一个原生菜单栏应用和 iPhone 应用，显示 <a href="https://umami.is">Umami</a> 账户下的网站和访客。基于 <a href="https://github.com/nsgo-dev/nsgo">NSGo</a> 构建。
+</p>
+
+<p align="center">
+  <img src="screenshots/macos-list-zh-Hans.png" alt="Umapp 在 macOS 上的面板：网站和访客" width="360">
+  <img src="screenshots/macos-site-zh-Hans.png" alt="macOS 上的单个网站页面" width="360">
+</p>
+
+<p align="center">
+  <img src="screenshots/ios-list-zh-Hans.png" alt="iPhone 上的 Umapp" width="280">
+  <img src="screenshots/ios-site-zh-Hans.png" alt="iPhone 上的单个网站页面" width="280">
 </p>
 
 ## 功能
@@ -60,6 +70,8 @@ go tool nsgo dev -target ios
 go tool nsgo build
 GOWORK=off go test ./...
 ```
+
+`go tool nsgo test -target macos -run TestScreenshots` 和 `-target ios_simulator` 会用虚构的数据把截图保存到 `source/.nsgo/test/screenshots/`。
 
 布局见 [ARCHITECTURE.md](ARCHITECTURE.md)，协作规则见 [AGENTS.md](AGENTS.md)。
 
