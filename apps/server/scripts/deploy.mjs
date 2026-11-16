@@ -14,6 +14,7 @@ import {
   API_BASE,
   apiHeaders,
   autoTrackSql,
+  connectLink,
   describeInactive,
   hasMorePages,
   inactiveZones,
@@ -417,6 +418,13 @@ async function connectApp(endpoint) {
   }
   if (!endpoint || !stdin.isTTY) return;
   if (!(await confirm("\nConnect Umapp on this Mac?", true))) return;
+  // Umapp fills in its settings from the link, launching first when needed, and connects once the user confirms.
+  const opened = spawnSync("open", [connectLink(endpoint, key)], { stdio: ["ignore", "ignore", "pipe"], encoding: "utf8", timeout: 20_000 });
+  if (opened.status === 0) {
+    console.log("  ✓ Umapp shows its settings with the endpoint and key filled in: check them and press Connect.");
+    return;
+  }
+  console.log("  This Umapp doesn't take links yet, so its settings are written instead.");
   while (appRunning()) {
     await ask("  Umapp is open, and would put its old endpoint back: quit it, then press Enter. ");
   }

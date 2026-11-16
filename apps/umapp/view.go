@@ -84,7 +84,7 @@ func (a *app) root(cx *core.Scope) core.Node {
 }
 
 func (a *app) pageKey() string {
-	return fmt.Sprint(a.page, a.open, a.configured())
+	return fmt.Sprint(a.page, a.open, a.configured(), a.fromLink)
 }
 
 func (a *app) listContentKey() string {

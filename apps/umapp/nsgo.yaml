@@ -6,6 +6,8 @@ icon:
   apple: assets/AppIcon.icon
   png: assets/icon.png
 
+url_schemes: [umapp]
+
 dev:
   target: native
 

@@ -903,3 +903,45 @@ func TestWebsiteAutoTrackDecodes(t *testing.T) {
 		t.Errorf("Umami's website reads as automatic: %+v, %v", umami, err)
 	}
 }
+
+func TestOpenConnectLink(t *testing.T) {
+	a := testApp(t, newFake())
+	a.refresh()
+	tt := build(t, a)
+	if !a.openLink("umapp://connect?endpoint=https%3A%2F%2Fumapp-server.example.workers.dev%2Fapi&key=umapp_abc") {
+		t.Fatal("the link was refused")
+	}
+	tt.Settle()
+	if a.page != pageSettings || a.editEndpoint != "https://umapp-server.example.workers.dev/api" || a.editKey != "umapp_abc" {
+		t.Fatalf("page %v, endpoint %q, key %q", a.page, a.editEndpoint, a.editKey)
+	}
+	if a.cfg.Key != "api_test" || a.cfg.Endpoint != cloudEndpoint {
+		t.Errorf("a link changed the saved settings: %+v", a.cfg)
+	}
+	if !tt.hasText("Filled in from a link") || !tt.hasText("Save") {
+		t.Errorf("texts %q", tt.Texts())
+	}
+	tt.Press("back")
+	if a.fromLink || a.editKey != "api_test" {
+		t.Errorf("leaving settings kept the link: fromLink %v, key %q", a.fromLink, a.editKey)
+	}
+}
+
+func TestOpenLinkRefusesOthers(t *testing.T) {
+	a := testApp(t, newFake())
+	for _, link := range []string{
+		"https://connect?endpoint=https://x.example/api&key=k",
+		"umapp://settings",
+		"umapp://connect?endpoint=https://x.example/api",
+		"umapp://connect?endpoint=javascript:alert(1)&key=k",
+		"umapp://connect?endpoint=file:///etc/passwd&key=k",
+		"umapp://connect?key=k",
+	} {
+		if a.openLink(link) {
+			t.Errorf("took %q", link)
+		}
+	}
+	if a.fromLink || a.page != pageSites {
+		t.Errorf("a refused link changed the state: page %v", a.page)
+	}
+}

@@ -201,6 +201,8 @@ type app struct {
 	editKey      string
 	connecting   bool
 	connectErr   string
+	// fromLink says the fields were filled in from a umapp://connect link, which the user confirms by connecting.
+	fromLink bool
 
 	// The add page's fields.
 	addName   string
@@ -793,6 +795,7 @@ func (a *app) stale() bool {
 }
 
 func (a *app) resetSettings() {
+	a.fromLink = false
 	a.editEndpoint, a.editKey = a.cfg.Endpoint, a.cfg.Key
 	if a.editEndpoint == "" {
 		a.editEndpoint = cloudEndpoint
@@ -840,6 +843,7 @@ func (a *app) connect(newSource func(endpoint, key string) source) {
 				return
 			}
 			first := !a.configured()
+			a.fromLink = false
 			a.cfg.Endpoint, a.cfg.Key, a.src = endpoint, key, src
 			a.sites, a.listErr = nil, nil
 			a.commitCfg()
@@ -868,4 +872,23 @@ func change(cur, prev float64) (float64, bool) {
 		return 0, false
 	}
 	return (cur - prev) / prev, true
+}
+
+// openLink fills in the settings from a link umapp://connect?endpoint=…&key=…, as npm run deploy opens, and shows them for the user to connect; it reports whether link was one. Anyone can make such a link, so it connects nothing by itself.
+func (a *app) openLink(link string) bool {
+	u, err := url.Parse(link)
+	if err != nil || u.Scheme != "umapp" || u.Host != "connect" {
+		return false
+	}
+	q := u.Query()
+	endpoint, key := strings.TrimSpace(q.Get("endpoint")), strings.TrimSpace(q.Get("key"))
+	e, err := url.Parse(endpoint)
+	if err != nil || (e.Scheme != "https" && e.Scheme != "http") || e.Host == "" || key == "" {
+		return false
+	}
+	a.resetSettings()
+	a.editEndpoint, a.editKey, a.fromLink = endpoint, key, true
+	a.page = pageSettings
+	a.invalidate()
+	return true
 }

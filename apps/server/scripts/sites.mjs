@@ -265,6 +265,11 @@ export function autoTrackSql(domains) {
   return `UPDATE website SET auto_track = (${websiteDomainSql} IN (${domains.map(sqlString).join(", ")}))`;
 }
 
+/** connectLink is the link that has Umapp fill in its settings with endpoint and key for the user to connect. */
+export function connectLink(endpoint, key) {
+  return `umapp://connect?${new URLSearchParams({ endpoint, key })}`;
+}
+
 /** mergeConfig is Umapp's config.json text with endpoint set and any key removed, every other field kept; it throws when the text is there but not a JSON object, so a file the app can't read is not lost. */
 export function mergeConfig(text, endpoint) {
   let cfg = {};
