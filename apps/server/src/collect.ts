@@ -5,6 +5,12 @@ export interface Env {
   API_KEY?: string;
   /** SERVER_HOSTS lists, separated by commas, the hostnames besides workers.dev that are this server's own, such as a custom domain: on any other hostname, a request that is no tracked site's goes on to the site's origin. */
   SERVER_HOSTS?: string;
+  /** CF_API_TOKEN lets the server add the websites of the Cloudflare accounts it covers (cloudflare.ts): Zone Read, Workers Routes Edit and Workers Scripts Edit. */
+  CF_API_TOKEN?: string;
+  /** CF_ACCOUNT_ID is the account the server runs in, whose sites' routes lead to the server itself rather than to a relay. */
+  CF_ACCOUNT_ID?: string;
+  /** SCRIPT_NAME is the server's Worker, umapp-server when unset. */
+  SCRIPT_NAME?: string;
 }
 
 const MAX_BODY = 16 << 10;

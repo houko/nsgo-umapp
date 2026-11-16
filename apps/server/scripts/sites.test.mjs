@@ -23,6 +23,8 @@ import {
   planRoutes,
   planWebsites,
   serverHosts,
+  tokenLink,
+  trackedElsewhere,
   sitePatterns,
   sqlString,
   updateWebsiteSql,
@@ -379,4 +381,28 @@ test("connectLink carries the endpoint and key so the app reads them back", () =
   assert.equal(u.host, "connect");
   assert.equal(u.searchParams.get("endpoint"), "https://umapp-server.example.workers.dev/api");
   assert.equal(u.searchParams.get("key"), "umapp_a+b/c=");
+});
+
+test("tokenLink fills in the token's permissions on every account and zone", () => {
+  const url = new URL(tokenLink("Umapp server"));
+  assert.equal(url.origin + url.pathname, "https://dash.cloudflare.com/profile/api-tokens");
+  assert.deepEqual(JSON.parse(url.searchParams.get("permissionGroupKeys")), [
+    { key: "zone", type: "read" },
+    { key: "workers_routes", type: "edit" },
+    { key: "workers_scripts", type: "edit" },
+    { key: "account_settings", type: "read" },
+  ]);
+  assert.equal(url.searchParams.get("accountId"), "*");
+  assert.equal(url.searchParams.get("zoneId"), "all");
+  assert.equal(url.searchParams.get("name"), "Umapp server");
+});
+
+test("trackedElsewhere keeps the websites Umapp tracks in another account", () => {
+  const zones = [{ id: "z1", name: "example.com" }];
+  const rows = [
+    { id: "1", domain: "example.com", auto_track: 1 },
+    { id: "2", domain: "www.Other.app", auto_track: 1 },
+    { id: "3", domain: "manual.org", auto_track: 0 },
+  ];
+  assert.deepEqual(trackedElsewhere(rows, zones), ["other.app"]);
 });

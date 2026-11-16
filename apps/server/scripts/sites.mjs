@@ -137,6 +137,7 @@ export function describeConflict(route) {
 }
 
 /** siteState is one site: its domain and zone, each of its patterns with the route of the Worker named script on it or what keeps it, whether the Worker has any of them (routed), whether it is tracked, and why it cannot be: its hostname is one the Worker answers at as its own (ownHosts), or, unless the Worker has one of its patterns already, its own hostname is taken. A site is tracked when it is routed and has its website: websites, the normalized domains of D1's websites, or null when they are unknown. One routed without a website (orphaned), as one deleted in Umapp, isn't kept by default, so its routes go. A site the Worker has keeps the patterns it has; planRoutes skips the one taken. */
+/** @param {Set<string> | null} [websites] */
 export function siteState(domain, zone, routes, script, ownHosts = [], websites = null) {
   const patterns = sitePatterns(domain, zone.name).map((pattern) => ({
     pattern,
@@ -153,6 +154,7 @@ export function siteState(domain, zone, routes, script, ownHosts = [], websites 
 }
 
 /** listSites is every site to offer: each zone's apex, then the other hostnames the Worker already has a route of their own for, in their zone's order. routesByZone maps a zone's id to its routes, ownHosts are the hostnames the Worker answers Umapp at, and websites the normalized domains of D1's websites, or null when unknown. */
+/** @param {Set<string> | null} [websites] */
 export function listSites(zones, routesByZone, script, ownHosts = [], websites = null) {
   const sites = [];
   for (const zone of zones) {
@@ -265,6 +267,11 @@ export function autoTrackSql(domains) {
   return `UPDATE website SET auto_track = (${websiteDomainSql} IN (${domains.map(sqlString).join(", ")}))`;
 }
 
+/** trackedElsewhere are the domains of the websites tracked outside zones, which Umapp added from another Cloudflare account through its relay: a deploy choosing the sites of zones keeps them tracked. */
+export function trackedElsewhere(rows, zones) {
+  return rows.filter((r) => r.auto_track === 1 && typeof r.domain === "string" && !zoneOf(normalizeDomain(r.domain), zones)).map((r) => normalizeDomain(r.domain));
+}
+
 /** connectLink is the link that has Umapp fill in its settings with endpoint and key for the user to connect. */
 export function connectLink(endpoint, key) {
   return `umapp://connect?${new URLSearchParams({ endpoint, key })}`;
@@ -279,4 +286,18 @@ export function mergeConfig(text, endpoint) {
   }
   const { key: _key, ...rest } = cfg;
   return JSON.stringify({ ...rest, endpoint }, null, 2) + "\n";
+}
+
+/** TOKEN_PERMISSIONS are the permissions the server's own Cloudflare token needs to add the sites of every account the user can manage: Zone Read to list them, Workers Routes Edit to route them, Workers Scripts Edit to put the relay in another account, Account Settings Read to name the accounts. */
+export const TOKEN_PERMISSIONS = [
+  { key: "zone", type: "read" },
+  { key: "workers_routes", type: "edit" },
+  { key: "workers_scripts", type: "edit" },
+  { key: "account_settings", type: "read" },
+];
+
+/** tokenLink is the dashboard page that creates a user API token with TOKEN_PERMISSIONS on all accounts and zones, filled in for the user to press Create. */
+export function tokenLink(name) {
+  const q = new URLSearchParams({ permissionGroupKeys: JSON.stringify(TOKEN_PERMISSIONS), accountId: "*", zoneId: "all", name });
+  return `https://dash.cloudflare.com/profile/api-tokens?${q}`;
 }
