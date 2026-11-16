@@ -16,15 +16,19 @@ import (
 const sectionGap = 22
 
 func (a *app) settings(cx *core.Scope) core.Node {
-	connected := a.configured()
-	body := core.Scroll{Style: ui.FillRest, TestID: "settings",
-		Children: []core.Node{core.View{Style: core.Style{Padding: core.All(gutter), Gap: sectionGap,
-			PaddingEnv: core.EnvEdges{Bottom: core.EnvKeyboard}},
-			Children: a.settingsBody(cx, connected)}}}
-	if !connected {
+	body := a.settingsContent(cx)
+	if !a.configured() {
 		return body
 	}
 	return core.View{Style: ui.FillRest, Children: []core.Node{a.pageHeader(cx, msgsOf(cx).SettingsTitle()), body}}
+}
+
+// settingsContent is the settings without their bar, which the window shows under its own.
+func (a *app) settingsContent(cx *core.Scope) core.Node {
+	return core.Scroll{Style: ui.FillRest, TestID: "settings",
+		Children: []core.Node{core.View{Style: core.Style{Padding: core.All(gutter), Gap: sectionGap,
+			PaddingEnv: core.EnvEdges{Bottom: core.EnvKeyboard}},
+			Children: a.settingsBody(cx, a.configured())}}}
 }
 
 // pageHeader is the bar of a page under the list: the way back, and the page's title.

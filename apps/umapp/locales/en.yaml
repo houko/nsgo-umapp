@@ -114,3 +114,7 @@ autoTrackedHint: "Umapp's server adds the tracker to this website's pages throug
 noDataYetAutoHint: "Visit the website once."
 fromLink: "Filled in from a link"
 fromLinkHint: "Check that the endpoint is your server, then connect."
+openWindow: "Open Window"
+overview: "Overview"
+toggleSidebar: "Show or Hide the Sidebar"
+resizeSidebar: "Resize the Sidebar"

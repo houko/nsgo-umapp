@@ -34,6 +34,7 @@
 ## Features
 
 - Open a panel from the menu bar with every website the API key can see, and how many people are on them now.
+- Open a window on macOS with the websites in a sidebar beside each one's page, laid out wide.
 - Show visitors / views and a sparkline for 24 hours, 7 days, 30 days or 90 days, compared with the range before.
 - Open one website for bounce rate, duration, a chart with counts under the pointer, and the top pages, referrers and countries with their icons and flags, all of them or of one tag.
 - Connect to Umami Cloud, a self-hosted Umami or Umapp's own server on Cloudflare Workers, and sort the websites, each with its icon and domain, by visitors, views or name.

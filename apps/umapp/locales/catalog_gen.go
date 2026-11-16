@@ -159,6 +159,10 @@ const (
 	textNoDataYetAutoHint
 	textFromLink
 	textFromLinkHint
+	textOpenWindow
+	textOverview
+	textToggleSidebar
+	textResizeSidebar
 	numTexts
 )
 
@@ -255,6 +259,10 @@ var keyOfText = [numTexts]string{
 	"noDataYetAutoHint",
 	"fromLink",
 	"fromLinkHint",
+	"openWindow",
+	"overview",
+	"toggleSidebar",
+	"resizeSidebar",
 }
 
 // textsEn are the messages without arguments in en.
@@ -348,7 +356,11 @@ var textsEn = i18n.NewTexts(""+
 	"Umapp's server adds the tracker to this website's pages through Cloudflare, so there is nothing to embed."+
 	"Visit the website once."+
 	"Filled in from a link"+
-	"Check that the endpoint is your server, then connect.",
+	"Check that the endpoint is your server, then connect."+
+	"Open Window"+
+	"Overview"+
+	"Show or Hide the Sidebar"+
+	"Resize the Sidebar",
 	[]uint16{
 		5,
 		5,
@@ -440,6 +452,10 @@ var textsEn = i18n.NewTexts(""+
 		23,
 		21,
 		53,
+		11,
+		8,
+		24,
+		18,
 	})
 
 // textsZhHans are the messages without arguments in zh-Hans.
@@ -533,7 +549,11 @@ var textsZhHans = i18n.NewTexts(""+
 	"Umapp 服务端通过 Cloudflare 给这个网站的页面自动加上了跟踪代码，无需手动嵌入。"+
 	"访问一次网站即可。"+
 	"已从链接填入"+
-	"确认地址是你自己的服务器后再连接。",
+	"确认地址是你自己的服务器后再连接。"+
+	"打开窗口"+
+	"概览"+
+	"显示或隐藏边栏"+
+	"调整边栏宽度",
 	[]uint16{
 		5,
 		5,
@@ -625,6 +645,10 @@ var textsZhHans = i18n.NewTexts(""+
 		27,
 		18,
 		51,
+		12,
+		6,
+		21,
+		18,
 	})
 
 // texts returns the messages without arguments in lang, nil for a
@@ -1477,3 +1501,31 @@ func FromLinkHint(cx *core.Scope) string { return For(cx).FromLinkHint() }
 
 // FromLinkHint is the package's FromLinkHint in the language of msgs.
 func (msgs Messages) FromLinkHint() string { return msgs.text(textFromLinkHint) }
+
+// OpenWindow says "Open Window"
+// in the language the app shows under cx.
+func OpenWindow(cx *core.Scope) string { return For(cx).OpenWindow() }
+
+// OpenWindow is the package's OpenWindow in the language of msgs.
+func (msgs Messages) OpenWindow() string { return msgs.text(textOpenWindow) }
+
+// Overview says "Overview"
+// in the language the app shows under cx.
+func Overview(cx *core.Scope) string { return For(cx).Overview() }
+
+// Overview is the package's Overview in the language of msgs.
+func (msgs Messages) Overview() string { return msgs.text(textOverview) }
+
+// ToggleSidebar says "Show or Hide the Sidebar"
+// in the language the app shows under cx.
+func ToggleSidebar(cx *core.Scope) string { return For(cx).ToggleSidebar() }
+
+// ToggleSidebar is the package's ToggleSidebar in the language of msgs.
+func (msgs Messages) ToggleSidebar() string { return msgs.text(textToggleSidebar) }
+
+// ResizeSidebar says "Resize the Sidebar"
+// in the language the app shows under cx.
+func ResizeSidebar(cx *core.Scope) string { return For(cx).ResizeSidebar() }
+
+// ResizeSidebar is the package's ResizeSidebar in the language of msgs.
+func (msgs Messages) ResizeSidebar() string { return msgs.text(textResizeSidebar) }

@@ -114,3 +114,7 @@ autoTrackedHint: "Umapp 服务端通过 Cloudflare 给这个网站的页面自�
 noDataYetAutoHint: "访问一次网站即可。"
 fromLink: "已从链接填入"
 fromLinkHint: "确认地址是你自己的服务器后再连接。"
+openWindow: "打开窗口"
+overview: "概览"
+toggleSidebar: "显示或隐藏边栏"
+resizeSidebar: "调整边栏宽度"
