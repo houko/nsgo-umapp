@@ -96,6 +96,16 @@ describe("websites", () => {
     expect(left?.n).toBe(0);
   });
 
+  it("renames a website and changes its domain", async () => {
+    const id = await createSite("old.example.com");
+    const renamed = await call("POST", `/websites/${id}`, { body: { name: "Shop" } });
+    expect(renamed.body).toMatchObject({ id, name: "Shop", domain: "old.example.com" });
+    const moved = await call("POST", `/websites/${id}`, { body: { domain: "https://New.Example.com/x" } });
+    expect(moved.body).toMatchObject({ name: "Shop", domain: "new.example.com" });
+    expect((await call("POST", `/websites/${id}`, { body: { domain: "" } })).status).toBe(400);
+    expect((await call("POST", "/websites/missing", { body: { name: "x" } })).status).toBe(404);
+  });
+
   it("refuses a website without a domain", async () => {
     expect((await call("POST", "/websites", { body: { name: "x" } })).status).toBe(400);
   });

@@ -17,7 +17,7 @@ Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone
 | `package.json` | npm workspaces of the TypeScript apps. |
 | `apps/server/src/index.ts` | The server's routes: `/script.js`, `/api/send` and `/api`. |
 | `apps/server/src/collect.ts` | Events the tracker sends, without bots, keyed by hashed sessions and visits. |
-| `apps/server/src/api.ts` | The API key, websites, and Umami 3's stats, active, pageviews and metrics. |
+| `apps/server/src/api.ts` | The API key, websites to list, add, edit and delete, and Umami 3's stats, active, pageviews and metrics. |
 | `apps/server/src/zone.ts` | The hours and days of a time zone as UTC ranges, which D1 groups series by. |
 | `apps/server/src/tracker.ts` | The script websites embed, sending what Umami's does. |
 | `apps/server/migrations/` | D1's schema: websites and their events. |
@@ -25,7 +25,8 @@ Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone
 | `apps/umapp/view.go` | List, header, summary and sparklines. |
 | `apps/umapp/detail.go` | One website's tag filter, metrics, chart and breakdowns, with favicons and flags. |
 | `apps/umapp/settings.go` | Connect and menu bar options. |
-| `apps/umapp/add.go` | Adding a website, and its tracking code to copy. |
+| `apps/umapp/add.go` | Adding a website. |
+| `apps/umapp/manage.go` | A website's own page: its name and domain, tracking code, whether its visits arrive, and its deletion. |
 | `apps/umapp/screenshots_test.go` | The README's and the website's screenshots, on a made-up account, light and dark. |
 | `apps/umapp/locales/` | NSGo message catalogs, and the accessors the `nsgo` tool writes from them. |
 | `apps/umapp/assets/` | Icon sources. |
@@ -48,7 +49,7 @@ Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone
 
 **Web requests.** In a browser the app sends each request to the Worker's `/umami-api` on its own origin, the Umami URL in `X-Umami-URL`. Browsers refuse Umami's answers to another origin's requests that carry `Authorization`, as its CORS headers allow headers by `*`, which leaves `Authorization` out. The Worker forwards GETs and POSTs of JSON, only to the APIs `UMAMI_ENDPOINTS` lists.
 
-**Add a website.** The add page posts the name and domain to `/websites`, which Umami and Umapp's server both take, and shows the tag to embed: Umami Cloud's script for Umami Cloud, else the one served beside the endpoint's `/api`.
+**Manage websites.** Settings list the websites, and a website's page opens its own. Adding posts the name and domain to `/websites`, saving them to `/websites/:id`, and deleting, once confirmed, sends `DELETE /websites/:id`; Umami and Umapp's server take all three. The page shows the tag to embed, Umami Cloud's script for Umami Cloud, else the one served beside the endpoint's `/api`, and whether the website had views in the last 24 hours, which shows the tag at work. A new website opens on its page.
 
 **Server.** `/api/send` takes Umami's tracker events from any origin. A session is a hash of the website, address and browser with a salt that changes each month, and a visit a hash of the session and the hour, so no address is kept. The API answers in Umami 3's form; D1 keeps times in UTC, so series group by ranges `zone.ts` computes for the zone asked for.
 

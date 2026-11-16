@@ -110,6 +110,9 @@ func (cl *client) call(ctx context.Context, method, path string, q url.Values, i
 		}
 		return e
 	}
+	if out == nil {
+		return nil
+	}
 	if err := json.Unmarshal(body, out); err != nil {
 		return errors.New("The server's answer isn't Umami's.")
 	}
@@ -151,6 +154,21 @@ func (cl *client) addWebsite(ctx context.Context, name, domain string) (website,
 		err = errors.New("The server's answer isn't Umami's.")
 	}
 	return w, err
+}
+
+// updateWebsite renames website id and sets its domain, as Umami's POST /websites/:id and Umapp's server both take it.
+func (cl *client) updateWebsite(ctx context.Context, id, name, domain string) (website, error) {
+	var w website
+	err := cl.call(ctx, http.MethodPost, "/websites/"+url.PathEscape(id), nil, map[string]string{"name": name, "domain": domain}, &w)
+	if err == nil && w.ID == "" {
+		err = errors.New("The server's answer isn't Umami's.")
+	}
+	return w, err
+}
+
+// deleteWebsite deletes website id and its statistics.
+func (cl *client) deleteWebsite(ctx context.Context, id string) error {
+	return cl.call(ctx, http.MethodDelete, "/websites/"+url.PathEscape(id), nil, nil, nil)
 }
 
 // num decodes a count however the server writes it: a number, a string (as

@@ -23,6 +23,8 @@ type source interface {
 	series(ctx context.Context, id string, from, to time.Time, unit, tz, tag string) (views, visitors []point, err error)
 	metrics(ctx context.Context, id, kind string, from, to time.Time, limit int, tag string) ([]metric, error)
 	addWebsite(ctx context.Context, name, domain string) (website, error)
+	updateWebsite(ctx context.Context, id, name, domain string) (website, error)
+	deleteWebsite(ctx context.Context, id string) error
 }
 
 // span is a range of time the app shows, with its buckets.
@@ -164,6 +166,7 @@ const (
 	pageSite
 	pageSettings
 	pageAdd
+	pageManage
 )
 
 // app is the state of the panel. Everything in it is read and changed on
@@ -199,14 +202,27 @@ type app struct {
 	connecting   bool
 	connectErr   string
 
-	// The add page's fields until added, then the website it added.
+	// The add page's fields.
 	addName   string
 	addDomain string
 	adding    bool
 	addErr    string
-	added     *website
 	// copied is the ID of the website whose tracking code was copied last, while its page shows.
 	copied string
+
+	// The manage page's website, the page it returns to, and its fields until saved (manage.go).
+	managed    website
+	manageFrom page
+	siteName   string
+	siteDomain string
+	saving     bool
+	saveErr    string
+	deleting   bool
+	// The manage page's check that the website sends data: whether it ran, and the views of the last day it found.
+	checking   bool
+	checked    bool
+	checkViews float64
+	checkErr   string
 
 	// Whether the system starts the app at login, where it can. The
 	// system keeps the setting: readLogin asks it, setLogin changes it.
@@ -631,18 +647,23 @@ func (a *app) back() {
 	if a.page == pageSettings {
 		a.resetSettings()
 	}
+	if a.page == pageManage && (a.manageFrom == pageSettings || a.manageFrom == pageSite && a.site(a.open) != nil) {
+		a.page, a.copied = a.manageFrom, ""
+		a.invalidate()
+		return
+	}
 	a.page, a.selected, a.copied = pageSites, -1, ""
 	a.invalidate()
 }
 
 // startAdd shows the page that adds a website.
 func (a *app) startAdd() {
-	a.addName, a.addDomain, a.addErr, a.added, a.copied = "", "", "", nil, ""
+	a.addName, a.addDomain, a.addErr, a.copied = "", "", "", ""
 	a.page = pageAdd
 	a.invalidate()
 }
 
-// addWebsite adds the add page's website to the account, then shows its tracking code and loads the list again.
+// addWebsite adds the add page's website to the account, then shows its page, with the tracking code to embed, and loads the list again.
 func (a *app) addWebsite() {
 	domain := bareDomain(a.addDomain)
 	if a.adding || domain == "" || a.src == nil {
@@ -665,7 +686,7 @@ func (a *app) addWebsite() {
 				a.addErr = err.Error()
 				return
 			}
-			a.added = &w
+			a.openManage(w, pageSites)
 			a.refresh()
 		})
 	})

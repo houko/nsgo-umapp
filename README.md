@@ -38,7 +38,7 @@
 - Open one website for bounce rate, duration, a chart with counts under the pointer, and the top pages, referrers and countries with their icons and flags, all of them or of one tag.
 - Connect to Umami Cloud, a self-hosted Umami or Umapp's own server on Cloudflare Workers, and sort the websites, each with its icon and domain, by visitors, views or name.
 - Show the count of visitors online beside the icon, or hide it.
-- Add a website and copy the tracking code it embeds, from the list or a website's page.
+- Manage the websites from settings or a website's page: add, rename or delete one, copy the tracking code it embeds, and check that its visits arrive.
 - Open at login.
 - Show English or Simplified Chinese, following the system unless you choose one.
 - Update on its own on macOS, or from *Check for Updates…* in the right-click menu and settings.
