@@ -1176,3 +1176,60 @@ func TestClientCloudflareSites(t *testing.T) {
 		t.Errorf("without a token: %v", err)
 	}
 }
+
+func TestWindowSiteMenu(t *testing.T) {
+	f := newFake()
+	a := testApp(t, f)
+	a.refresh()
+	tt := buildWindow(t, a)
+	tt.Press("window-site-b")
+	tt.WaitUntil(5*time.Second, func() bool { return a.page == pageSite && a.loading == 0 })
+
+	tt.RightClick("window-site-menu-c")
+	for _, s := range []string{"Website settings", "Open website", "Open in Umami", "Delete website"} {
+		if len(tt.Query("role:menuitem "+s)) != 1 {
+			t.Errorf("no %q in the menu: %q", s, tt.Texts())
+		}
+	}
+	tt.Press("role:menuitem Website settings")
+	if a.page != pageManage || a.managed.ID != "c" {
+		t.Fatalf("page %v, managed %+v", a.page, a.managed)
+	}
+
+	// Deleting the website whose page is open shows the overview.
+	tt.Press("window-site-b")
+	tt.WaitUntil(5*time.Second, func() bool { return a.page == pageSite && a.open == "b" })
+	tt.OnAlert = func(core.AlertConfig) int { return 0 } // Cancel
+	tt.RightClick("window-site-menu-b")
+	tt.Press("role:menuitem Delete website")
+	if a.site("b") == nil {
+		t.Fatal("deleted though cancelled")
+	}
+	tt.OnAlert = func(core.AlertConfig) int { return 1 } // Delete
+	tt.RightClick("window-site-menu-b")
+	tt.Press("role:menuitem Delete website")
+	tt.WaitUntil(5*time.Second, func() bool { return !a.deleting && a.loading == 0 })
+	if a.site("b") != nil || a.page != pageSites || len(tt.Query("window-site-b")) != 0 {
+		t.Errorf("page %v, open %q, b %v", a.page, a.open, a.site("b"))
+	}
+}
+
+func TestWindowSiteMenuDeleteFails(t *testing.T) {
+	f := newFake()
+	f.ownServer = true
+	a := testApp(t, f)
+	a.refresh()
+	tt := buildWindow(t, a)
+	tt.WaitUntil(5*time.Second, func() bool { return a.loading == 0 })
+	tt.RightClick("window-site-menu-a")
+	if len(tt.Query("role:menuitem Open in Umami")) != 0 {
+		t.Error("Umapp's own server is offered Umami's dashboard")
+	}
+	f.err = &apiError{status: 500, msg: "D1 is down."}
+	tt.OnAlert = func(core.AlertConfig) int { return 1 }
+	tt.Press("role:menuitem Delete website")
+	tt.WaitUntil(5*time.Second, func() bool { return !a.deleting })
+	if a.page != pageManage || a.managed.ID != "a" || !tt.hasText("D1 is down.") {
+		t.Errorf("page %v, texts %q", a.page, tt.Texts())
+	}
+}

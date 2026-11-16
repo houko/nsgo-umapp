@@ -116,6 +116,57 @@ func (a *app) confirmDelete(cx *core.Scope) {
 	})
 }
 
+// confirmDeleteSite asks before deleting the website with id from where it is listed, then deletes it, showing the list if its page was open. When deleting fails, its settings show why, with the button to try again.
+func (a *app) confirmDeleteSite(cx *core.Scope, id string) {
+	s := a.site(id)
+	if s == nil {
+		return
+	}
+	tr := msgsOf(cx)
+	del := tr.Delete()
+	w := s.website
+	base.ShowAlertDialog(cx, base.AlertDialog{
+		Title:       tr.DeleteTitle(w.Name),
+		Description: tr.DeleteBody(),
+		Actions: []core.AlertAction{
+			{Label: tr.Cancel(), Role: core.AlertCancel},
+			{Label: del, Role: core.AlertDestructive},
+		},
+	}, func(label string) {
+		if label == del {
+			a.deleteSite(w)
+		}
+	})
+}
+
+func (a *app) deleteSite(w website) {
+	if a.deleting || a.src == nil {
+		return
+	}
+	src := a.src
+	a.deleting = true
+	a.invalidate()
+	a.spawn(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+		err := src.deleteWebsite(ctx, w.ID)
+		a.post(func() {
+			a.deleting = false
+			if err != nil {
+				a.openManage(w, a.page)
+				a.saveErr = err.Error()
+				return
+			}
+			a.sites = slices.DeleteFunc(a.sites, func(s *site) bool { return s.ID == w.ID })
+			if a.open == w.ID || a.page == pageManage && a.managed.ID == w.ID {
+				a.open = ""
+				a.showOverview()
+			}
+			a.refresh()
+		})
+	})
+}
+
 func (a *app) deleteWebsite() {
 	if a.deleting || a.src == nil {
 		return
