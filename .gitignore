@@ -2,3 +2,4 @@ dist/
 .nsgo/
 .DS_Store
 .wrangler/
+node_modules/

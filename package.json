@@ -1,0 +1,5 @@
+{
+  "name": "umapp-monorepo",
+  "private": true,
+  "workspaces": ["apps/server"]
+}
