@@ -63,9 +63,10 @@ On iPhone, the app opens straight to the panel. The key is kept in the login key
 
 ## Development
 
-The Go module and the packaging configuration, `nsgo.yaml`, live at the repository root. NSGo comes from a checkout beside this repository's, which `go.mod` replaces it with. Run Go and NSGo commands from the root:
+The repository holds each app under `apps/`. The Go module of the Umapp app and its packaging configuration, `nsgo.yaml`, live in `apps/umapp`. NSGo comes from a checkout beside this repository's, which `go.mod` replaces it with. Run Go and NSGo commands from `apps/umapp`:
 
 ```sh
+cd apps/umapp
 go tool nsgo dev
 go tool nsgo dev -target ios_simulator
 go tool nsgo dev -target ios
@@ -75,7 +76,7 @@ GOWORK=off go test ./...
 
 `go tool nsgo test -target macos -run TestScreenshots` and `-target ios_simulator` save the screenshots, with made-up data, under `.nsgo/test/screenshots/`.
 
-To release, set `nsgo.yaml`'s version and turn `CHANGELOG.md`'s `## [Unreleased]` into that version on `main`, then push the tag `vX.Y.Z`. The [release workflow](.github/workflows/release.yml) builds the macOS app, signs it for updates with the `NSGO_UPDATES_KEY` secret and publishes a GitHub release with that version's notes.
+To release, set `apps/umapp/nsgo.yaml`'s version and turn `CHANGELOG.md`'s `## [Unreleased]` into that version on `main`, then push the tag `vX.Y.Z`. The [release workflow](.github/workflows/release.yml) builds the macOS app, signs it for updates with the `NSGO_UPDATES_KEY` secret and publishes a GitHub release with that version's notes.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the layout and [AGENTS.md](AGENTS.md) for the working rules.
 

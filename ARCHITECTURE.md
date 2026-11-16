@@ -1,22 +1,22 @@
 # Umapp architecture
 
-Umapp is a native macOS menu bar application, built for Apple silicon, and an iPhone app, that reads an Umami account and shows its websites and visitors in a panel. It is a single Go module at the repository root, built with NSGo's `ui` components in its default theme.
+Umapp is a native macOS menu bar application, built for Apple silicon, and an iPhone app, that reads an Umami account and shows its websites and visitors in a panel. It is a single Go module in `apps/umapp`, built with NSGo's `ui` components in its default theme.
 
 ## Code map
 
 | Path | Responsibility |
 | --- | --- |
-| `go.mod`, `nsgo.yaml` | The only Go module and the packaging configuration; run Go and the `nsgo` tool at the root. |
-| `main.go` | Entry point; the tray icon, the panel or the iPhone's main view, saving config and the refresh tick. |
-| `model.go` | Panel state: websites, ranges, order, load and connect. |
-| `umami.go` | Umami HTTP client for Cloud and self-hosted servers. |
-| `config.go` | Config file and the macOS keychain. |
-| `view.go` | List, header, summary and sparklines. |
-| `detail.go` | One website's tag filter, metrics, chart and breakdowns, with favicons and flags. |
-| `settings.go` | Connect and menu bar options. |
-| `screenshots_test.go` | The README's screenshots, on a made-up account. |
-| `locales/` | NSGo message catalogs, and the accessors the `nsgo` tool writes from them. |
-| `assets/` | Icon sources. |
+| `apps/umapp/go.mod`, `apps/umapp/nsgo.yaml` | The only Go module and the packaging configuration; run Go and the `nsgo` tool in `apps/umapp`. |
+| `apps/umapp/main.go` | Entry point; the tray icon, the panel or the iPhone's main view, saving config and the refresh tick. |
+| `apps/umapp/model.go` | Panel state: websites, ranges, order, load and connect. |
+| `apps/umapp/umami.go` | Umami HTTP client for Cloud and self-hosted servers. |
+| `apps/umapp/config.go` | Config file and the macOS keychain. |
+| `apps/umapp/view.go` | List, header, summary and sparklines. |
+| `apps/umapp/detail.go` | One website's tag filter, metrics, chart and breakdowns, with favicons and flags. |
+| `apps/umapp/settings.go` | Connect and menu bar options. |
+| `apps/umapp/screenshots_test.go` | The README's screenshots, on a made-up account. |
+| `apps/umapp/locales/` | NSGo message catalogs, and the accessors the `nsgo` tool writes from them. |
+| `apps/umapp/assets/` | Icon sources. |
 | `.github/workflows/release.yml` | Builds, signs and publishes a release for each version tag. |
 
 ## Boundaries
