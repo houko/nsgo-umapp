@@ -7,4 +7,5 @@
     { "binding": "DB", "database_name": "umapp", "migrations_dir": "migrations" }
   ]
   // The API key Umapp connects with is the API_KEY secret, which `npm run deploy` makes the first time; for `npm run dev`, set it in .dev.vars.
+  // The server answers at its workers.dev address; to reach it at a custom domain as well, name that domain here, as in "vars": { "SERVER_HOSTS": "stats.example.com" }, since any other hostname is taken for a site whose route leads here.
 }

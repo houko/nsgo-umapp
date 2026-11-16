@@ -103,7 +103,11 @@ Anyone who can open the site can use it with their own key. Put [Cloudflare Acce
 git clone https://github.com/oneo-me/nsgo-umapp && cd nsgo-umapp && npm install && npm run deploy
 ```
 
-It signs in to Cloudflare if needed, asks which account when there are several (or reads `CLOUDFLARE_ACCOUNT_ID`), creates the D1 database, applies its migrations and deploys the Worker with a new API key. Then it prints the endpoint and the key to connect Umapp with; keep the key, which Cloudflare shows no one again. Run `npm run deploy` again to update: the database and the key stay.
+It signs in to Cloudflare if needed, asks which account when there are several (or reads `CLOUDFLARE_ACCOUNT_ID`), creates the D1 database, applies its migrations and deploys the Worker with a new API key. Then it prints the endpoint and the key to connect Umapp with; keep the key, which Cloudflare shows no one again. On a Mac it offers to connect Umapp itself.
+
+It also lists the websites of the same Cloudflare account and tracks the ones you choose with nothing to embed: their requests pass through the Worker, which adds the tracker to their pages and falls back to the website if it fails. Each request counts against the account's Workers requests, 100,000 a day on the free plan. Without a terminal, set `UMAPP_SITES` to their hostnames, `all` or `none`. A website elsewhere needs the tracking code Umapp shows when you add it.
+
+Run `npm run deploy` again to update or change the sites: the database, the key and the data stay. If you serve the Worker on a route of your own rather than its workers.dev address or a custom domain, add the hostname to `SERVER_HOSTS` in `apps/server/wrangler.jsonc`.
 
 For `npm run dev`, set `API_KEY` in `apps/server/.dev.vars`. `npm test` runs the tests in workerd with D1.
 

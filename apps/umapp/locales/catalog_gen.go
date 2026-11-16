@@ -154,6 +154,9 @@ const (
 	textDelete
 	textCancel
 	textDeleting
+	textAutoTracked
+	textAutoTrackedHint
+	textNoDataYetAutoHint
 	numTexts
 )
 
@@ -245,6 +248,9 @@ var keyOfText = [numTexts]string{
 	"delete",
 	"cancel",
 	"deleting",
+	"autoTracked",
+	"autoTrackedHint",
+	"noDataYetAutoHint",
 }
 
 // textsEn are the messages without arguments in en.
@@ -333,7 +339,10 @@ var textsEn = i18n.NewTexts(""+
 	"Its statistics go with it. This can't be undone."+
 	"Delete"+
 	"Cancel"+
-	"Deleting…",
+	"Deleting…"+
+	"Added automatically"+
+	"Umapp's server adds the tracker to this website's pages through Cloudflare, so there is nothing to embed."+
+	"Visit the website once.",
 	[]uint16{
 		5,
 		5,
@@ -420,6 +429,9 @@ var textsEn = i18n.NewTexts(""+
 		6,
 		6,
 		11,
+		19,
+		105,
+		23,
 	})
 
 // textsZhHans are the messages without arguments in zh-Hans.
@@ -508,7 +520,10 @@ var textsZhHans = i18n.NewTexts(""+
 	"它的统计数据会一并删除，且无法恢复。"+
 	"删除"+
 	"取消"+
-	"正在删除…",
+	"正在删除…"+
+	"已自动添加"+
+	"Umapp 服务端通过 Cloudflare 给这个网站的页面自动加上了跟踪代码，无需手动嵌入。"+
+	"访问一次网站即可。",
 	[]uint16{
 		5,
 		5,
@@ -595,6 +610,9 @@ var textsZhHans = i18n.NewTexts(""+
 		6,
 		6,
 		15,
+		15,
+		108,
+		27,
 	})
 
 // texts returns the messages without arguments in lang, nil for a
@@ -1412,3 +1430,24 @@ func Deleting(cx *core.Scope) string { return For(cx).Deleting() }
 
 // Deleting is the package's Deleting in the language of msgs.
 func (msgs Messages) Deleting() string { return msgs.text(textDeleting) }
+
+// AutoTracked says "Added automatically"
+// in the language the app shows under cx.
+func AutoTracked(cx *core.Scope) string { return For(cx).AutoTracked() }
+
+// AutoTracked is the package's AutoTracked in the language of msgs.
+func (msgs Messages) AutoTracked() string { return msgs.text(textAutoTracked) }
+
+// AutoTrackedHint says "Umapp's server adds the tracker to this website's pages through Cloudflare, so there is nothing to embed."
+// in the language the app shows under cx.
+func AutoTrackedHint(cx *core.Scope) string { return For(cx).AutoTrackedHint() }
+
+// AutoTrackedHint is the package's AutoTrackedHint in the language of msgs.
+func (msgs Messages) AutoTrackedHint() string { return msgs.text(textAutoTrackedHint) }
+
+// NoDataYetAutoHint says "Visit the website once."
+// in the language the app shows under cx.
+func NoDataYetAutoHint(cx *core.Scope) string { return For(cx).NoDataYetAutoHint() }
+
+// NoDataYetAutoHint is the package's NoDataYetAutoHint in the language of msgs.
+func (msgs Messages) NoDataYetAutoHint() string { return msgs.text(textNoDataYetAutoHint) }

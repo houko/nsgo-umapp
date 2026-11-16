@@ -3,6 +3,8 @@
 export interface Env {
   DB: D1Database;
   API_KEY?: string;
+  /** SERVER_HOSTS lists, separated by commas, the hostnames besides workers.dev that are this server's own, such as a custom domain: on any other hostname, a request that is no tracked site's goes on to the site's origin. */
+  SERVER_HOSTS?: string;
 }
 
 const MAX_BODY = 16 << 10;
@@ -46,8 +48,9 @@ async function hash(...parts: string[]): Promise<string> {
   return Array.from(digest.subarray(0, 16), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function bareHost(host: string): string {
-  return host.toLowerCase().replace(/^www\./, "");
+/** bareHost is host in lower case without a leading "www." or a trailing dot, as scripts/sites.mjs's normalizeDomain stores the domains of the sites routed here. */
+export function bareHost(host: string): string {
+  return host.toLowerCase().replace(/\.$/, "").replace(/^www\./, "");
 }
 
 function clip(v: unknown, n: number): string {

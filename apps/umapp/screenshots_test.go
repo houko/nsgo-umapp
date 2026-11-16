@@ -24,11 +24,11 @@ type demoSite struct {
 }
 
 var demoSites = []demoSite{
-	{website{"a", "NSGo", "nsgo.dev"}, 1840, 1.18, 0},
-	{website{"b", "China Holidays", "holidays.oneo.me"}, 1260, 0.91, 2},
-	{website{"c", "Blog", "oneo.me"}, 620, 1.07, 4},
-	{website{"d", "Awesome NSGo", "awesomensgo.dev"}, 410, 1.32, 1},
-	{website{"e", "Gallery", "gallery.nsgo.dev"}, 95, 0.84, 3},
+	{website{ID: "a", Name: "NSGo", Domain: "nsgo.dev"}, 1840, 1.18, 0},
+	{website{ID: "b", Name: "China Holidays", Domain: "holidays.oneo.me"}, 1260, 0.91, 2},
+	{website{ID: "c", Name: "Blog", Domain: "oneo.me"}, 620, 1.07, 4},
+	{website{ID: "d", Name: "Awesome NSGo", Domain: "awesomensgo.dev"}, 410, 1.32, 1},
+	{website{ID: "e", Name: "Gallery", Domain: "gallery.nsgo.dev"}, 95, 0.84, 3},
 }
 
 var demoTags = []metric{{"website", 0.72}, {"gallery-web", 0.2}, {"gallery-app", 0.08}}

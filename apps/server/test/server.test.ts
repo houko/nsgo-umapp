@@ -1,4 +1,4 @@
-import { env } from "cloudflare:test";
+import { createExecutionContext, env } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { api } from "../src/api";
 import { collect } from "../src/collect";
@@ -104,6 +104,14 @@ describe("websites", () => {
     expect(moved.body).toMatchObject({ name: "Shop", domain: "new.example.com" });
     expect((await call("POST", `/websites/${id}`, { body: { domain: "" } })).status).toBe(400);
     expect((await call("POST", "/websites/missing", { body: { name: "x" } })).status).toBe(404);
+  });
+
+  it("says which websites the Worker tracks through its routes", async () => {
+    const id = await createSite("auto.example.com");
+    expect((await call("GET", `/websites/${id}`)).body.autoTrack).toBe(false);
+    await env.DB.prepare("UPDATE website SET auto_track = 1 WHERE id = ?").bind(id).run();
+    expect((await call("GET", `/websites/${id}`)).body.autoTrack).toBe(true);
+    expect((await call("GET", "/websites")).body.data[0].autoTrack).toBe(true);
   });
 
   it("refuses a website without a domain", async () => {
@@ -237,7 +245,7 @@ describe("buckets", () => {
 
 describe("worker", () => {
   it("serves the tracker", async () => {
-    const res = await worker.fetch(new Request("https://stats.test/script.js"), env);
+    const res = await worker.fetch(new Request("https://umapp-server.someone.workers.dev/script.js"), env, createExecutionContext());
     expect(res.headers.get("Content-Type")).toContain("javascript");
     expect(await res.text()).toContain("/api/send");
   });
@@ -245,16 +253,17 @@ describe("worker", () => {
   it("routes /api/send and /api", async () => {
     const id = await createSite();
     const sent = await worker.fetch(
-      new Request("https://stats.test/api/send", {
+      new Request("https://umapp-server.someone.workers.dev/api/send", {
         method: "POST",
         headers: { "User-Agent": UA },
         body: JSON.stringify({ type: "event", payload: { website: id, hostname: "example.com", url: "/" } }),
       }),
       env,
+      createExecutionContext(),
     );
     expect(sent.status).toBe(200);
-    const list = await worker.fetch(new Request("https://stats.test/api/websites", { headers: KEY }), env);
+    const list = await worker.fetch(new Request("https://umapp-server.someone.workers.dev/api/websites", { headers: KEY }), env, createExecutionContext());
     expect(((await list.json()) as any).count).toBe(1);
-    expect((await worker.fetch(new Request("https://stats.test/other"), env)).status).toBe(404);
+    expect((await worker.fetch(new Request("https://umapp-server.someone.workers.dev/other"), env, createExecutionContext())).status).toBe(404);
   });
 });

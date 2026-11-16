@@ -15,13 +15,15 @@ Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone
 | `apps/umapp/platform_js.go` | Config in the site's storage, the browser's time zone, and requests through the Worker. |
 | `apps/umapp/wrangler.jsonc`, `apps/umapp/cloudflare/` | The web build's deployment: the build script and the Worker that serves it and forwards requests to Umami. |
 | `package.json` | npm workspaces of the TypeScript apps. |
-| `apps/server/src/index.ts` | The server's routes: `/script.js`, `/api/send` and `/api`. |
+| `apps/server/src/index.ts` | The server's routes on its own hostnames, `/script.js`, `/api/send` and `/api`, and every other hostname to its site. |
+| `apps/server/src/inject.ts` | A site whose route leads to the Worker: its website by hostname, `/_umapp/`, and the tracker added to its pages. |
 | `apps/server/src/collect.ts` | Events the tracker sends, without bots, keyed by hashed sessions and visits. |
 | `apps/server/src/api.ts` | The API key, websites to list, add, edit and delete, and Umami 3's stats, active, pageviews and metrics. |
 | `apps/server/src/zone.ts` | The hours and days of a time zone as UTC ranges, which D1 groups series by. |
 | `apps/server/src/tracker.ts` | The script websites embed, sending what Umami's does. |
-| `apps/server/migrations/` | D1's schema: websites and their events. |
-| `apps/server/scripts/deploy.mjs` | `npm run deploy`: the account, the D1 database and its migrations, and the Worker with an API key the first time. |
+| `apps/server/migrations/` | D1's schema: websites, whether the Worker tracks each through its routes, and their events. |
+| `apps/server/scripts/deploy.mjs` | `npm run deploy`: the account, the D1 database and its migrations, the Worker with an API key the first time, the account's sites to track, and Umapp on this Mac. |
+| `apps/server/scripts/sites.mjs` | What `deploy.mjs` decides without I/O: zones, routes, the sites chosen, and the routes and websites that changes. |
 | `apps/umapp/view.go` | List, header, summary and sparklines. |
 | `apps/umapp/detail.go` | One website's tag filter, metrics, chart and breakdowns, with favicons and flags. |
 | `apps/umapp/settings.go` | Connect and menu bar options. |
@@ -52,6 +54,8 @@ Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone
 **Manage websites.** Settings list the websites, and a website's page opens its own. Adding posts the name and domain to `/websites`, saving them to `/websites/:id`, and deleting, once confirmed, sends `DELETE /websites/:id`; Umami and Umapp's server take all three. The page shows the tag to embed, Umami Cloud's script for Umami Cloud, else the one served beside the endpoint's `/api`, and whether the website had views in the last 24 hours, which shows the tag at work. A new website opens on its page.
 
 **Server.** `/api/send` takes Umami's tracker events from any origin. A session is a hash of the website, address and browser with a salt that changes each month, and a visit a hash of the session and the hour, so no address is kept. The API answers in Umami 3's form; D1 keeps times in UTC, so series group by ranges `zone.ts` computes for the zone asked for.
+
+**Sites of the account.** `npm run deploy` lists the account's active zones, with Wrangler's login, and the user chooses which to track. For each it makes a website and routes `<host>/*`, plus `www.<host>/*` for a zone's apex, to the Worker, and never touches another Worker's routes. The Worker answers Umapp only on its own hostnames: `*.workers.dev`, its custom domains, which the script passes as `SERVER_HOSTS`, and `localhost`. Any other hostname is a site: if its website exists, the Worker serves the tracker and its events under the site's own `/_umapp/`, forwards everything else to the origin, and adds `<script src="/_umapp/script.js">` to the end of `<head>` of its HTML pages, unless one is there; otherwise the request goes to the origin untouched. Failures fall back to the origin. A site counts as tracked while it has both its routes and its website, so one deleted in Umapp loses its routes at the next deploy. The script marks the websites it tracks (`auto_track`), and Umapp shows them as added automatically instead of offering the tracker to embed.
 
 **Tags.** A website's page lists the tags of its events in the range. Choosing one loads that tag's totals, series and breakdowns, while the list keeps every event's; opening a website starts on all of them.
 

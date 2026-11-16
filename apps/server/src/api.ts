@@ -144,24 +144,32 @@ async function metrics(env: Env, id: string, q: URLSearchParams) {
   return results;
 }
 
+/** Website is a website in Umami's form, with autoTrack beside it: whether the Worker tracks it through its Cloudflare routes, so it needs no tracker embedded. */
 interface Website {
   id: string;
   name: string;
   domain: string;
   createdAt: string;
+  autoTrack: boolean;
 }
 
-const websiteColumns = "id, name, domain, strftime('%Y-%m-%dT%H:%M:%fZ', created_at / 1000.0, 'unixepoch') AS createdAt";
+type WebsiteRow = Omit<Website, "autoTrack"> & { autoTrack: number };
+
+const websiteColumns = "id, name, domain, strftime('%Y-%m-%dT%H:%M:%fZ', created_at / 1000.0, 'unixepoch') AS createdAt, auto_track AS autoTrack";
+
+function fromRow(row: WebsiteRow): Website {
+  return { ...row, autoTrack: row.autoTrack === 1 };
+}
 
 async function website(env: Env, id: string): Promise<Website> {
-  const row = await env.DB.prepare(`SELECT ${websiteColumns} FROM website WHERE id = ?`).bind(id).first<Website>();
+  const row = await env.DB.prepare(`SELECT ${websiteColumns} FROM website WHERE id = ?`).bind(id).first<WebsiteRow>();
   if (!row) throw new HTTPError(404, "No such website.");
-  return row;
+  return fromRow(row);
 }
 
 async function websites(env: Env) {
-  const { results } = await env.DB.prepare(`SELECT ${websiteColumns} FROM website ORDER BY name, id`).all<Website>();
-  return { data: results, count: results.length, page: 1, pageSize: results.length };
+  const { results } = await env.DB.prepare(`SELECT ${websiteColumns} FROM website ORDER BY name, id`).all<WebsiteRow>();
+  return { data: results.map(fromRow), count: results.length, page: 1, pageSize: results.length };
 }
 
 /** domainOf is the host of what the user typed, an address or a domain. */
