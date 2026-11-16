@@ -17,6 +17,8 @@ export const site = {
   readmeZh: `${repo}/blob/main/README.zh-CN.md`,
   development: `${repo}#development`,
   developmentZh: `${repo}/blob/main/README.zh-CN.md#开发`,
+  server: `${repo}#server`,
+  serverZh: `${repo}/blob/main/README.zh-CN.md#服务端`,
   releases: `${repo}/releases/latest`,
   changelog: `${repo}/blob/main/CHANGELOG.md`,
   license: `${repo}/blob/main/LICENSE`,

@@ -86,7 +86,7 @@ go tool nsgo build
 GOWORK=off go test ./...
 ```
 
-`go tool nsgo test -target macos -run TestScreenshots` and `-target ios_simulator` save the screenshots of the panel, and on macOS of the window too, with made-up data and in both appearances, under `.nsgo/test/screenshots/`; `bun run screenshots` in `apps/website` takes both and copies them to `screenshots/`.
+`go tool nsgo test -target macos -run TestScreenshots` and `-target ios_simulator` save the screenshots of the panel, and on macOS of the window too, with made-up data and in both appearances, under `.nsgo/test/screenshots/`; `bun run screenshots` in `apps/website` takes both and copies them to `screenshots/`; with `IOS_TARGET=ios DEVICE=<iPhone>` it takes the iPhone's on a connected iPhone (`-target ios`).
 
 The [website](https://oneo-me.github.io/nsgo-umapp/) is in `apps/website`, built with Astro and Bun outside the npm workspaces: from there, `bun install`, then `bun run dev` serves it at <http://localhost:4321/> and `bun run build` checks and builds it. Pushes to `main` that touch it publish it to GitHub Pages.
 
