@@ -874,3 +874,32 @@ func TestClientUpdateDeleteWebsite(t *testing.T) {
 		t.Errorf("calls %q", calls)
 	}
 }
+
+func TestManageAutoTrackedWebsite(t *testing.T) {
+	f := newFake()
+	f.sites[0].AutoTrack = true
+	f.scale["a"] = 0
+	a := testApp(t, f)
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("settings")
+	tt.Press("manage-a")
+	tt.WaitUntil(5*time.Second, func() bool { return a.checked })
+	if !tt.hasText("Added automatically") || tt.hasText("<script") {
+		t.Errorf("texts %q", tt.Texts())
+	}
+	if !tt.hasText("Visit the website once.") {
+		t.Errorf("no hint for an automatic website in %q", tt.Texts())
+	}
+}
+
+func TestWebsiteAutoTrackDecodes(t *testing.T) {
+	var w website
+	if err := json.Unmarshal([]byte(`{"id":"a","name":"A","domain":"a.dev","autoTrack":true}`), &w); err != nil || !w.AutoTrack {
+		t.Errorf("%+v, %v", w, err)
+	}
+	var umami website
+	if err := json.Unmarshal([]byte(`{"id":"b","name":"B","domain":"b.dev"}`), &umami); err != nil || umami.AutoTrack {
+		t.Errorf("Umami's website reads as automatic: %+v, %v", umami, err)
+	}
+}

@@ -103,7 +103,11 @@ wrangler deploy
 git clone https://github.com/oneo-me/nsgo-umapp && cd nsgo-umapp && npm install && npm run deploy
 ```
 
-它会在需要时登录 Cloudflare，有多个账号时询问部署到哪个（或读取 `CLOUDFLARE_ACCOUNT_ID`），创建 D1 数据库、执行迁移，并用新生成的 API 密钥部署 Worker。最后打印用来连接 Umapp 的地址和密钥；请保存好密钥，Cloudflare 之后不会再显示它。再次运行 `npm run deploy` 即可更新，数据库和密钥都会保留。
+它会在需要时登录 Cloudflare，有多个账号时询问部署到哪个（或读取 `CLOUDFLARE_ACCOUNT_ID`），创建 D1 数据库、执行迁移，并用新生成的 API 密钥部署 Worker。最后打印用来连接 Umapp 的地址和密钥；请保存好密钥，Cloudflare 之后不会再显示它。在 Mac 上它还会提议直接帮你连接 Umapp。
+
+它还会列出同一个 Cloudflare 账号下的网站，你选中的网站无需嵌入任何代码就会被统计：它们的请求会经过 Worker，由 Worker 给页面加上跟踪代码，Worker 出错时请求照常到达网站。每个请求都计入账号的 Workers 请求数，免费版每天 10 万次。没有终端时，把 `UMAPP_SITES` 设为它们的主机名、`all` 或 `none`。不在这个账号里的网站，仍需嵌入添加网站时 Umapp 给出的跟踪代码。
+
+再次运行 `npm run deploy` 即可更新或修改要统计的网站，数据库、密钥和数据都会保留。如果你把 Worker 放在自己配置的路由上，而不是它的 workers.dev 地址或自定义域名，请把这个主机名加到 `apps/server/wrangler.jsonc` 的 `SERVER_HOSTS` 中。
 
 使用 `npm run dev` 时，在 `apps/server/.dev.vars` 中设置 `API_KEY`。`npm test` 会在 workerd 和 D1 中运行测试。
 

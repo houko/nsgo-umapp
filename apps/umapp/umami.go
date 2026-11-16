@@ -124,6 +124,8 @@ type website struct {
 	ID     string `json:"id"`
 	Name   string `json:"name"`
 	Domain string `json:"domain"`
+	// AutoTrack is set by Umapp's server for a website it tracks through its Cloudflare routes, which needs no tracker embedded; Umami never sets it.
+	AutoTrack bool `json:"autoTrack,omitempty"`
 }
 
 // websites returns every website the key can see, its teams' included.

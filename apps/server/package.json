@@ -6,7 +6,8 @@
     "dev": "wrangler d1 migrations apply umapp --local && wrangler dev",
     "deploy": "node scripts/deploy.mjs",
     "check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --dir test && npm run test:scripts",
+    "test:scripts": "node --test \"scripts/*.test.mjs\""
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.8.2",

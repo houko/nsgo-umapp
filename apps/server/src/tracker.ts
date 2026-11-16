@@ -76,3 +76,14 @@ export const trackerScript = `(() => {
   else addEventListener("load", () => track(), { once: true });
 })();
 `;
+
+/** trackerResponse serves the script, cached for a day and to any origin. */
+export function trackerResponse(): Response {
+  return new Response(trackerScript, {
+    headers: {
+      "Content-Type": "text/javascript; charset=utf-8",
+      "Cache-Control": "public, max-age=86400",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
+}

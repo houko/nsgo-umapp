@@ -219,6 +219,11 @@ func (a *app) siteStatus(cx *core.Scope) core.Node {
 func (a *app) codeSection(cx *core.Scope, id string) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
+	if a.managed.AutoTrack {
+		return ui.FormSection{Title: tr.TrackingCode(), Footer: tr.AutoTrackedHint(), Children: []core.Node{
+			ui.FormRow{Icon: lucide.CircleCheck, Title: tr.AutoTracked(), TestID: "auto-tracked"},
+		}}
+	}
 	code := core.Text{Content: trackingCode(a.cfg.Endpoint, id), Selectable: core.SelectableOn, TestID: "tracking-code",
 		Style:     core.Style{FontFamily: ui.Mono, FontSize: 11, LineHeight: 16, Padding: core.All(inset)},
 		StyleFunc: ui.Colored(colors.Text)}
@@ -253,7 +258,11 @@ func (a *app) installSection(cx *core.Scope) core.Node {
 	case a.checked && a.checkViews > 0:
 		status = ui.FormRow{Icon: lucide.CircleCheck, Title: tr.Receiving(), Detail: tr.ViewsLastDay(int(a.checkViews)), TestID: "install-status"}
 	default:
-		status = ui.FormRow{Icon: lucide.CircleDashed, Title: tr.NoDataYet(), Detail: tr.NoDataYetHint(), TestID: "install-status"}
+		hint := tr.NoDataYetHint()
+		if a.managed.AutoTrack {
+			hint = tr.NoDataYetAutoHint()
+		}
+		status = ui.FormRow{Icon: lucide.CircleDashed, Title: tr.NoDataYet(), Detail: hint, TestID: "install-status"}
 	}
 	return ui.FormSection{Title: tr.Installation(), Children: []core.Node{
 		status,
