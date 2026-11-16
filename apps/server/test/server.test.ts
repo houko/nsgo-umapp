@@ -67,6 +67,11 @@ describe("auth", () => {
     expect((await call("GET", "/websites", { headers: { Authorization: "", "x-umami-api-key": "test-key" } })).status).toBe(200);
   });
 
+  it("says it is Umapp's own server", async () => {
+    const res = await api(new Request("https://stats.test/api/websites", { headers: KEY }), env, "/websites");
+    expect(res.headers.get("X-Umapp-Server")).toBe("1");
+  });
+
   it("refuses a wrong or missing key", async () => {
     expect((await call("GET", "/websites", { headers: { Authorization: "Bearer nope" } })).status).toBe(401);
     expect((await call("GET", "/websites", { headers: { Authorization: "" } })).status).toBe(401);

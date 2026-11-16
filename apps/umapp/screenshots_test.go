@@ -134,6 +134,8 @@ func (demo) updateWebsite(context.Context, string, string, string) (website, err
 	return website{}, errors.New("the demo changes no websites")
 }
 
+func (demo) hasDashboard() bool { return true }
+
 func (demo) deleteWebsite(context.Context, string) error {
 	return errors.New("the demo deletes no websites")
 }

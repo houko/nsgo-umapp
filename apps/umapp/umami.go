@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -23,7 +24,12 @@ type client struct {
 	endpoint string // without a trailing slash, as https://api.umami.is/v1
 	key      string
 	http     *http.Client
+	// ownServer is set once an answer says it comes from Umapp's own server, which has no Umami dashboard.
+	ownServer atomic.Bool
 }
+
+// hasDashboard reports whether the server has Umami's own interface to open a website in: false once it answered as Umapp's server.
+func (cl *client) hasDashboard() bool { return !cl.ownServer.Load() }
 
 func newClient(endpoint, key string) *client {
 	return &client{
@@ -84,6 +90,9 @@ func (cl *client) call(ctx context.Context, method, path string, q url.Values, i
 	req.Header.Set("Authorization", "Bearer "+cl.key)
 	req.Header.Set("x-umami-api-key", cl.key)
 	res, err := cl.http.Do(req)
+	if err == nil && res.Header.Get("X-Umapp-Server") != "" {
+		cl.ownServer.Store(true)
+	}
 	if err != nil {
 		var ue *url.Error
 		if errors.As(err, &ue) && ue.Timeout() {

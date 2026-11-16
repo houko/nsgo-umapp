@@ -25,6 +25,8 @@ type source interface {
 	addWebsite(ctx context.Context, name, domain string) (website, error)
 	updateWebsite(ctx context.Context, id, name, domain string) (website, error)
 	deleteWebsite(ctx context.Context, id string) error
+	// hasDashboard reports whether the server has Umami's interface to open a website in.
+	hasDashboard() bool
 }
 
 // span is a range of time the app shows, with its buckets.

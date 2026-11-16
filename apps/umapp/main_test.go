@@ -26,6 +26,8 @@ type fake struct {
 	calls  int
 	mu     sync.Mutex
 	keyErr bool
+	// ownServer makes the fake answer as Umapp's own server.
+	ownServer bool
 }
 
 func newFake() *fake {
@@ -154,6 +156,8 @@ func (f *fake) deleteWebsite(_ context.Context, id string) error {
 	f.sites = slices.DeleteFunc(f.sites, func(w website) bool { return w.ID == id })
 	return nil
 }
+
+func (f *fake) hasDashboard() bool { return !f.ownServer }
 
 func testApp(t *testing.T, f *fake) *app {
 	t.Helper()
@@ -943,5 +947,48 @@ func TestOpenLinkRefusesOthers(t *testing.T) {
 	}
 	if a.fromLink || a.page != pageSites {
 		t.Errorf("a refused link changed the state: page %v", a.page)
+	}
+}
+
+func TestNoDashboardOnOwnServer(t *testing.T) {
+	f := newFake()
+	a := testApp(t, f)
+	a.refresh()
+	tt := build(t, a)
+	a.openSite("a")
+	tt.Settle()
+	if len(tt.Query("open")) == 0 {
+		t.Fatalf("Umami's dashboard isn't offered")
+	}
+	f.ownServer = true
+	a.back()
+	tt.Settle()
+	a.openSite("b")
+	tt.Settle()
+	if len(tt.Query("open")) != 0 {
+		t.Error("Umapp's own server is offered a dashboard")
+	}
+}
+
+func TestClientKnowsOwnServer(t *testing.T) {
+	own := true
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if own {
+			w.Header().Set("X-Umapp-Server", "1")
+		}
+		w.Write([]byte(`{"data":[],"count":0}`))
+	}))
+	defer srv.Close()
+	cl := newClient(srv.URL+"/api", "k")
+	if !cl.hasDashboard() {
+		t.Error("a client that heard nothing yet has no dashboard")
+	}
+	if _, err := cl.websites(context.Background()); err != nil || cl.hasDashboard() {
+		t.Errorf("own server not recognized: %v", err)
+	}
+	own = false
+	umami := newClient(srv.URL+"/api", "k")
+	if _, err := umami.websites(context.Background()); err != nil || !umami.hasDashboard() {
+		t.Errorf("Umami taken for Umapp's server: %v", err)
 	}
 }

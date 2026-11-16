@@ -39,6 +39,8 @@ export default {
       headers: {
         "Content-Type": res.headers.get("Content-Type") ?? "application/json",
         "Cache-Control": "no-store",
+        // Umapp's own server says it is one, so the app offers no Umami dashboard for it.
+        ...(res.headers.has("X-Umapp-Server") ? { "X-Umapp-Server": res.headers.get("X-Umapp-Server") } : {}),
       },
     });
   },
