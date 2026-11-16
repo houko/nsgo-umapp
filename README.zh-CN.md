@@ -18,7 +18,11 @@
 </p>
 
 <p align="center">
-  一个原生菜单栏应用和 iPhone 应用，显示 <a href="https://umami.is">Umami</a> 账户下的网站和访客。基于 <a href="https://github.com/nsgo-dev/nsgo">NSGo</a> 构建。
+  一个原生应用，在 macOS 上有菜单栏和窗口两种形态，也能在 iPhone 上运行，显示你的网站和访客：数据来自 <a href="https://umami.is">Umami</a> 账户，或来自 Umapp 自己的服务端，一条命令即可部署到 Cloudflare。基于 <a href="https://github.com/nsgo-dev/nsgo">NSGo</a> 构建。
+</p>
+
+<p align="center">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="screenshots/macos-window-zh-Hans-dark.png"><img src="screenshots/macos-window-zh-Hans.png" alt="Umapp 在 macOS 上的窗口：侧边栏列出网站，旁边是网站页面" width="736"></picture>
 </p>
 
 <p align="center">
@@ -37,7 +41,8 @@
 - 在 macOS 上打开窗口：左侧边栏列出网站，右侧以宽布局显示每个网站的页面。
 - 按 24 小时、7 天、30 天或 90 天显示访客/浏览和趋势，并与上一段对比。
 - 打开单个网站，查看跳出率、访问时长、指针悬停显示数量的图表，以及带图标和国旗的热门页面、来源和国家/地区，可看全部或只看某个标签。
-- 连接 Umami Cloud、自建 Umami，或部署在 Cloudflare Workers 上的 Umapp 自有服务端，并按访客、浏览或名称为网站排序，每个网站都附上图标和域名。
+- 连接 Umami Cloud、自建 Umami，或 Umapp 自有服务端，并按访客、浏览或名称为网站排序，每个网站都附上图标和域名。
+- 不用 Umami 也能统计访客：用 `npm run deploy` 把 Umapp 自有服务端部署到 Cloudflare，同一个 Cloudflare 账号下的网站无需嵌入代码即可统计，并会帮你连接 Mac 上的 Umapp。
 - 在图标旁显示在线访客数，也可以关掉。
 - 在设置或网站页面中管理网站：添加、改名或删除，复制要嵌入的跟踪代码，并检查访问数据是否已经到达。
 - 开机时启动。
@@ -58,10 +63,13 @@ curl -fsSL https://github.com/oneo-me/nsgo-umapp/releases/latest/download/instal
 
 ## 快速开始
 
-1. 启动 Umapp。它会在菜单栏添加一个图标。
-2. 打开面板，设置 API 地址（默认为 Umami Cloud）和在 *设置 → API 密钥* 中创建的密钥。
-3. 浏览网站、切换时间范围，或打开某个网站查看明细。
-4. 右键点击图标可以退出。
+1. 启动 Umapp。它会在菜单栏添加一个图标，点击打开面板。要打开窗口，可以在图标的右键菜单中选择 *打开窗口*，在面板中点 ⤢ 或按 ⌘0，或者再次打开 Umapp；窗口打开时它会显示在程序坞中。
+2. 在设置中连接服务器：
+   - Umami Cloud 或自建 Umami：设置 API 地址（默认为 Umami Cloud）和在 Umami 的 *设置 → API 密钥* 中创建的密钥。
+   - Umapp 自有服务端：按[服务端](#服务端)一节运行 `npm run deploy`。在你的 Mac 上它会打开 Umapp 并填好地址和密钥，确认后点 *连接*。
+3. 用 + 添加网站，把它给出的跟踪代码放到网站的页面上。服务端所在 Cloudflare 账号下的网站无需代码，部署时选中即可。
+4. 浏览网站、切换时间范围，或打开某个网站查看明细。
+5. 右键点击图标可以退出。
 
 在 iPhone 和浏览器中，应用直接打开面板。密钥在 macOS 上保存在登录钥匙串中，在 iPhone 上保存在应用自己的存储中，在浏览器中保存在该站点的本地存储中。
 
@@ -78,7 +86,7 @@ go tool nsgo build
 GOWORK=off go test ./...
 ```
 
-`go tool nsgo test -target macos -run TestScreenshots` 和 `-target ios_simulator` 会用虚构的数据，以浅色和深色两种外观把截图保存到 `.nsgo/test/screenshots/`；在 `apps/website` 中运行 `bun run screenshots` 会同时拍摄两者并复制到 `screenshots/`。
+`go tool nsgo test -target macos -run TestScreenshots` 和 `-target ios_simulator` 会用虚构的数据，以浅色和深色两种外观把面板截图（在 macOS 上还有窗口截图）保存到 `.nsgo/test/screenshots/`；在 `apps/website` 中运行 `bun run screenshots` 会同时拍摄两者并复制到 `screenshots/`。
 
 [官网](https://oneo-me.github.io/nsgo-umapp/zh/)在 `apps/website` 中，用 Astro 和 Bun 构建，不属于 npm workspaces：在该目录先 `bun install`，再用 `bun run dev` 在 <http://localhost:4321/> 预览，用 `bun run build` 检查并构建。推送到 `main` 且改动了官网时，会发布到 GitHub Pages。
 

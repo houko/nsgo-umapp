@@ -18,7 +18,11 @@
 </p>
 
 <p align="center">
-  A native menu bar app, and an iPhone app, that shows the websites of an <a href="https://umami.is">Umami</a> account and their visitors. It is built with <a href="https://github.com/nsgo-dev/nsgo">NSGo</a>.
+  A native app for macOS, in the menu bar and a window, and for iPhone, that shows your websites and their visitors: from an <a href="https://umami.is">Umami</a> account, or from Umapp's own server, which you deploy to Cloudflare with one command. It is built with <a href="https://github.com/nsgo-dev/nsgo">NSGo</a>.
+</p>
+
+<p align="center">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="screenshots/macos-window-en-dark.png"><img src="screenshots/macos-window-en.png" alt="Umapp's window on macOS: the websites in a sidebar beside one's page" width="736"></picture>
 </p>
 
 <p align="center">
@@ -37,7 +41,8 @@
 - Open a window on macOS with the websites in a sidebar beside each one's page, laid out wide.
 - Show visitors / views and a sparkline for 24 hours, 7 days, 30 days or 90 days, compared with the range before.
 - Open one website for bounce rate, duration, a chart with counts under the pointer, and the top pages, referrers and countries with their icons and flags, all of them or of one tag.
-- Connect to Umami Cloud, a self-hosted Umami or Umapp's own server on Cloudflare Workers, and sort the websites, each with its icon and domain, by visitors, views or name.
+- Connect to Umami Cloud, a self-hosted Umami or Umapp's own server, and sort the websites, each with its icon and domain, by visitors, views or name.
+- Count visitors without Umami: deploy Umapp's own server to Cloudflare with `npm run deploy`, which tracks the websites of the same Cloudflare account with nothing to embed and connects Umapp on your Mac.
 - Show the count of visitors online beside the icon, or hide it.
 - Manage the websites from settings or a website's page: add, rename or delete one, copy the tracking code it embeds, and check that its visits arrive.
 - Open at login.
@@ -58,10 +63,13 @@ Or download the disk image from [Releases](https://github.com/oneo-me/nsgo-umapp
 
 ## Getting started
 
-1. Start Umapp. It adds an icon to the menu bar.
-2. Open the panel and set the API endpoint (Umami Cloud by default) and an API key from *Settings → API keys*.
-3. Browse the websites, change the range, or open one for its breakdown.
-4. Right-click the icon to quit.
+1. Start Umapp. It adds an icon to the menu bar, which opens the panel. For the window, choose *Open Window* in the icon's right-click menu, press ⤢ in the panel or ⌘0, or open Umapp again; it shows in the Dock while the window is open.
+2. Connect a server in settings:
+   - Umami Cloud or an Umami of your own: set the API endpoint (Umami Cloud by default) and an API key from Umami's *Settings → API keys*.
+   - Umapp's own server: run `npm run deploy`, as [Server](#server) says. On your Mac it opens Umapp with the endpoint and key filled in; check them and press *Connect*.
+3. Add a website with + and put the tracking code it shows on the website's pages. Websites in the server's own Cloudflare account need no code: choose them when you deploy.
+4. Browse the websites, change the range, or open one for its breakdown.
+5. Right-click the icon to quit.
 
 On iPhone and in a browser, the app opens straight to the panel. The key is kept in the login keychain on macOS, in the app's own storage on iPhone, and in the site's local storage in a browser.
 
@@ -78,7 +86,7 @@ go tool nsgo build
 GOWORK=off go test ./...
 ```
 
-`go tool nsgo test -target macos -run TestScreenshots` and `-target ios_simulator` save the screenshots, with made-up data and in both appearances, under `.nsgo/test/screenshots/`; `bun run screenshots` in `apps/website` takes both and copies them to `screenshots/`.
+`go tool nsgo test -target macos -run TestScreenshots` and `-target ios_simulator` save the screenshots of the panel, and on macOS of the window too, with made-up data and in both appearances, under `.nsgo/test/screenshots/`; `bun run screenshots` in `apps/website` takes both and copies them to `screenshots/`.
 
 The [website](https://oneo-me.github.io/nsgo-umapp/) is in `apps/website`, built with Astro and Bun outside the npm workspaces: from there, `bun install`, then `bun run dev` serves it at <http://localhost:4321/> and `bun run build` checks and builds it. Pushes to `main` that touch it publish it to GitHub Pages.
 

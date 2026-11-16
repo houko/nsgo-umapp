@@ -149,6 +149,37 @@ func TestScreenshotsDark(t *testing.T)   { screenshots(t, "en", core.AppearanceD
 func TestScreenshotsZh(t *testing.T)     { screenshots(t, "zh-Hans", core.AppearanceLight) }
 func TestScreenshotsZhDark(t *testing.T) { screenshots(t, "zh-Hans", core.AppearanceDark) }
 
+// TestScreenshotsWindow and the others save the main window's, on macOS alone, which has it.
+func TestScreenshotsWindow(t *testing.T)       { windowScreenshot(t, "en", core.AppearanceLight) }
+func TestScreenshotsWindowDark(t *testing.T)   { windowScreenshot(t, "en", core.AppearanceDark) }
+func TestScreenshotsWindowZh(t *testing.T)     { windowScreenshot(t, "zh-Hans", core.AppearanceLight) }
+func TestScreenshotsWindowZhDark(t *testing.T) { windowScreenshot(t, "zh-Hans", core.AppearanceDark) }
+
+func windowScreenshot(t *testing.T, locale string, appearance core.Appearance) {
+	if nsgotest.Target() != "macos" {
+		t.Skip("only macOS has the window")
+	}
+	a := newApp(config{Endpoint: cloudEndpoint, Key: "api_demo", Range: 1}, demo{})
+	a.openWindow = func() {}
+	a.refresh()
+	tt := nsgotest.Start(t, func(cx *core.Scope) core.Node {
+		cx.SetLocale(locale)
+		cx.SetAppearance(appearance)
+		a.attach(cx)
+		return a.windowRoot(cx)
+	}, nsgotest.Size(windowWidth, windowHeight))
+	tt.WaitUntil(5*time.Second, func() bool { return a.loading == 0 })
+	tt.Press("window-site-a")
+	tt.WaitUntil(5*time.Second, func() bool { return a.loading == 0 && a.site("a").livePages != nil })
+	// Let the icons and flags load: the sidebar's and the page's, more than the panel shows.
+	time.Sleep(8 * time.Second)
+	suffix := ""
+	if appearance == core.AppearanceDark {
+		suffix = "-dark"
+	}
+	tt.Screenshot(locale + "/window" + suffix)
+}
+
 func screenshots(t *testing.T, locale string, appearance core.Appearance) {
 	a := newApp(config{Endpoint: cloudEndpoint, Key: "api_demo", Range: 1}, demo{})
 	size := nsgotest.Size(panelWidth, panelHeight)
