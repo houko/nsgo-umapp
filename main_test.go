@@ -363,11 +363,33 @@ func TestPhone(t *testing.T) {
 		t.Fatalf("texts %q", tt.Texts())
 	}
 	tt.Press("settings")
-	if tt.hasText("Visitors online") || tt.hasText("General") {
+	if tt.hasText("Visitors online") || tt.hasText("Check for Updates…") {
 		t.Errorf("settings offer the menu bar's options: %q", tt.Texts())
 	}
-	if !tt.hasText("Disconnect") {
+	if !tt.hasText("Language") || !tt.hasText("Disconnect") {
 		t.Errorf("texts %q", tt.Texts())
+	}
+}
+
+func TestLanguage(t *testing.T) {
+	a := testApp(t, newFake())
+	var saved config
+	a.changed = func(cfg config) { saved = cfg }
+	a.refresh()
+	tt := &tester{App: nsgotest.Start(t, func(cx *core.Scope) core.Node {
+		a.attach(cx)
+		return a.root(cx)
+	}, nsgotest.Environment(core.Environment{Locale: "en-US"})), a: a}
+	tt.Press("settings")
+	tt.Press("language")
+	tt.Press("language-2")
+	if saved.Language != "zh-Hans" || !tt.hasText("语言") {
+		t.Fatalf("language %q, texts %q", saved.Language, tt.Texts())
+	}
+	tt.Press("language")
+	tt.Press("language-0")
+	if saved.Language != "" || !tt.hasText("Language") {
+		t.Fatalf("language %q, texts %q", saved.Language, tt.Texts())
 	}
 }
 
@@ -548,5 +570,22 @@ func TestTrayIcon(t *testing.T) {
 	b := trayIcon()
 	if len(b) < 100 {
 		t.Fatalf("icon %d bytes", len(b))
+	}
+}
+
+func TestCheckForUpdates(t *testing.T) {
+	a := testApp(t, newFake())
+	checks := 0
+	a.checkUpdates = func() { checks++ }
+	a.refresh()
+	tt := &tester{App: nsgotest.Start(t, func(cx *core.Scope) core.Node {
+		cx.SetLocale("en")
+		a.attach(cx)
+		return a.root(cx)
+	}), a: a}
+	tt.Press("settings")
+	tt.Press("check-updates")
+	if checks != 1 {
+		t.Fatalf("checks %d", checks)
 	}
 }

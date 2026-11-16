@@ -12,6 +12,13 @@ save: "保存"
 checkingKey: "正在检查密钥…"
 disconnect: "断开"
 general: "通用"
+language: "语言"
+followSystem: "跟随系统"
+checkForUpdates: "检查更新…"
+versionLabel:
+  message: "版本 {Version}"
+  placeholders:
+    Version: { type: String }
 launchAtLoginLabel: "开机时启动"
 liveLabel: "在线访客"
 liveHint: "在菜单栏显示当前有多少人在浏览网站。"

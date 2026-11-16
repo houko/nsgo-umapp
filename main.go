@@ -15,9 +15,8 @@ import (
 	"github.com/nsgo-dev/nsgo/core"
 	"github.com/nsgo-dev/nsgo/desktop"
 	menus "github.com/nsgo-dev/nsgo/desktop/locales"
+	"github.com/nsgo-dev/nsgo/updater"
 )
-
-const version = "0.1.0"
 
 // shell is what lives as long as the app: the tray icon, the panel while
 // it is open, and the state the panel shows.
@@ -57,15 +56,25 @@ func (s *shell) ready(cx *core.Scope, dir string) {
 		s.updateTray()
 		go s.save(dir, cfg)
 	}
+	cx.SetLocale(cfg.Language)
 	a.attach(cx)
 	if runtime.GOOS == "darwin" {
+		a.checkUpdates = func() { updater.Check(cx) }
 		a.canLaunchAtLogin = true
 		a.readLogin = func(done func(bool)) { desktop.LaunchAtLogin(cx, done) }
 		a.setLogin = func(on bool) { desktop.SetLaunchAtLogin(cx, on) }
 	}
 
 	desktop.SetShutdownMode(cx, desktop.ShutdownOnExplicit)
-	s.installMenu(cx)
+	// The menus and the tray's tooltip say their words again as the
+	// language changes.
+	cx.Effect(func() {
+		cx.Env().Language()
+		cx.Untrack(func() {
+			s.installMenu(cx)
+			s.updateTray()
+		})
+	})
 	s.createTray(cx)
 	a.refresh()
 	go s.tick()
@@ -73,17 +82,20 @@ func (s *shell) ready(cx *core.Scope, dir string) {
 
 func (s *shell) installMenu(cx *core.Scope) {
 	tr := s.a.msgs()
-	desktop.SetApplicationMenu(cx, []desktop.MenuItem{
-		{Label: tr.AppName(), Items: []desktop.MenuItem{
-			{Label: tr.Settings(), Shortcut: "mod+,", OnSelect: func() {
-				s.a.resetSettings()
-				s.a.page = pageSettings
-				s.a.invalidate()
-				s.showPanel()
-			}},
-			{Separator: true},
-			{Role: desktop.MenuQuit},
+	app := []desktop.MenuItem{
+		{Label: tr.Settings(), Shortcut: "mod+,", OnSelect: func() {
+			s.a.resetSettings()
+			s.a.page = pageSettings
+			s.a.invalidate()
+			s.showPanel()
 		}},
+	}
+	if s.a.checkUpdates != nil {
+		app = append(app, desktop.MenuItem{Label: tr.CheckForUpdates(), OnSelect: s.a.checkUpdates})
+	}
+	app = append(app, desktop.MenuItem{Separator: true}, desktop.MenuItem{Role: desktop.MenuQuit})
+	desktop.SetApplicationMenu(cx, []desktop.MenuItem{
+		{Label: tr.AppName(), Items: app},
 		{Label: menus.For(cx).Edit(), Items: []desktop.MenuItem{
 			{Role: desktop.MenuUndo}, {Role: desktop.MenuRedo},
 			{Separator: true},
@@ -145,9 +157,11 @@ func (s *shell) createTray(cx *core.Scope) {
 
 func (s *shell) trayMenu() []desktop.MenuItem {
 	tr := s.a.msgs()
-	return []desktop.MenuItem{
-		{Label: tr.Quit(), OnSelect: s.a.quit},
+	var items []desktop.MenuItem
+	if s.a.checkUpdates != nil {
+		items = append(items, desktop.MenuItem{Label: tr.CheckForUpdates(), OnSelect: s.a.checkUpdates}, desktop.MenuItem{Separator: true})
 	}
+	return append(items, desktop.MenuItem{Label: tr.Quit(), OnSelect: s.a.quit})
 }
 
 func (s *shell) showPanel() {

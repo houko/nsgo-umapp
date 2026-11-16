@@ -61,7 +61,7 @@ func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 		return a.accountStatus(cx, connected)
 	})))
 	if connected {
-		var general []core.Node
+		general := []core.Node{a.languageRow(cx)}
 		if a.canLaunchAtLogin {
 			general = append(general, a.loginSwitch(cx))
 		}
@@ -70,8 +70,15 @@ func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 			general = append(general, a.liveSwitch(cx))
 			footer = tr.LiveHint()
 		}
-		if general != nil {
-			nodes = append(nodes, ui.FormSection{Title: tr.General(), Footer: footer, Children: general})
+		nodes = append(nodes, ui.FormSection{Title: tr.General(), Footer: footer, Children: general})
+		if a.checkUpdates != nil {
+			footer := ""
+			if v := core.App().Version; v != "" {
+				footer = tr.VersionLabel(v)
+			}
+			nodes = append(nodes, ui.FormSection{Footer: footer, Children: []core.Node{
+				ui.FormRow{Icon: lucide.RefreshCw, Title: tr.CheckForUpdates(), TestID: "check-updates", OnPress: a.checkUpdates},
+			}})
 		}
 		nodes = append(nodes, ui.FormSection{Children: []core.Node{
 			ui.FormRow{Title: tr.Disconnect(), Variant: ui.FormRowDanger, TestID: "disconnect", OnPress: a.disconnect},
@@ -138,6 +145,25 @@ func (a *app) liveSwitch(cx *core.Scope) core.Node {
 			a.cfg.HideLive = !on
 			a.commitCfg()
 		}}}
+}
+
+// languages are the catalogs' languages, each named in itself.
+var languages = []struct{ tag, name string }{
+	{"en", "English"},
+	{"zh-Hans", "简体中文"},
+}
+
+func (a *app) languageRow(cx *core.Scope) core.Node {
+	tr := msgsOf(cx)
+	options := []ui.Option[string]{{Value: "", Label: tr.FollowSystem()}}
+	for _, l := range languages {
+		options = append(options, ui.Option[string]{Value: l.tag, Label: l.name})
+	}
+	return ui.FormRow{Icon: lucide.Languages, Title: tr.Language(), Control: ui.Select[string]{
+		Options: options, Label: tr.Language(), TestID: "language", Style: core.Style{Width: core.Pt(140)},
+		Value:    live(a, func() string { return a.cfg.Language }),
+		OnChange: a.setLanguage,
+	}}
 }
 
 func (a *app) loginSwitch(cx *core.Scope) core.Node {

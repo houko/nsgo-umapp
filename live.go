@@ -20,11 +20,12 @@ func live[T any](a *app, fn func() T) func() T {
 	}
 }
 
-// region builds its nodes again only when key changes, keeping what the user
+// region builds its nodes again only when key or the language changes, keeping what the user
 // is doing inside it across other changes of the state.
 func (a *app) region(key func() string, build func(cx *core.Scope) core.Node) core.Node {
 	return core.Func(func(cx *core.Scope) core.Node {
-		memo := core.NewMemo(cx, live(a, key))
+		// The language shown is part of every key, so its words follow.
+		memo := core.NewMemo(cx, func() string { return cx.Env().Language() + "\x00" + live(a, key)() })
 		return core.Dynamic(func(cx *core.Scope) core.Node {
 			memo.Get()
 			var node core.Node

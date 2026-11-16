@@ -201,6 +201,10 @@ type app struct {
 	readLogin        func(done func(on bool))
 	setLogin         func(on bool)
 
+	// checkUpdates asks the platform's updater for a newer version and
+	// shows what it finds; nil where the app does not update itself.
+	checkUpdates func()
+
 	// noTray is set where the panel fills the app, as on iOS, with no
 	// menu bar icon to count visitors beside.
 	noTray bool
@@ -264,6 +268,19 @@ func (a *app) invalidate() {
 func (a *app) commitCfg() {
 	a.changed(a.cfg)
 	a.invalidate()
+}
+
+// setLanguage shows the app in lang, a catalog's language, or the
+// system's for "".
+func (a *app) setLanguage(lang string) {
+	if lang == a.cfg.Language {
+		return
+	}
+	a.cfg.Language = lang
+	if a.cx != nil {
+		a.cx.SetLocale(lang)
+	}
+	a.commitCfg()
 }
 
 func (a *app) configured() bool { return a.src != nil && a.cfg.Key != "" }

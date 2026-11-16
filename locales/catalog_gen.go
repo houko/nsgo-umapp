@@ -43,9 +43,10 @@ func For(cx *core.Scope) Messages {
 // its method, for the TSX declarations of the messages
 // (tsx.RegisterMessages).
 var Parameters = map[string][]string{
-	"Online":      {"Count"},
-	"LiveTooltip": {"Count", "Unit"},
-	"TrayTooltip": {"Count", "Unit"},
+	"VersionLabel": {"Version"},
+	"Online":       {"Count"},
+	"LiveTooltip":  {"Count", "Unit"},
+	"TrayTooltip":  {"Count", "Unit"},
 }
 
 // Translation is a language's messages another package supplies:
@@ -53,10 +54,11 @@ var Parameters = map[string][]string{
 // of the others; a key or a field left out leaves the message to the
 // catalog.
 type Translation struct {
-	Texts       map[string]string
-	Online      func(Count int) string
-	LiveTooltip func(Count int, Unit string) string
-	TrayTooltip func(Count int, Unit string) string
+	Texts        map[string]string
+	VersionLabel func(Version string) string
+	Online       func(Count int) string
+	LiveTooltip  func(Count int, Unit string) string
+	TrayTooltip  func(Count int, Unit string) string
 }
 
 var supplied = map[string]Translation{}
@@ -77,6 +79,9 @@ const (
 	textCheckingKey
 	textDisconnect
 	textGeneral
+	textLanguage
+	textFollowSystem
+	textCheckForUpdates
 	textLaunchAtLoginLabel
 	textLiveLabel
 	textLiveHint
@@ -140,6 +145,9 @@ var keyOfText = [numTexts]string{
 	"checkingKey",
 	"disconnect",
 	"general",
+	"language",
+	"followSystem",
+	"checkForUpdates",
 	"launchAtLoginLabel",
 	"liveLabel",
 	"liveHint",
@@ -201,6 +209,9 @@ var textsEn = i18n.NewTexts(""+
 	"Checking the key…"+
 	"Disconnect"+
 	"General"+
+	"Language"+
+	"System"+
+	"Check for Updates…"+
 	"Open at login"+
 	"Visitors online"+
 	"Show by the menu bar icon how many people are on your websites now."+
@@ -259,6 +270,9 @@ var textsEn = i18n.NewTexts(""+
 		19,
 		10,
 		7,
+		8,
+		6,
+		20,
 		13,
 		15,
 		67,
@@ -320,6 +334,9 @@ var textsZhHans = i18n.NewTexts(""+
 	"正在检查密钥…"+
 	"断开"+
 	"通用"+
+	"语言"+
+	"跟随系统"+
+	"检查更新…"+
 	"开机时启动"+
 	"在线访客"+
 	"在菜单栏显示当前有多少人在浏览网站。"+
@@ -378,6 +395,9 @@ var textsZhHans = i18n.NewTexts(""+
 		21,
 		6,
 		6,
+		6,
+		12,
+		15,
 		15,
 		12,
 		54,
@@ -477,6 +497,9 @@ func Supply(lang string, t Translation) {
 		}
 	}
 	s := supplied[lang]
+	if t.VersionLabel != nil {
+		s.VersionLabel = t.VersionLabel
+	}
 	if t.Online != nil {
 		s.Online = t.Online
 	}
@@ -596,6 +619,49 @@ func General(cx *core.Scope) string { return For(cx).General() }
 
 // General is the package's General in the language of msgs.
 func (msgs Messages) General() string { return msgs.text(textGeneral) }
+
+// Language says "Language"
+// in the language the app shows under cx.
+func Language(cx *core.Scope) string { return For(cx).Language() }
+
+// Language is the package's Language in the language of msgs.
+func (msgs Messages) Language() string { return msgs.text(textLanguage) }
+
+// FollowSystem says "System"
+// in the language the app shows under cx.
+func FollowSystem(cx *core.Scope) string { return For(cx).FollowSystem() }
+
+// FollowSystem is the package's FollowSystem in the language of msgs.
+func (msgs Messages) FollowSystem() string { return msgs.text(textFollowSystem) }
+
+// CheckForUpdates says "Check for Updates…"
+// in the language the app shows under cx.
+func CheckForUpdates(cx *core.Scope) string { return For(cx).CheckForUpdates() }
+
+// CheckForUpdates is the package's CheckForUpdates in the language of msgs.
+func (msgs Messages) CheckForUpdates() string { return msgs.text(textCheckForUpdates) }
+
+// VersionLabel says "Version {Version}"
+// in the language the app shows under cx.
+func VersionLabel(cx *core.Scope, Version string) string { return For(cx).VersionLabel(Version) }
+
+// VersionLabel is the package's VersionLabel in the language of msgs.
+func (msgs Messages) VersionLabel(Version string) string {
+	if i18n.IsPseudo(msgs.lang) {
+		return i18n.Pseudo(msgs.lang, Messages{lang: Source, mark: true}.VersionLabel(Version))
+	}
+	for lang := msgs.lang; ; lang = i18n.Parent(lang) {
+		if f := supplied[lang].VersionLabel; f != nil {
+			return f(Version)
+		}
+		switch lang {
+		case "", "en":
+			return "Version " + msgs.arg(Version)
+		case "zh-Hans":
+			return "版本 " + Version
+		}
+	}
+}
 
 // LaunchAtLoginLabel says "Open at login"
 // in the language the app shows under cx.

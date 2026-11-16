@@ -12,6 +12,13 @@ save: "Save"
 checkingKey: "Checking the key…"
 disconnect: "Disconnect"
 general: "General"
+language: "Language"
+followSystem: "System"
+checkForUpdates: "Check for Updates…"
+versionLabel:
+  message: "Version {Version}"
+  placeholders:
+    Version: { type: String }
 launchAtLoginLabel: "Open at login"
 liveLabel: "Visitors online"
 liveHint: "Show by the menu bar icon how many people are on your websites now."

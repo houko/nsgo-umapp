@@ -20,6 +20,9 @@ type config struct {
 	HideLive bool   `json:"hideLive,omitempty"` // no count of live visitors in the menu bar
 	// Sort is how the list orders websites: by visitors, views or name.
 	Sort int `json:"sort,omitempty"`
+	// Language is the catalog the app shows, such as "zh-Hans"; "" follows
+	// the system.
+	Language string `json:"language,omitempty"`
 }
 
 // The orders of the list.
