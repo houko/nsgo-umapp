@@ -28,6 +28,9 @@ type fake struct {
 	keyErr bool
 	// ownServer makes the fake answer as Umapp's own server.
 	ownServer bool
+	// cf are the Cloudflare accounts' websites the own server lists, and cfErr what listing them fails with.
+	cf    []cfSite
+	cfErr error
 }
 
 func newFake() *fake {
@@ -158,6 +161,29 @@ func (f *fake) deleteWebsite(_ context.Context, id string) error {
 }
 
 func (f *fake) hasDashboard() bool { return !f.ownServer }
+
+func (f *fake) cloudflareSites(context.Context) ([]cfSite, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return slices.Clone(f.cf), f.cfErr
+}
+
+func (f *fake) trackSite(_ context.Context, domain string) (website, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.err != nil {
+		return website{}, f.err
+	}
+	for i := range f.cf {
+		if f.cf[i].Domain == domain {
+			f.cf[i].Tracked = true
+		}
+	}
+	w := website{ID: fmt.Sprintf("new%d", len(f.sites)), Name: domain, Domain: domain, AutoTrack: true}
+	f.sites = append(f.sites, w)
+	f.scale[w.ID] = 0
+	return w, nil
+}
 
 func testApp(t *testing.T, f *fake) *app {
 	t.Helper()
@@ -1062,5 +1088,91 @@ func TestPanelOffersTheWindow(t *testing.T) {
 	b.refresh()
 	if len(build(t, b).Query("open-window")) != 0 {
 		t.Error("a panel without a window offers one")
+	}
+}
+
+func TestAddFromCloudflare(t *testing.T) {
+	f := newFake()
+	f.ownServer = true
+	f.cf = []cfSite{
+		{Domain: "acme.dev", Account: "Acme", Tracked: true},
+		{Domain: "msime.app", Account: "Metasequoia"},
+		{Domain: "taken.dev", Account: "Acme", Unavailable: `taken.dev/* goes to the Worker "other"`},
+	}
+	a := testApp(t, f)
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("add")
+	tt.WaitUntil(5*time.Second, func() bool { return !a.cfLoading })
+	if len(tt.Query("track-msime.app")) != 1 || len(tt.Query("track-acme.dev")) != 0 || len(tt.Query("track-taken.dev")) != 0 {
+		t.Fatalf("offered %q", tt.Texts())
+	}
+	if !tt.hasText("On Cloudflare") || !tt.hasText("Metasequoia") || !tt.hasText("Another website") {
+		t.Errorf("texts %q", tt.Texts())
+	}
+	tt.Press("track-msime.app")
+	tt.WaitUntil(5*time.Second, func() bool { return a.page == pageManage && !a.checking && a.loading == 0 })
+	if a.managed.Domain != "msime.app" || !a.managed.AutoTrack || tt.hasText("<script") {
+		t.Errorf("managed %+v, texts %q", a.managed, tt.Texts())
+	}
+}
+
+func TestAddFromCloudflareNeedsAToken(t *testing.T) {
+	f := newFake()
+	f.ownServer = true
+	f.cfErr = errNoCloudflare
+	a := testApp(t, f)
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("add")
+	tt.WaitUntil(5*time.Second, func() bool { return !a.cfLoading })
+	if !tt.hasText("Run npm run deploy with a Cloudflare token") || len(tt.Query("domain")) != 1 {
+		t.Errorf("texts %q", tt.Texts())
+	}
+}
+
+func TestAddOnUmamiOffersNoCloudflare(t *testing.T) {
+	f := newFake()
+	f.cf = []cfSite{{Domain: "msime.app"}}
+	a := testApp(t, f)
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("add")
+	tt.Settle()
+	if a.cfLoading || len(tt.Query("cloudflare")) != 0 || tt.hasText("Another website") {
+		t.Errorf("Umami is offered Cloudflare's websites: %q", tt.Texts())
+	}
+}
+
+func TestClientCloudflareSites(t *testing.T) {
+	token := true
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/api/cloudflare" && !token:
+			w.WriteHeader(http.StatusNotImplemented)
+			w.Write([]byte(`{"message":"no token"}`))
+		case r.Method == http.MethodGet && r.URL.Path == "/api/cloudflare":
+			w.Write([]byte(`{"sites":[{"domain":"msime.app","account":"M","tracked":false,"unavailable":""}]}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/api/cloudflare/sites":
+			var body map[string]string
+			json.NewDecoder(r.Body).Decode(&body)
+			json.NewEncoder(w).Encode(website{ID: "n", Name: body["domain"], Domain: body["domain"], AutoTrack: true})
+		default:
+			w.WriteHeader(400)
+		}
+	}))
+	defer srv.Close()
+	cl := newClient(srv.URL+"/api", "k")
+	sites, err := cl.cloudflareSites(context.Background())
+	if err != nil || len(sites) != 1 || sites[0] != (cfSite{Domain: "msime.app", Account: "M"}) {
+		t.Errorf("%+v, %v", sites, err)
+	}
+	w, err := cl.trackSite(context.Background(), "msime.app")
+	if err != nil || w != (website{ID: "n", Name: "msime.app", Domain: "msime.app", AutoTrack: true}) {
+		t.Errorf("%+v, %v", w, err)
+	}
+	token = false
+	if _, err := cl.cloudflareSites(context.Background()); !errors.Is(err, errNoCloudflare) {
+		t.Errorf("without a token: %v", err)
 	}
 }

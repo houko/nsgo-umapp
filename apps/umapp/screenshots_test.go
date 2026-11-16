@@ -136,6 +136,12 @@ func (demo) updateWebsite(context.Context, string, string, string) (website, err
 
 func (demo) hasDashboard() bool { return true }
 
+func (demo) cloudflareSites(context.Context) ([]cfSite, error) { return nil, errNoCloudflare }
+
+func (demo) trackSite(context.Context, string) (website, error) {
+	return website{}, errors.New("demo")
+}
+
 func (demo) deleteWebsite(context.Context, string) error {
 	return errors.New("the demo deletes no websites")
 }

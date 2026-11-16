@@ -42,7 +42,7 @@
 - 按 24 小时、7 天、30 天或 90 天显示访客/浏览和趋势，并与上一段对比。
 - 打开单个网站，查看跳出率、访问时长、指针悬停显示数量的图表，以及带图标和国旗的热门页面、来源和国家/地区，可看全部或只看某个标签。
 - 连接 Umami Cloud、自建 Umami，或 Umapp 自有服务端，并按访客、浏览或名称为网站排序，每个网站都附上图标和域名。
-- 不用 Umami 也能统计访客：用 `npm run deploy` 把 Umapp 自有服务端部署到 Cloudflare，同一个 Cloudflare 账号下的网站无需嵌入代码即可统计，并会帮你连接 Mac 上的 Umapp。
+- 不用 Umami 也能统计访客：用 `npm run deploy` 把 Umapp 自有服务端部署到 Cloudflare，之后 + 会列出你各个 Cloudflare 账号里的网站，点一下即可统计，无需嵌入代码。
 - 在图标旁显示在线访客数，也可以关掉。
 - 在设置或网站页面中管理网站：添加、改名或删除，复制要嵌入的跟踪代码，并检查访问数据是否已经到达。
 - 开机时启动。
@@ -67,7 +67,7 @@ curl -fsSL https://github.com/oneo-me/nsgo-umapp/releases/latest/download/instal
 2. 在设置中连接服务器：
    - Umami Cloud 或自建 Umami：设置 API 地址（默认为 Umami Cloud）和在 Umami 的 *设置 → API 密钥* 中创建的密钥。
    - Umapp 自有服务端：按[服务端](#服务端)一节运行 `npm run deploy`。在你的 Mac 上它会打开 Umapp 并填好地址和密钥，确认后点 *连接*。
-3. 用 + 添加网站，把它给出的跟踪代码放到网站的页面上。服务端所在 Cloudflare 账号下的网站无需代码，部署时选中即可。
+3. 用 + 添加网站。连接 Umapp 自有服务端时，+ 会列出你各个 Cloudflare 账号里的网站，点一下就开始统计，无需代码。其他网站使用它给出的跟踪代码。
 4. 浏览网站、切换时间范围，或打开某个网站查看明细。
 5. 右键点击图标可以退出。
 
@@ -114,7 +114,7 @@ git clone https://github.com/oneo-me/nsgo-umapp && cd nsgo-umapp && npm install 
 
 它会在需要时登录 Cloudflare，有多个账号时询问部署到哪个（或读取 `CLOUDFLARE_ACCOUNT_ID`），创建 D1 数据库、执行迁移，并用新生成的 API 密钥部署 Worker。最后打印用来连接 Umapp 的地址和密钥；请保存好密钥，Cloudflare 之后不会再显示它。在 Mac 上它会打开 Umapp 并填好这两项，由你确认后连接。
 
-它还会列出同一个 Cloudflare 账号下的网站，你选中的网站无需嵌入任何代码就会被统计：它们的请求会经过 Worker，由 Worker 给页面加上跟踪代码，Worker 出错时请求照常到达网站。每个请求都计入账号的 Workers 请求数，免费版每天 10 万次。没有终端时，把 `UMAPP_SITES` 设为它们的主机名、`all` 或 `none`。不在这个账号里的网站，仍需嵌入添加网站时 Umapp 给出的跟踪代码。
+它会请你创建一次 Cloudflare API Token，链接里已填好所需权限，之后 Umapp 的 + 会列出你管理的每个 Cloudflare 账号里的网站，点一下即可统计，无需嵌入代码。这些网站的请求会经过 Worker；其他账号的网站则经过服务端放在那个账号里的一个小型转发 Worker，由它给页面加上跟踪代码，出错时请求照常到达网站。每个请求都计入所在账号的 Workers 请求数，免费版每天 10 万次。脚本也会列出服务端所在账号的网站供选择；没有终端时，把 `UMAPP_SITES` 设为它们的主机名、`all` 或 `none`，并把 `UMAPP_CF_TOKEN` 设为这个 Token。不在 Cloudflare 上的网站，仍需嵌入添加网站时 Umapp 给出的跟踪代码。
 
 再次运行 `npm run deploy` 即可更新或修改要统计的网站，数据库、密钥和数据都会保留。如果你把 Worker 放在自己配置的路由上，而不是它的 workers.dev 地址或自定义域名，请把这个主机名加到 `apps/server/wrangler.jsonc` 的 `SERVER_HOSTS` 中。
 

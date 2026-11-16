@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"context"
+	"errors"
 	"math"
 	"net/url"
 	"os"
@@ -27,7 +28,22 @@ type source interface {
 	deleteWebsite(ctx context.Context, id string) error
 	// hasDashboard reports whether the server has Umami's interface to open a website in.
 	hasDashboard() bool
+	// cloudflareSites are the websites of the Cloudflare accounts Umapp's server can add with nothing to embed; errNoCloudflare when it has no token for them.
+	cloudflareSites(ctx context.Context) ([]cfSite, error)
+	// trackSite adds the website of a Cloudflare account's domain, tracked from then on.
+	trackSite(ctx context.Context, domain string) (website, error)
 }
+
+// cfSite is a website of the Cloudflare accounts, as Umapp's server lists them.
+type cfSite struct {
+	Domain      string `json:"domain"`
+	Account     string `json:"account"`
+	Tracked     bool   `json:"tracked"`
+	Unavailable string `json:"unavailable"`
+}
+
+// errNoCloudflare says Umapp's server has no Cloudflare token to list the accounts' websites with.
+var errNoCloudflare = errors.New("no Cloudflare token")
 
 // span is a range of time the app shows, with its buckets.
 type span struct {
@@ -211,6 +227,11 @@ type app struct {
 	addDomain string
 	adding    bool
 	addErr    string
+	// The add page's websites of the Cloudflare accounts: loading, what loading them failed with, and the one being added.
+	cfSites    []cfSite
+	cfLoading  bool
+	cfErr      error
+	cfTracking string
 	// copied is the ID of the website whose tracking code was copied last, while its page shows.
 	copied string
 
@@ -665,8 +686,52 @@ func (a *app) back() {
 // startAdd shows the page that adds a website.
 func (a *app) startAdd() {
 	a.addName, a.addDomain, a.addErr, a.copied = "", "", "", ""
+	a.cfSites, a.cfErr, a.cfTracking = nil, nil, ""
 	a.page = pageAdd
 	a.invalidate()
+	a.loadCloudflareSites()
+}
+
+// loadCloudflareSites loads the websites of the Cloudflare accounts the add page offers, from Umapp's own server only.
+func (a *app) loadCloudflareSites() {
+	src := a.src
+	if src == nil || src.hasDashboard() || a.cfLoading {
+		return
+	}
+	a.cfLoading = true
+	a.spawn(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		sites, err := src.cloudflareSites(ctx)
+		a.post(func() {
+			a.cfLoading = false
+			a.cfSites, a.cfErr = sites, err
+		})
+	})
+}
+
+// trackSite adds the Cloudflare accounts' website of domain, then shows its page and loads the list again.
+func (a *app) trackSite(domain string) {
+	if a.cfTracking != "" || a.adding || a.src == nil {
+		return
+	}
+	a.cfTracking, a.addErr = domain, ""
+	a.invalidate()
+	src := a.src
+	a.spawn(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+		w, err := src.trackSite(ctx, domain)
+		a.post(func() {
+			a.cfTracking = ""
+			if err != nil {
+				a.addErr = err.Error()
+				return
+			}
+			a.openManage(w, pageSites)
+			a.refresh()
+		})
+	})
 }
 
 // addWebsite adds the add page's website to the account, then shows its page, with the tracking code to embed, and loads the list again.
