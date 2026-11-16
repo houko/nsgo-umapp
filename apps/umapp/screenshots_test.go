@@ -130,6 +130,14 @@ func (demo) addWebsite(context.Context, string, string) (website, error) {
 	return website{}, errors.New("the demo adds no websites")
 }
 
+func (demo) updateWebsite(context.Context, string, string, string) (website, error) {
+	return website{}, errors.New("the demo changes no websites")
+}
+
+func (demo) deleteWebsite(context.Context, string) error {
+	return errors.New("the demo deletes no websites")
+}
+
 // TestScreenshots and the others save the README's and the website's
 // screenshots, of the list and of a website's page in each language and
 // appearance, under nsgo test -target macos or ios_simulator: one app to a

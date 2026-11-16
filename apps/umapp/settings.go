@@ -1,7 +1,10 @@
 package main
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/nsgo-dev/nsgo/base"
 	"github.com/nsgo-dev/nsgo/core"
@@ -71,6 +74,7 @@ func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 			general = append(general, a.liveSwitch(cx))
 			footer = tr.LiveHint()
 		}
+		nodes = append(nodes, a.region(a.websitesKey, a.websitesSection))
 		nodes = append(nodes, ui.FormSection{Title: tr.General(), Footer: footer, Children: general})
 		if a.sendView != nil {
 			nodes = append(nodes, ui.FormSection{Footer: tr.AnalyticsHint(), Children: []core.Node{a.analyticsSwitch(cx)}})
@@ -89,6 +93,29 @@ func (a *app) settingsBody(cx *core.Scope, connected bool) []core.Node {
 		}})
 	}
 	return nodes
+}
+
+// websitesKey changes as the websites the settings list do.
+func (a *app) websitesKey() string {
+	var b strings.Builder
+	for _, s := range a.sites {
+		fmt.Fprintf(&b, "%s:%s:%s;", s.ID, s.Name, s.Domain)
+	}
+	return b.String()
+}
+
+// websitesSection lists the account's websites by name, each opening its page, and adds one.
+func (a *app) websitesSection(cx *core.Scope) core.Node {
+	tr := msgsOf(cx)
+	sites := slices.Clone(a.sites)
+	slices.SortFunc(sites, func(x, y *site) int { return cmp.Compare(strings.ToLower(x.Name), strings.ToLower(y.Name)) })
+	rows := make([]core.Node, 0, len(sites)+1)
+	for _, s := range sites {
+		rows = append(rows, ui.FormRow{Title: s.Name, Detail: s.Domain, TestID: "manage-" + s.ID,
+			OnPress: func() { a.manageSite(s.ID) }})
+	}
+	rows = append(rows, ui.FormRow{Icon: lucide.Plus, Title: tr.AddWebsite(), Variant: ui.FormRowAccent, TestID: "settings-add", OnPress: a.startAdd})
+	return ui.FormSection{Title: tr.Websites(), Children: rows}
 }
 
 func (a *app) accountSection(cx *core.Scope, title string, connected bool) core.Node {

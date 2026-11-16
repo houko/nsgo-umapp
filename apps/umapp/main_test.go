@@ -130,6 +130,31 @@ func (f *fake) addWebsite(_ context.Context, name, domain string) (website, erro
 	return w, nil
 }
 
+func (f *fake) updateWebsite(_ context.Context, id, name, domain string) (website, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.err != nil {
+		return website{}, f.err
+	}
+	for i := range f.sites {
+		if f.sites[i].ID == id {
+			f.sites[i].Name, f.sites[i].Domain = name, domain
+			return f.sites[i], nil
+		}
+	}
+	return website{}, &apiError{status: 404}
+}
+
+func (f *fake) deleteWebsite(_ context.Context, id string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.err != nil {
+		return f.err
+	}
+	f.sites = slices.DeleteFunc(f.sites, func(w website) bool { return w.ID == id })
+	return nil
+}
+
 func testApp(t *testing.T, f *fake) *app {
 	t.Helper()
 	cfg := config{Endpoint: cloudEndpoint, Key: "api_test"}
@@ -336,8 +361,8 @@ func TestSettings(t *testing.T) {
 	if a.page != pageSettings {
 		t.Fatalf("page %v", a.page)
 	}
-	if tt.hasText("Landing page") {
-		t.Error("settings lists websites")
+	if tt.hasText("by visitors") {
+		t.Error("settings show the list")
 	}
 	tt.Press("back")
 	if !tt.hasText("Landing page") || !tt.hasText("acme.dev") {
@@ -635,13 +660,16 @@ func TestAddWebsite(t *testing.T) {
 	}
 	tt.Type("domain", "https://Shop.Acme.dev/cart")
 	tt.Press("add-website")
-	tt.Settle()
-	if a.added == nil || a.added.Domain != "shop.acme.dev" || a.added.Name != "shop.acme.dev" {
-		t.Fatalf("added %+v", a.added)
+	tt.WaitUntil(5*time.Second, func() bool { return a.page == pageManage && !a.checking && a.loading == 0 })
+	if a.page != pageManage || a.managed.Domain != "shop.acme.dev" || a.managed.Name != "shop.acme.dev" {
+		t.Fatalf("page %v, managed %+v", a.page, a.managed)
 	}
-	want := `<script defer src="https://cloud.umami.is/script.js" data-website-id="` + a.added.ID + `"></script>`
+	want := `<script defer src="https://cloud.umami.is/script.js" data-website-id="` + a.managed.ID + `"></script>`
 	if !tt.hasText(want) {
 		t.Errorf("no tracking code in %q", tt.Texts())
+	}
+	if !tt.hasText("No data yet") {
+		t.Errorf("a new website is said to send data: %q", tt.Texts())
 	}
 	tt.Press("copy")
 	if tt.Clipboard != want {
@@ -650,7 +678,7 @@ func TestAddWebsite(t *testing.T) {
 	if !tt.hasText("Copied") {
 		t.Error("no sign of the copy")
 	}
-	tt.Press("done")
+	tt.Press("back")
 	if a.page != pageSites || !tt.hasText("shop.acme.dev") {
 		t.Errorf("page %v, texts %q", a.page, tt.Texts())
 	}
@@ -665,21 +693,99 @@ func TestAddWebsiteError(t *testing.T) {
 	f.err = &apiError{status: 400, msg: "The domain is missing or isn't a domain."}
 	tt.Type("domain", "example.com")
 	tt.Press("add-website")
-	tt.Settle()
-	if a.added != nil || !tt.hasText("The domain is missing") {
-		t.Errorf("added %+v, texts %q", a.added, tt.Texts())
+	tt.WaitUntil(5*time.Second, func() bool { return !a.adding })
+	if a.page != pageAdd || !tt.hasText("The domain is missing") {
+		t.Errorf("page %v, texts %q", a.page, tt.Texts())
 	}
 }
 
-func TestCopyTrackingCode(t *testing.T) {
-	a := testApp(t, newFake())
+func TestManageWebsite(t *testing.T) {
+	f := newFake()
+	a := testApp(t, f)
 	a.refresh()
 	tt := build(t, a)
 	a.openSite("a")
 	tt.Settle()
-	tt.Press("copy-code")
+	tt.Press("manage")
+	if a.page != pageManage || a.managed.ID != "a" {
+		t.Fatalf("page %v, managed %+v", a.page, a.managed)
+	}
+	tt.WaitUntil(5*time.Second, func() bool { return a.checked })
+	if !tt.hasText("Receiving data") || !tt.hasText("in the last 24 hours") {
+		t.Errorf("no install status in %q", tt.Texts())
+	}
+	tt.Press("copy")
 	if !strings.Contains(tt.Clipboard, `data-website-id="a"`) {
 		t.Errorf("clipboard %q", tt.Clipboard)
+	}
+	tt.Type("site-name", " Docs")
+	tt.Press("save-site")
+	tt.WaitUntil(5*time.Second, func() bool { return !a.saving })
+	if f.sites[0].Name != "Acme Docs Docs" || a.site("a").Name != "Acme Docs Docs" {
+		t.Errorf("saved %q, shown %q", f.sites[0].Name, a.site("a").Name)
+	}
+	tt.Press("back")
+	if a.page != pageSite || a.open != "a" {
+		t.Errorf("back to page %v, site %q", a.page, a.open)
+	}
+}
+
+func TestDeleteWebsite(t *testing.T) {
+	f := newFake()
+	a := testApp(t, f)
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("settings")
+	tt.Press("manage-b")
+	if a.page != pageManage || a.managed.ID != "b" {
+		t.Fatalf("page %v, managed %+v", a.page, a.managed)
+	}
+	var asked []string
+	tt.OnAlert = func(c core.AlertConfig) int { asked = append(asked, c.Title); return 0 } // Cancel
+	tt.Press("delete-site")
+	tt.Settle()
+	if len(asked) != 1 || !strings.Contains(asked[0], "Personal blog") || a.site("b") == nil {
+		t.Fatalf("asked %q, site %v", asked, a.site("b"))
+	}
+	tt.OnAlert = func(core.AlertConfig) int { return 1 } // Delete
+	tt.Press("delete-site")
+	tt.WaitUntil(5*time.Second, func() bool { return !a.deleting && a.loading == 0 })
+	if a.site("b") != nil || slices.ContainsFunc(f.sites, func(w website) bool { return w.ID == "b" }) {
+		t.Error("the website is still there")
+	}
+	if a.page != pageSettings || tt.hasText("Personal blog") {
+		t.Errorf("page %v, texts %q", a.page, tt.Texts())
+	}
+}
+
+func TestNoWebsites(t *testing.T) {
+	f := newFake()
+	f.sites = nil
+	a := testApp(t, f)
+	a.refresh()
+	tt := build(t, a)
+	if !tt.hasText("No websites yet") {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	tt.Press("empty-add")
+	if a.page != pageAdd {
+		t.Errorf("page %v", a.page)
+	}
+}
+
+func TestSettingsListsWebsites(t *testing.T) {
+	a := testApp(t, newFake())
+	a.refresh()
+	tt := build(t, a)
+	tt.Press("settings")
+	for _, s := range []string{"Acme Docs", "docs.acme.dev", "Status", "Add website"} {
+		if !tt.hasText(s) {
+			t.Errorf("no %q in %q", s, tt.Texts())
+		}
+	}
+	tt.Press("settings-add")
+	if a.page != pageAdd {
+		t.Errorf("page %v", a.page)
 	}
 }
 
@@ -724,5 +830,47 @@ func TestClientAddWebsite(t *testing.T) {
 	got, err := newClient(srv.URL+"/api", "k").addWebsite(context.Background(), "Shop", "shop.acme.dev")
 	if err != nil || got != (website{ID: "n", Name: "Shop", Domain: "shop.acme.dev"}) {
 		t.Errorf("%+v, %v", got, err)
+	}
+}
+
+func TestDeleteFromItsPage(t *testing.T) {
+	a := testApp(t, newFake())
+	a.refresh()
+	tt := build(t, a)
+	a.openSite("c")
+	tt.Settle()
+	tt.Press("manage")
+	tt.OnAlert = func(core.AlertConfig) int { return 1 }
+	tt.Press("delete-site")
+	tt.WaitUntil(5*time.Second, func() bool { return !a.deleting && a.loading == 0 })
+	if a.page != pageSites || a.site("c") != nil {
+		t.Errorf("page %v, site %v", a.page, a.site("c"))
+	}
+}
+
+func TestClientUpdateDeleteWebsite(t *testing.T) {
+	var calls []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, r.Method+" "+r.URL.Path)
+		switch r.Method {
+		case http.MethodPost:
+			var body map[string]string
+			json.NewDecoder(r.Body).Decode(&body)
+			json.NewEncoder(w).Encode(website{ID: "w", Name: body["name"], Domain: body["domain"]})
+		case http.MethodDelete:
+			// Umami answers a deletion with no body.
+		}
+	}))
+	defer srv.Close()
+	cl := newClient(srv.URL+"/api", "k")
+	got, err := cl.updateWebsite(context.Background(), "w", "Shop", "shop.acme.dev")
+	if err != nil || got != (website{ID: "w", Name: "Shop", Domain: "shop.acme.dev"}) {
+		t.Errorf("%+v, %v", got, err)
+	}
+	if err := cl.deleteWebsite(context.Background(), "w"); err != nil {
+		t.Error(err)
+	}
+	if want := []string{"POST /api/websites/w", "DELETE /api/websites/w"}; !slices.Equal(calls, want) {
+		t.Errorf("calls %q", calls)
 	}
 }

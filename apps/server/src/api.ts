@@ -191,6 +191,28 @@ async function createWebsite(env: Env, request: Request, now: number): Promise<W
   return website(env, id);
 }
 
+/** updateWebsite renames a website or changes its domain, as Umami's POST /websites/:id does; what the body leaves out stays. */
+async function updateWebsite(env: Env, id: string, request: Request): Promise<Website> {
+  const current = await website(env, id);
+  let body: { name?: unknown; domain?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    throw new HTTPError(400, "The website isn't JSON.");
+  }
+  let domain = current.domain;
+  if (body.domain !== undefined) {
+    domain = typeof body.domain === "string" ? domainOf(body.domain) : "";
+    if (!domain) throw new HTTPError(400, "The domain is missing or isn't a domain.");
+  }
+  let name = current.name;
+  if (body.name !== undefined) {
+    name = (typeof body.name === "string" && body.name.trim()) || domain;
+  }
+  await env.DB.prepare("UPDATE website SET name = ?, domain = ? WHERE id = ?").bind(name.slice(0, 100), domain, id).run();
+  return website(env, id);
+}
+
 async function deleteWebsite(env: Env, id: string) {
   await website(env, id);
   await env.DB.batch([
@@ -220,6 +242,7 @@ export async function api(request: Request, env: Env, path: string, now = Date.n
     const id = decodeURIComponent(rawID);
     if (!sub) {
       if (m === "GET") return json(await website(env, id));
+      if (m === "POST") return json(await updateWebsite(env, id, request));
       if (m === "DELETE") return json(await deleteWebsite(env, id));
       throw new HTTPError(405, "Method not allowed.");
     }

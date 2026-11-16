@@ -67,6 +67,8 @@ func (a *app) root(cx *core.Scope) core.Node {
 					return a.settings(cx)
 				case a.page == pageAdd:
 					return a.addPage(cx)
+				case a.page == pageManage:
+					return a.managePage(cx)
 				case a.page == pageSite && a.site(a.open) != nil:
 					return a.region(a.detailKey, func(cx *core.Scope) core.Node {
 						s := a.site(a.open)
@@ -95,7 +97,7 @@ func (a *app) detailKey() string {
 		return a.open
 	}
 	return fmt.Sprint(a.cfg.Range, a.loading, a.gen, s.detailGen, a.tag, s.detailTag, len(s.tags), s.tagged.loaded,
-		len(s.pages), len(s.referrers), len(s.countries), s.detailErr, s.loaded, s.active, s.liveTag, s.liveTags, s.livePages, s.liveCountries, a.copied)
+		len(s.pages), len(s.referrers), len(s.countries), s.detailErr, s.loaded, s.active, s.liveTag, s.liveTags, s.livePages, s.liveCountries)
 }
 
 func (a *app) header(cx *core.Scope) core.Node {
@@ -160,12 +162,12 @@ func (a *app) list(cx *core.Scope) core.Node {
 	tr := msgsOf(cx)
 	switch {
 	case a.listErr != nil && len(a.sites) == 0:
-		return a.problem(cx, tr.LoadErrorTitle(), a.listErr.Error())
+		return a.problem(cx, lucide.CloudOff, tr.LoadErrorTitle(), a.listErr.Error())
 	case len(a.sites) == 0 && a.loading > 0:
 		return core.View{Style: core.Style{Padding: core.All(gutter - inset)},
 			Children: []core.Node{a.summary(cx), a.skeletonList(cx)}}
 	case len(a.sites) == 0:
-		return a.problem(cx, tr.NoSitesTitle(), tr.NoSitesBody())
+		return a.problem(cx, lucide.Globe, tr.NoSitesTitle(), tr.NoSitesBody())
 	}
 	return a.region(a.listKey, a.siteList)
 }
@@ -447,12 +449,14 @@ func (a *app) sparkline(cx *core.Scope, values []float64, h, w float32, wide boo
 	}
 }
 
-func (a *app) problem(cx *core.Scope, title, detail string) core.Node {
+func (a *app) problem(cx *core.Scope, icon func() *core.SVG, title, detail string) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
 	actions := []core.Node{}
 	if a.listErr != nil {
 		actions = append(actions, ui.Button{Text: tr.TryAgain(), TestID: "retry", OnPress: a.refresh})
+	} else {
+		actions = append(actions, ui.Button{Text: tr.AddWebsite(), TestID: "empty-add", OnPress: a.startAdd})
 	}
 	actions = append(actions, ui.Button{Text: tr.Settings(), Variant: ui.ButtonSecondary, TestID: "open-settings", OnPress: func() {
 		a.resetSettings()
@@ -462,9 +466,12 @@ func (a *app) problem(cx *core.Scope, title, detail string) core.Node {
 	return core.View{Style: core.Style{FlexGrow: 1, AlignItems: core.AlignCenter, JustifyContent: core.JustifyCenter, Gap: 6,
 		Padding: core.All(24)},
 		Children: []core.Node{
+			core.View{Style: core.Style{Width: core.Pt(48), Height: core.Pt(48), CornerRadius: 12, AlignItems: core.AlignCenter,
+				JustifyContent: core.JustifyCenter, Margin: core.Edges{Bottom: 6}},
+				StyleFunc: ui.Filled(colors.Inset), Children: []core.Node{ui.Icon(icon, 24, colors.Muted)}},
 			ui.Text(title, 14, ui.Semibold, colors.Text),
 			core.Text{Content: detail, Style: core.Style{FontSize: 12, TextAlign: core.TextAlignCenter, LineHeight: 16},
 				StyleFunc: ui.Colored(colors.Muted)},
-			row(8, actions...),
+			core.View{Style: core.Style{Margin: core.Edges{Top: 8}}, Children: []core.Node{row(8, actions...)}},
 		}}
 }

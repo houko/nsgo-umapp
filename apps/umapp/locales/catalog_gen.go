@@ -47,6 +47,8 @@ var Parameters = map[string][]string{
 	"Online":       {"Count"},
 	"LiveTooltip":  {"Count", "Unit"},
 	"TrayTooltip":  {"Count", "Unit"},
+	"ViewsLastDay": {"Count"},
+	"DeleteTitle":  {"Name"},
 }
 
 // Translation is a language's messages another package supplies:
@@ -59,6 +61,8 @@ type Translation struct {
 	Online       func(Count int) string
 	LiveTooltip  func(Count int, Unit string) string
 	TrayTooltip  func(Count int, Unit string) string
+	ViewsLastDay func(Count int) string
+	DeleteTitle  func(Name string) string
 }
 
 var supplied = map[string]Translation{}
@@ -136,8 +140,20 @@ const (
 	textTrackingCodeHint
 	textCopy
 	textCopied
-	textCopyTrackingCode
-	textDone
+	textAddWebsiteHint
+	textWebsiteSettings
+	textSaving
+	textInstallation
+	textReceiving
+	textNoDataYet
+	textNoDataYetHint
+	textChecking
+	textCheckAgain
+	textDeleteWebsite
+	textDeleteBody
+	textDelete
+	textCancel
+	textDeleting
 	numTexts
 )
 
@@ -215,8 +231,20 @@ var keyOfText = [numTexts]string{
 	"trackingCodeHint",
 	"copy",
 	"copied",
-	"copyTrackingCode",
-	"done",
+	"addWebsiteHint",
+	"websiteSettings",
+	"saving",
+	"installation",
+	"receiving",
+	"noDataYet",
+	"noDataYetHint",
+	"checking",
+	"checkAgain",
+	"deleteWebsite",
+	"deleteBody",
+	"delete",
+	"cancel",
+	"deleting",
 }
 
 // textsEn are the messages without arguments in en.
@@ -258,7 +286,7 @@ var textsEn = i18n.NewTexts(""+
 	"Couldn't load your websites"+
 	"Try again"+
 	"No websites yet"+
-	"Add a website, and it shows up here."+
+	"Add a website and embed its tracking code: its visitors show up here."+
 	"24H"+
 	"7D"+
 	"30D"+
@@ -292,8 +320,20 @@ var textsEn = i18n.NewTexts(""+
 	"Paste it into the <head> of every page of the website."+
 	"Copy"+
 	"Copied"+
-	"Copy tracking code"+
-	"Done",
+	"Next comes the tracking code to put on the website."+
+	"Website settings"+
+	"Saving…"+
+	"Installation"+
+	"Receiving data"+
+	"No data yet"+
+	"Put the tracking code on the website, then visit it."+
+	"Checking…"+
+	"Check again"+
+	"Delete website"+
+	"Its statistics go with it. This can't be undone."+
+	"Delete"+
+	"Cancel"+
+	"Deleting…",
 	[]uint16{
 		5,
 		5,
@@ -332,7 +372,7 @@ var textsEn = i18n.NewTexts(""+
 		27,
 		9,
 		15,
-		36,
+		69,
 		3,
 		2,
 		3,
@@ -366,8 +406,20 @@ var textsEn = i18n.NewTexts(""+
 		54,
 		4,
 		6,
-		18,
-		4,
+		51,
+		16,
+		9,
+		12,
+		14,
+		11,
+		52,
+		11,
+		11,
+		14,
+		48,
+		6,
+		6,
+		11,
 	})
 
 // textsZhHans are the messages without arguments in zh-Hans.
@@ -409,7 +461,7 @@ var textsZhHans = i18n.NewTexts(""+
 	"无法加载网站"+
 	"重试"+
 	"还没有网站"+
-	"添加网站后，就会出现在这里。"+
+	"添加网站并嵌入跟踪代码后，访客就会显示在这里。"+
 	"24H"+
 	"7D"+
 	"30D"+
@@ -443,8 +495,20 @@ var textsZhHans = i18n.NewTexts(""+
 	"粘贴到网站每个页面的 <head> 中。"+
 	"复制"+
 	"已复制"+
-	"复制跟踪代码"+
-	"完成",
+	"添加后会给出要放到网站上的跟踪代码。"+
+	"网站设置"+
+	"正在保存…"+
+	"安装状态"+
+	"正在接收数据"+
+	"还没有收到数据"+
+	"把跟踪代码放到网站上，然后访问一次。"+
+	"正在检测…"+
+	"重新检测"+
+	"删除网站"+
+	"它的统计数据会一并删除，且无法恢复。"+
+	"删除"+
+	"取消"+
+	"正在删除…",
 	[]uint16{
 		5,
 		5,
@@ -483,7 +547,7 @@ var textsZhHans = i18n.NewTexts(""+
 		18,
 		6,
 		15,
-		42,
+		69,
 		3,
 		2,
 		3,
@@ -517,8 +581,20 @@ var textsZhHans = i18n.NewTexts(""+
 		44,
 		6,
 		9,
+		54,
+		12,
+		15,
+		12,
 		18,
+		21,
+		54,
+		15,
+		12,
+		12,
+		54,
 		6,
+		6,
+		15,
 	})
 
 // texts returns the messages without arguments in lang, nil for a
@@ -586,6 +662,12 @@ func Supply(lang string, t Translation) {
 	}
 	if t.TrayTooltip != nil {
 		s.TrayTooltip = t.TrayTooltip
+	}
+	if t.ViewsLastDay != nil {
+		s.ViewsLastDay = t.ViewsLastDay
+	}
+	if t.DeleteTitle != nil {
+		s.DeleteTitle = t.DeleteTitle
 	}
 	supplied[lang] = s
 	Catalog.Add(lang)
@@ -881,7 +963,7 @@ func NoSitesTitle(cx *core.Scope) string { return For(cx).NoSitesTitle() }
 // NoSitesTitle is the package's NoSitesTitle in the language of msgs.
 func (msgs Messages) NoSitesTitle() string { return msgs.text(textNoSitesTitle) }
 
-// NoSitesBody says "Add a website, and it shows up here."
+// NoSitesBody says "Add a website and embed its tracking code: its visitors show up here."
 // in the language the app shows under cx.
 func NoSitesBody(cx *core.Scope) string { return For(cx).NoSitesBody() }
 
@@ -1189,16 +1271,144 @@ func Copied(cx *core.Scope) string { return For(cx).Copied() }
 // Copied is the package's Copied in the language of msgs.
 func (msgs Messages) Copied() string { return msgs.text(textCopied) }
 
-// CopyTrackingCode says "Copy tracking code"
+// AddWebsiteHint says "Next comes the tracking code to put on the website."
 // in the language the app shows under cx.
-func CopyTrackingCode(cx *core.Scope) string { return For(cx).CopyTrackingCode() }
+func AddWebsiteHint(cx *core.Scope) string { return For(cx).AddWebsiteHint() }
 
-// CopyTrackingCode is the package's CopyTrackingCode in the language of msgs.
-func (msgs Messages) CopyTrackingCode() string { return msgs.text(textCopyTrackingCode) }
+// AddWebsiteHint is the package's AddWebsiteHint in the language of msgs.
+func (msgs Messages) AddWebsiteHint() string { return msgs.text(textAddWebsiteHint) }
 
-// Done says "Done"
+// WebsiteSettings says "Website settings"
 // in the language the app shows under cx.
-func Done(cx *core.Scope) string { return For(cx).Done() }
+func WebsiteSettings(cx *core.Scope) string { return For(cx).WebsiteSettings() }
 
-// Done is the package's Done in the language of msgs.
-func (msgs Messages) Done() string { return msgs.text(textDone) }
+// WebsiteSettings is the package's WebsiteSettings in the language of msgs.
+func (msgs Messages) WebsiteSettings() string { return msgs.text(textWebsiteSettings) }
+
+// Saving says "Saving…"
+// in the language the app shows under cx.
+func Saving(cx *core.Scope) string { return For(cx).Saving() }
+
+// Saving is the package's Saving in the language of msgs.
+func (msgs Messages) Saving() string { return msgs.text(textSaving) }
+
+// Installation says "Installation"
+// in the language the app shows under cx.
+func Installation(cx *core.Scope) string { return For(cx).Installation() }
+
+// Installation is the package's Installation in the language of msgs.
+func (msgs Messages) Installation() string { return msgs.text(textInstallation) }
+
+// Receiving says "Receiving data"
+// in the language the app shows under cx.
+func Receiving(cx *core.Scope) string { return For(cx).Receiving() }
+
+// Receiving is the package's Receiving in the language of msgs.
+func (msgs Messages) Receiving() string { return msgs.text(textReceiving) }
+
+// ViewsLastDay says "{Count} views in the last 24 hours"
+// in the language the app shows under cx.
+func ViewsLastDay(cx *core.Scope, Count int) string { return For(cx).ViewsLastDay(Count) }
+
+// ViewsLastDay is the package's ViewsLastDay in the language of msgs.
+func (msgs Messages) ViewsLastDay(Count int) string {
+	if i18n.IsPseudo(msgs.lang) {
+		return i18n.Pseudo(msgs.lang, Messages{lang: Source, mark: true}.ViewsLastDay(Count))
+	}
+	for lang := msgs.lang; ; lang = i18n.Parent(lang) {
+		if f := supplied[lang].ViewsLastDay; f != nil {
+			return f(Count)
+		}
+		switch lang {
+		case "", "en":
+			return msgs.arg(i18n.FormatNumber("en", float64(Count))) + " views in the last 24 hours"
+		case "zh-Hans":
+			return "过去 24 小时有 " + i18n.FormatNumber("zh-Hans", float64(Count)) + " 次浏览"
+		}
+	}
+}
+
+// NoDataYet says "No data yet"
+// in the language the app shows under cx.
+func NoDataYet(cx *core.Scope) string { return For(cx).NoDataYet() }
+
+// NoDataYet is the package's NoDataYet in the language of msgs.
+func (msgs Messages) NoDataYet() string { return msgs.text(textNoDataYet) }
+
+// NoDataYetHint says "Put the tracking code on the website, then visit it."
+// in the language the app shows under cx.
+func NoDataYetHint(cx *core.Scope) string { return For(cx).NoDataYetHint() }
+
+// NoDataYetHint is the package's NoDataYetHint in the language of msgs.
+func (msgs Messages) NoDataYetHint() string { return msgs.text(textNoDataYetHint) }
+
+// Checking says "Checking…"
+// in the language the app shows under cx.
+func Checking(cx *core.Scope) string { return For(cx).Checking() }
+
+// Checking is the package's Checking in the language of msgs.
+func (msgs Messages) Checking() string { return msgs.text(textChecking) }
+
+// CheckAgain says "Check again"
+// in the language the app shows under cx.
+func CheckAgain(cx *core.Scope) string { return For(cx).CheckAgain() }
+
+// CheckAgain is the package's CheckAgain in the language of msgs.
+func (msgs Messages) CheckAgain() string { return msgs.text(textCheckAgain) }
+
+// DeleteWebsite says "Delete website"
+// in the language the app shows under cx.
+func DeleteWebsite(cx *core.Scope) string { return For(cx).DeleteWebsite() }
+
+// DeleteWebsite is the package's DeleteWebsite in the language of msgs.
+func (msgs Messages) DeleteWebsite() string { return msgs.text(textDeleteWebsite) }
+
+// DeleteTitle says "Delete {Name}?"
+// in the language the app shows under cx.
+func DeleteTitle(cx *core.Scope, Name string) string { return For(cx).DeleteTitle(Name) }
+
+// DeleteTitle is the package's DeleteTitle in the language of msgs.
+func (msgs Messages) DeleteTitle(Name string) string {
+	if i18n.IsPseudo(msgs.lang) {
+		return i18n.Pseudo(msgs.lang, Messages{lang: Source, mark: true}.DeleteTitle(Name))
+	}
+	for lang := msgs.lang; ; lang = i18n.Parent(lang) {
+		if f := supplied[lang].DeleteTitle; f != nil {
+			return f(Name)
+		}
+		switch lang {
+		case "", "en":
+			return "Delete " + msgs.arg(Name) + "?"
+		case "zh-Hans":
+			return "删除「" + Name + "」？"
+		}
+	}
+}
+
+// DeleteBody says "Its statistics go with it. This can't be undone."
+// in the language the app shows under cx.
+func DeleteBody(cx *core.Scope) string { return For(cx).DeleteBody() }
+
+// DeleteBody is the package's DeleteBody in the language of msgs.
+func (msgs Messages) DeleteBody() string { return msgs.text(textDeleteBody) }
+
+// Delete says "Delete"
+// in the language the app shows under cx.
+func Delete(cx *core.Scope) string { return For(cx).Delete() }
+
+// Delete is the package's Delete in the language of msgs.
+func (msgs Messages) Delete() string { return msgs.text(textDelete) }
+
+// Cancel says "Cancel"
+// in the language the app shows under cx.
+func Cancel(cx *core.Scope) string { return For(cx).Cancel() }
+
+// Cancel is the package's Cancel in the language of msgs.
+func (msgs Messages) Cancel() string { return msgs.text(textCancel) }
+
+// Deleting says "Deleting…"
+// in the language the app shows under cx.
+func Deleting(cx *core.Scope) string { return For(cx).Deleting() }
+
+// Deleting is the package's Deleting in the language of msgs.
+func (msgs Messages) Deleting() string { return msgs.text(textDeleting) }
