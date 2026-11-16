@@ -142,7 +142,7 @@ func (demo) deleteWebsite(context.Context, string) error {
 
 // TestScreenshots and the others save the README's and the website's
 // screenshots, of the list and of a website's page in each language and
-// appearance, under nsgo test -target macos or ios_simulator: one app to a
+// appearance, under nsgo test -target macos, ios or ios_simulator: one app to a
 // test, as a phone runs one.
 func TestScreenshots(t *testing.T)       { screenshots(t, "en", core.AppearanceLight) }
 func TestScreenshotsDark(t *testing.T)   { screenshots(t, "en", core.AppearanceDark) }
@@ -183,7 +183,7 @@ func windowScreenshot(t *testing.T, locale string, appearance core.Appearance) {
 func screenshots(t *testing.T, locale string, appearance core.Appearance) {
 	a := newApp(config{Endpoint: cloudEndpoint, Key: "api_demo", Range: 1}, demo{})
 	size := nsgotest.Size(panelWidth, panelHeight)
-	if nsgotest.Target() == "ios_simulator" {
+	if t := nsgotest.Target(); t == "ios" || t == "ios_simulator" {
 		a.noTray = true
 		size = nsgotest.Size(390, 844)
 	}

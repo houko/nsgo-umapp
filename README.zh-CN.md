@@ -86,7 +86,7 @@ go tool nsgo build
 GOWORK=off go test ./...
 ```
 
-`go tool nsgo test -target macos -run TestScreenshots` 和 `-target ios_simulator` 会用虚构的数据，以浅色和深色两种外观把面板截图（在 macOS 上还有窗口截图）保存到 `.nsgo/test/screenshots/`；在 `apps/website` 中运行 `bun run screenshots` 会同时拍摄两者并复制到 `screenshots/`。
+`go tool nsgo test -target macos -run TestScreenshots` 和 `-target ios_simulator` 会用虚构的数据，以浅色和深色两种外观把面板截图（在 macOS 上还有窗口截图）保存到 `.nsgo/test/screenshots/`；在 `apps/website` 中运行 `bun run screenshots` 会同时拍摄两者并复制到 `screenshots/`；加上 `IOS_TARGET=ios DEVICE=<iPhone>` 时，iPhone 的截图改在连接的 iPhone 上拍摄（`-target ios`）。
 
 [官网](https://oneo-me.github.io/nsgo-umapp/zh/)在 `apps/website` 中，用 Astro 和 Bun 构建，不属于 npm workspaces：在该目录先 `bun install`，再用 `bun run dev` 在 <http://localhost:4321/> 预览，用 `bun run build` 检查并构建。推送到 `main` 且改动了官网时，会发布到 GitHub Pages。
 

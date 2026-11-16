@@ -1,8 +1,5 @@
 ---
-// The product page. Each section is self-contained and draws its words
-// from src/copy.ts: hero and the panel on a stage, what it works with,
-// features, one website beside its notes, the Mac and the iPhone, the
-// iPhone on a stage, three steps, the install command, and "built with".
+// The product page. Each section is self-contained and draws its words from src/copy.ts: hero and the panel on a stage, what it works with, features, the window on a stage, one website beside its notes, the Mac, the iPhone and the server, the iPhone on a stage, three steps, the install command, and "built with".
 // Screenshots are the README's, from the app's screenshot tests, in each
 // language's words and both appearances.
 import Layout from './Layout.astro';
@@ -17,6 +14,8 @@ import enMacListLight from '../../../../screenshots/macos-list-en.png';
 import enMacListDark from '../../../../screenshots/macos-list-en-dark.png';
 import enMacSiteLight from '../../../../screenshots/macos-site-en.png';
 import enMacSiteDark from '../../../../screenshots/macos-site-en-dark.png';
+import enMacWindowLight from '../../../../screenshots/macos-window-en.png';
+import enMacWindowDark from '../../../../screenshots/macos-window-en-dark.png';
 import enPhoneListLight from '../../../../screenshots/ios-list-en.png';
 import enPhoneListDark from '../../../../screenshots/ios-list-en-dark.png';
 import enPhoneSiteLight from '../../../../screenshots/ios-site-en.png';
@@ -25,6 +24,8 @@ import zhMacListLight from '../../../../screenshots/macos-list-zh-Hans.png';
 import zhMacListDark from '../../../../screenshots/macos-list-zh-Hans-dark.png';
 import zhMacSiteLight from '../../../../screenshots/macos-site-zh-Hans.png';
 import zhMacSiteDark from '../../../../screenshots/macos-site-zh-Hans-dark.png';
+import zhMacWindowLight from '../../../../screenshots/macos-window-zh-Hans.png';
+import zhMacWindowDark from '../../../../screenshots/macos-window-zh-Hans-dark.png';
 import zhPhoneListLight from '../../../../screenshots/ios-list-zh-Hans.png';
 import zhPhoneListDark from '../../../../screenshots/ios-list-zh-Hans-dark.png';
 import zhPhoneSiteLight from '../../../../screenshots/ios-site-zh-Hans.png';
@@ -40,12 +41,14 @@ const shots = {
   en: {
     macList: { light: enMacListLight, dark: enMacListDark },
     macSite: { light: enMacSiteLight, dark: enMacSiteDark },
+    macWindow: { light: enMacWindowLight, dark: enMacWindowDark },
     phoneList: { light: enPhoneListLight, dark: enPhoneListDark },
     phoneSite: { light: enPhoneSiteLight, dark: enPhoneSiteDark },
   },
   zh: {
     macList: { light: zhMacListLight, dark: zhMacListDark },
     macSite: { light: zhMacSiteLight, dark: zhMacSiteDark },
+    macWindow: { light: zhMacWindowLight, dark: zhMacWindowDark },
     phoneList: { light: zhPhoneListLight, dark: zhPhoneListDark },
     phoneSite: { light: zhPhoneSiteLight, dark: zhPhoneSiteDark },
   },
@@ -132,6 +135,25 @@ const phoneSizes = '(min-width: 760px) 300px, calc(50vw - 40px)';
   </section>
 
   <!-- A website ------------------------------------------------------- -->
+  <!-- The window ------------------------------------------------------ -->
+  <section id="window" class="pb-[120px] max-md:pb-20" aria-labelledby="window-title">
+    <div class="wrap section-head mb-14">
+      <h2 id="window-title" class="section-title">{copy.window.title}</h2>
+      <p class="section-lead">{copy.window.lead}</p>
+    </div>
+    <Stage tone={copy.window.tone}>
+      <Shot
+        light={shots.macWindow.light}
+        dark={shots.macWindow.dark}
+        alt={copy.window.alt}
+        caption={copy.window.caption}
+        showCaption={false}
+        enlarge={copy.lightbox.enlarge}
+        class="wide"
+      />
+    </Stage>
+  </section>
+
   <section id="site" class="pb-[120px] max-md:pb-20" aria-labelledby="site-title">
     <div class="wrap section-head mb-14">
       <h2 id="site-title" class="section-title">{copy.site.title}</h2>
@@ -405,6 +427,12 @@ const phoneSizes = '(min-width: 760px) 300px, calc(50vw - 40px)';
     margin-inline: auto;
   }
 
+  /* The window is 1080 points wide: shown as large as the stage allows. */
+  :global(.wide) {
+    width: min(1000px, 100%);
+    margin-inline: auto;
+  }
+
   .pair-phone {
     grid-template-columns: repeat(2, minmax(0, 300px));
   }
@@ -517,6 +545,12 @@ const phoneSizes = '(min-width: 760px) 300px, calc(50vw - 40px)';
   @media (min-width: 760px) {
     .cards {
       grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1000px) {
+    .cards {
+      grid-template-columns: repeat(3, 1fr);
     }
   }
 

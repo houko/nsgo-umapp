@@ -7,9 +7,11 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const app = path.join(root, 'apps', 'umapp');
 const device = process.env.DEVICE ?? 'iPhone 18 Pro';
+// IOS_TARGET=ios takes the iPhone's shots on the iPhone DEVICE names, connected to this Mac, rather than in the simulator.
+const iosTarget = process.env.IOS_TARGET ?? 'ios_simulator';
 const targets = [
   { target: 'macos', name: 'macos', args: [], views: ['list', 'site', 'window'] },
-  { target: 'ios_simulator', name: 'ios', args: ['-device', device], views: ['list', 'site'] },
+  { target: iosTarget, name: 'ios', args: ['-device', device], views: ['list', 'site'] },
 ];
 
 for (const { target, name, args, views } of targets) {

@@ -3,7 +3,7 @@
 // titles and kickers omit the trailing 。; body sentences keep it.
 
 import type { IconName } from './icons';
-import type { Lang } from './site';
+import { site, type Lang } from './site';
 import type { Led, Tone } from './template';
 
 type Feature = { led: Led; title: string; body: string };
@@ -15,7 +15,7 @@ const en = {
   meta: {
     title: 'Umapp — your Umami, in the menu bar',
     description:
-      'Umapp is a native menu bar app for macOS, and an iPhone app, that shows the websites of an Umami account and who is visiting them right now. Free and open source.',
+      'Umapp is a native app for macOS, in the menu bar and a window, and for iPhone, that shows your websites and who is visiting them right now, from Umami or from its own server on Cloudflare. Free and open source.',
     ogAlt: 'Umapp — your Umami, in the menu bar',
   },
 
@@ -25,6 +25,7 @@ const en = {
     home: 'Umapp home',
     links: [
       { label: 'Features', href: '#features' },
+      { label: 'Window', href: '#window' },
       { label: 'A website', href: '#site' },
       { label: 'iPhone', href: '#iphone' },
       { label: 'Get started', href: '#start' },
@@ -51,7 +52,7 @@ const en = {
   hero: {
     badge: { tag: 'New', text: 'Umapp for macOS and iPhone' },
     title: 'Your Umami.\nIn the menu bar.',
-    lede: 'Umapp shows every website of your Umami account, its visitors and views, and how many people are on it now — one click from the menu bar.',
+    lede: 'Umapp shows every website of your Umami account, its visitors and views, and how many people are on it now — one click from the menu bar, or in a window when you want more room.',
     primary: 'Download Umapp',
     secondary: 'View on GitHub',
     fine: 'Free and open source · MIT · Updates itself',
@@ -72,7 +73,7 @@ const en = {
 
   features: {
     title: 'Analytics at a glance.',
-    lead: 'Open the panel, see how your websites are doing, close it. Nothing more to set up than an API key.',
+    lead: 'Open the panel, see how your websites are doing, close it. Nothing more to set up than an API key, or one command for a server of your own.',
     items: [
       {
         led: 'green',
@@ -91,20 +92,28 @@ const en = {
       },
       {
         led: 'amber',
-        title: 'Cloud or your own server',
-        body: 'Connect to Umami Cloud or a server of your own. The API key stays in the macOS keychain.',
+        title: 'Umami, or no Umami at all',
+        body: 'Connect to Umami Cloud or a server of your own, or deploy Umapp’s own server to Cloudflare with one command: it counts the websites of the same account with nothing to embed.',
       },
       {
         led: 'teal',
-        title: 'Native, and current',
-        body: 'A native app that opens at login if you like and refreshes on its own: visitors online every minute, the rest every five.',
+        title: 'Your websites, managed',
+        body: 'Add, rename or delete a website, copy the tracking code it embeds, and see whether its visits arrive, from settings or its page.',
       },
       {
         led: 'pink',
-        title: 'Up to date by itself',
-        body: 'Signed releases on GitHub that Umapp installs in place, in English or Simplified Chinese.',
+        title: 'Native, and up to date',
+        body: 'Opens at login if you like and refreshes on its own: visitors online every minute, the rest every five. Signed releases install in place, in English or Simplified Chinese.',
       },
     ] satisfies Feature[],
+  },
+
+  window: {
+    title: 'A window when you want more room.',
+    lead: 'Open Umapp in a window: the websites in a sidebar with who is on each, and a website’s page laid out wide, its pages, referrers and countries side by side. It shows in the Dock only while it is open.',
+    alt: 'Umapp’s window: the websites in a sidebar beside NSGo’s page, with its metrics, a chart, and its pages, referrers and countries side by side',
+    caption: 'The window: every website in the sidebar, one open beside it.',
+    tone: 'amber' as Tone,
   },
 
   site: {
@@ -121,14 +130,14 @@ const en = {
   },
 
   cards: {
-    title: 'On your Mac. On your iPhone.',
-    lead: 'The same panel, made for each.',
+    title: 'On your Mac. On your iPhone. On your server.',
+    lead: 'The same app, made for each, and a server to count with if you would rather not run Umami.',
     items: [
       {
         icon: 'monitor',
         kicker: 'macOS',
-        title: 'In the menu bar',
-        body: 'A left click opens the panel, a right click quits. Install with one command or a disk image; Umapp keeps itself up to date.',
+        title: 'In the menu bar, and a window',
+        body: 'A left click opens the panel; the right-click menu, ⌘0 or opening Umapp again opens the window. Install with one command or a disk image; Umapp keeps itself up to date.',
         link: 'Download',
         href: '#start',
       },
@@ -139,6 +148,14 @@ const en = {
         body: 'The iPhone app opens straight to the panel and refreshes when it comes back. It builds from source with Go and Xcode.',
         link: 'Build it',
         href: '#iphone',
+      },
+      {
+        icon: 'server',
+        kicker: 'Cloudflare',
+        title: 'Your own server',
+        body: 'npm run deploy puts Umapp’s server on Cloudflare Workers, tracks the websites of the same account with nothing to embed, and opens Umapp on your Mac to connect.',
+        link: 'Deploy it',
+        href: site.server as string,
       },
     ] satisfies Card[],
   },
@@ -172,7 +189,7 @@ const en = {
       {
         value: '02',
         title: 'Connect',
-        body: 'Keep Umami Cloud or enter your server, then paste a key from Settings → API keys in Umami.',
+        body: 'Keep Umami Cloud or enter your server and paste a key from Settings → API keys in Umami, or run npm run deploy for Umapp’s own server, which fills both in.',
       },
       {
         value: '03',
@@ -192,7 +209,7 @@ const en = {
 
   built: {
     title: 'Built with NSGo',
-    body: 'Umapp is written in Go with NSGo: one native UI for the Mac’s menu bar and the iPhone, in English and Chinese.',
+    body: 'Umapp is written in Go with NSGo: one native UI for the Mac’s menu bar and window and the iPhone, in English and Chinese.',
     nsgo: 'nsgo.dev',
     nsgoRepo: 'GitHub',
   },
@@ -218,7 +235,7 @@ const zh: typeof en = {
   meta: {
     title: 'Umapp — 菜单栏里的 Umami',
     description:
-      'Umapp 是一个原生 macOS 菜单栏应用和 iPhone 应用，显示 Umami 账户下的网站，以及此刻谁在访问。免费开源。',
+      'Umapp 是一个原生应用，在 macOS 上有菜单栏和窗口两种形态，也能在 iPhone 上运行，显示你的网站以及此刻谁在访问，数据来自 Umami 或它自己在 Cloudflare 上的服务端。免费开源。',
     ogAlt: 'Umapp — 菜单栏里的 Umami',
   },
 
@@ -228,6 +245,7 @@ const zh: typeof en = {
     home: 'Umapp 首页',
     links: [
       { label: '功能', href: '#features' },
+      { label: '窗口', href: '#window' },
       { label: '单个网站', href: '#site' },
       { label: 'iPhone', href: '#iphone' },
       { label: '快速开始', href: '#start' },
@@ -254,7 +272,7 @@ const zh: typeof en = {
   hero: {
     badge: { tag: '新', text: 'Umapp 支持 macOS 和 iPhone' },
     title: '你的 Umami\n就在菜单栏',
-    lede: 'Umapp 显示 Umami 账户下的每个网站、它们的访客和浏览，以及此刻有多少人在线——从菜单栏点一下就能看到。',
+    lede: 'Umapp 显示 Umami 账户下的每个网站、它们的访客和浏览，以及此刻有多少人在线——从菜单栏点一下就能看到，想看得更全时也可以打开窗口。',
     primary: '下载 Umapp',
     secondary: '在 GitHub 查看',
     fine: '免费开源 · MIT · 自动更新',
@@ -275,7 +293,7 @@ const zh: typeof en = {
 
   features: {
     title: '一眼看清网站数据',
-    lead: '打开面板，看看网站情况，再关上。除了 API 密钥，没有别的要设置。',
+    lead: '打开面板，看看网站情况，再关上。只需一个 API 密钥，或用一条命令部署你自己的服务端。',
     items: [
       {
         led: 'green',
@@ -294,20 +312,28 @@ const zh: typeof en = {
       },
       {
         led: 'amber',
-        title: 'Cloud 或自建服务器',
-        body: '连接 Umami Cloud 或你自己的服务器。API 密钥保存在 macOS 钥匙串中。',
+        title: '用 Umami，或完全不用',
+        body: '连接 Umami Cloud 或你自己的服务器，或者用一条命令把 Umapp 自有服务端部署到 Cloudflare：同一个账号下的网站无需嵌入代码即可统计。',
       },
       {
         led: 'teal',
-        title: '原生，而且及时',
-        body: '原生应用，可以开机时启动，并自己刷新数据：在线访客每分钟一次，其余每五分钟一次。',
+        title: '管理你的网站',
+        body: '在设置或网站页面中添加、改名或删除网站，复制要嵌入的跟踪代码，并查看访问数据是否已经到达。',
       },
       {
         led: 'pink',
-        title: '自己保持最新',
-        body: '在 GitHub 发布签名的版本，Umapp 就地安装更新，界面支持英文和简体中文。',
+        title: '原生，而且保持最新',
+        body: '可以开机时启动，并自己刷新数据：在线访客每分钟一次，其余每五分钟一次。签名的版本就地安装更新，界面支持英文和简体中文。',
       },
     ],
+  },
+
+  window: {
+    title: '需要更大空间时，打开窗口',
+    lead: '在窗口中打开 Umapp：侧边栏列出所有网站和各自的在线人数，网站页面以宽布局显示，页面、来源和国家/地区并排排列。窗口打开时 Umapp 才会出现在程序坞中。',
+    alt: 'Umapp 的窗口：侧边栏列出网站，旁边是 NSGo 网站的页面，包括指标、图表，以及并排的页面、来源和国家/地区',
+    caption: '窗口：侧边栏是所有网站，旁边打开其中一个。',
+    tone: 'amber',
   },
 
   site: {
@@ -324,14 +350,14 @@ const zh: typeof en = {
   },
 
   cards: {
-    title: '在 Mac 上，也在 iPhone 上',
-    lead: '同一个面板，为各自而做。',
+    title: '在 Mac 上，在 iPhone 上，也在你的服务器上',
+    lead: '同一个应用，为各自而做；如果不想运行 Umami，还有一个可以统计的服务端。',
     items: [
       {
         icon: 'monitor',
         kicker: 'macOS',
-        title: '在菜单栏里',
-        body: '左键打开面板，右键退出。用一条命令或磁盘映像安装，之后 Umapp 会自动保持更新。',
+        title: '在菜单栏里，也在窗口里',
+        body: '左键打开面板；右键菜单、⌘0 或再次打开 Umapp 会打开窗口。用一条命令或磁盘映像安装，之后 Umapp 会自动保持更新。',
         link: '下载',
         href: '#start',
       },
@@ -342,6 +368,14 @@ const zh: typeof en = {
         body: 'iPhone 应用直接打开面板，回到前台时自动刷新。需要用 Go 和 Xcode 从源码构建。',
         link: '构建',
         href: '#iphone',
+      },
+      {
+        icon: 'server',
+        kicker: 'Cloudflare',
+        title: '你自己的服务端',
+        body: 'npm run deploy 会把 Umapp 服务端部署到 Cloudflare Workers，无需嵌入代码即可统计同一账号下的网站，并打开你 Mac 上的 Umapp 来连接。',
+        link: '部署',
+        href: site.serverZh,
       },
     ],
   },
@@ -375,7 +409,7 @@ const zh: typeof en = {
       {
         value: '02',
         title: '连接',
-        body: '保留 Umami Cloud 或填入你的服务器，再粘贴在 Umami 的设置 → API 密钥中创建的密钥。',
+        body: '保留 Umami Cloud 或填入你的服务器，再粘贴在 Umami 的设置 → API 密钥中创建的密钥；或者运行 npm run deploy 部署 Umapp 自有服务端，它会帮你填好这两项。',
       },
       {
         value: '03',
@@ -395,7 +429,7 @@ const zh: typeof en = {
 
   built: {
     title: '用 NSGo 构建',
-    body: 'Umapp 用 Go 和 NSGo 编写：一套原生界面，同时用于 Mac 的菜单栏和 iPhone，支持英文和中文。',
+    body: 'Umapp 用 Go 和 NSGo 编写：一套原生界面，同时用于 Mac 的菜单栏和窗口以及 iPhone，支持英文和中文。',
     nsgo: 'nsgo.dev',
     nsgoRepo: 'GitHub',
   },
