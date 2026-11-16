@@ -20,7 +20,7 @@ func (a *app) detailHeader(cx *core.Scope, s *site) core.Node {
 	tr := msgsOf(cx)
 	nav := []core.Node{a.backButton(cx), ui.Spacer{}}
 	nav = append(nav, a.toolButton(cx, lucide.SlidersHorizontal, tr.WebsiteSettings(), nil, func() { a.manageSite(s.ID) }, "manage"))
-	if u := dashboardURL(a.cfg.Endpoint, s.ID); u != "" {
+	if u := dashboardURL(a.cfg.Endpoint, s.ID); u != "" && a.src != nil && a.src.hasDashboard() {
 		nav = append(nav, a.toolButton(cx, lucide.ExternalLink, tr.OpenUmami(), nil, func() { cx.OpenURL(u, nil) }, "open"))
 	}
 	return bar(cx, append(nav, a.refreshButton(cx))...)

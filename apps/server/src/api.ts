@@ -16,10 +16,13 @@ class HTTPError extends Error {
   }
 }
 
+/** SERVER_HEADER tells Umapp it talks to its own server, which has no dashboard of Umami's to open websites in. */
+export const SERVER_HEADER = "X-Umapp-Server";
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store", [SERVER_HEADER]: "1" },
   });
 }
 
