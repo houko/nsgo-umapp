@@ -10,5 +10,5 @@ dev:
   target: native
 
 build:
-  output: ../dist
+  output: dist
   targets: [macos_arm64, ios]

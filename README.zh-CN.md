@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="source/assets/icon.png" alt="Umapp" width="128">
+  <img src="assets/icon.png" alt="Umapp" width="128">
 </p>
 
 <h1 align="center">Umapp</h1>
@@ -60,10 +60,9 @@
 
 ## 开发
 
-Go 模块和打包配置 `nsgo.yaml` 位于 `source/`。NSGo 来自与本仓库并列的检出，由 `source/go.mod` 的 replace 指向。请在 `source/` 下运行 Go 和 NSGo 命令：
+Go 模块和打包配置 `nsgo.yaml` 位于仓库根目录。NSGo 来自与本仓库并列的检出，由 `go.mod` 的 replace 指向。请在根目录下运行 Go 和 NSGo 命令：
 
 ```sh
-cd source
 go tool nsgo dev
 go tool nsgo dev -target ios_simulator
 go tool nsgo dev -target ios
@@ -71,7 +70,7 @@ go tool nsgo build
 GOWORK=off go test ./...
 ```
 
-`go tool nsgo test -target macos -run TestScreenshots` 和 `-target ios_simulator` 会用虚构的数据把截图保存到 `source/.nsgo/test/screenshots/`。
+`go tool nsgo test -target macos -run TestScreenshots` 和 `-target ios_simulator` 会用虚构的数据把截图保存到 `.nsgo/test/screenshots/`。
 
 布局见 [ARCHITECTURE.md](ARCHITECTURE.md)，协作规则见 [AGENTS.md](AGENTS.md)。
 

@@ -4,8 +4,8 @@ Umapp is a native menu bar app, and an iPhone app, that shows the websites of an
 
 ## Principles
 
-- Keep all Go code, `nsgo.yaml` and runtime payload in `source/`; run Go and NSGo commands there.
-- NSGo comes from the checkout `source/go.mod` replaces it with; follow that repository's own instructions when changing it.
+- Keep all Go code, `nsgo.yaml` and runtime payload at the repository root; run Go and NSGo commands there.
+- NSGo comes from the checkout `go.mod` replaces it with; follow that repository's own instructions when changing it.
 - Keep documentation at the repository root.
 - Use NSGo's `ui` components and its default theme; build reusable UI in NSGo rather than here.
 - Pad every side of a bar, page or row alike: `gutter` for bars and pages, `inset` for rows.
@@ -20,7 +20,7 @@ Umapp is a native menu bar app, and an iPhone app, that shows the websites of an
 
 ## Verification
 
-Build and test from `source/`, following [Development](README.md#development). A green headless run does not prove native behavior: review UI changes in a desktop session.
+Build and test from the repository root, following [Development](README.md#development). A green headless run does not prove native behavior: review UI changes in a desktop session.
 
 ## Documentation
 

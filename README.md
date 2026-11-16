@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="source/assets/icon.png" alt="Umapp" width="128">
+  <img src="assets/icon.png" alt="Umapp" width="128">
 </p>
 
 <h1 align="center">Umapp</h1>
@@ -60,10 +60,9 @@ On iPhone, the app opens straight to the panel. The key is kept in the login key
 
 ## Development
 
-The Go module and the packaging configuration, `nsgo.yaml`, live in `source/`. NSGo comes from a checkout beside this repository's, which `source/go.mod` replaces it with. Run Go and NSGo commands from `source/`:
+The Go module and the packaging configuration, `nsgo.yaml`, live at the repository root. NSGo comes from a checkout beside this repository's, which `go.mod` replaces it with. Run Go and NSGo commands from the root:
 
 ```sh
-cd source
 go tool nsgo dev
 go tool nsgo dev -target ios_simulator
 go tool nsgo dev -target ios
@@ -71,7 +70,7 @@ go tool nsgo build
 GOWORK=off go test ./...
 ```
 
-`go tool nsgo test -target macos -run TestScreenshots` and `-target ios_simulator` save the screenshots, with made-up data, under `source/.nsgo/test/screenshots/`.
+`go tool nsgo test -target macos -run TestScreenshots` and `-target ios_simulator` save the screenshots, with made-up data, under `.nsgo/test/screenshots/`.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the layout and [AGENTS.md](AGENTS.md) for the working rules.
 

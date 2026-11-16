@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/nsgo-dev/nsgo/core"
 
-	"github.com/oneo-me/umapp/source/locales"
+	"github.com/oneo-me/umapp/locales"
 )
 
 func (a *app) msgs() locales.Messages {

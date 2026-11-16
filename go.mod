@@ -1,4 +1,4 @@
-module github.com/oneo-me/umapp/source
+module github.com/oneo-me/umapp
 
 go 1.27.3
 
@@ -29,4 +29,4 @@ require (
 
 tool github.com/nsgo-dev/nsgo/cmd/nsgo
 
-replace github.com/nsgo-dev/nsgo => ../../nsgo
+replace github.com/nsgo-dev/nsgo => ../nsgo
