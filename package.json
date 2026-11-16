@@ -1,5 +1,8 @@
 {
   "name": "umapp-monorepo",
   "private": true,
-  "workspaces": ["apps/server"]
+  "workspaces": ["apps/server"],
+  "scripts": {
+    "deploy": "npm run deploy -w apps/server"
+  }
 }

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Deploy the server to Cloudflare with `npm run deploy` (#5 by @houko).
 - Add a server on Cloudflare Workers and D1 that counts the visitors of websites embedding its script, for Umapp to connect to as to Umami (#4 by @houko).
 - Add a website and copy its tracking code in the app (#4 by @houko).
 - Run in a browser, deployed to Cloudflare Workers (#1 by @houko).

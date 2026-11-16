@@ -21,6 +21,7 @@ Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone
 | `apps/server/src/zone.ts` | The hours and days of a time zone as UTC ranges, which D1 groups series by. |
 | `apps/server/src/tracker.ts` | The script websites embed, sending what Umami's does. |
 | `apps/server/migrations/` | D1's schema: websites and their events. |
+| `apps/server/scripts/deploy.mjs` | `npm run deploy`: the account, the D1 database and its migrations, and the Worker with an API key the first time. |
 | `apps/umapp/view.go` | List, header, summary and sparklines. |
 | `apps/umapp/detail.go` | One website's tag filter, metrics, chart and breakdowns, with favicons and flags. |
 | `apps/umapp/settings.go` | Connect and menu bar options. |

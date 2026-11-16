@@ -97,15 +97,13 @@ wrangler deploy
 
 ### 服务端
 
-`apps/server` 是 Umapp 自己的服务端：一个使用 D1 的 Cloudflare Worker，统计嵌入了它 `/script.js` 的网站的访客，并像 Umami 服务器一样响应 Umapp。用你设置的密钥把 Umapp 连接到它的 `/api`。登录 [Wrangler](https://developers.cloudflare.com/workers/wrangler/) 后，在仓库根目录下：
+`apps/server` 是 Umapp 自己的服务端：一个使用 D1 的 Cloudflare Worker，统计嵌入了它 `/script.js` 的网站的访客，并像 Umami 服务器一样响应 Umapp。一条命令部署到 Cloudflare：
 
 ```sh
-npm install
-cd apps/server
-npx wrangler d1 create umapp      # 把输出的 database_id 填进 wrangler.jsonc
-npx wrangler secret put API_KEY   # Umapp 连接时使用的密钥
-npm run deploy
+git clone https://github.com/oneo-me/nsgo-umapp && cd nsgo-umapp && npm install && npm run deploy
 ```
+
+它会在需要时登录 Cloudflare，有多个账号时询问部署到哪个（或读取 `CLOUDFLARE_ACCOUNT_ID`），创建 D1 数据库、执行迁移，并用新生成的 API 密钥部署 Worker。最后打印用来连接 Umapp 的地址和密钥；请保存好密钥，Cloudflare 之后不会再显示它。再次运行 `npm run deploy` 即可更新，数据库和密钥都会保留。
 
 使用 `npm run dev` 时，在 `apps/server/.dev.vars` 中设置 `API_KEY`。`npm test` 会在 workerd 和 D1 中运行测试。
 
