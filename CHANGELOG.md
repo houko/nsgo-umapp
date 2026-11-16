@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2026.3] - 2026-11-16
+
+Umapp opens in a window on macOS, beside its menu bar panel.
+
 - Open a window on macOS with the websites in a sidebar beside each one's page, from the menu bar icon, the panel, ⌘0 or by opening the app again (#11 by @houko).
 
 ## [0.2026.2] - 2026-11-16
