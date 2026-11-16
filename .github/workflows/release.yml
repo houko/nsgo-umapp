@@ -2,7 +2,7 @@ name: Release
 
 # Publishes a GitHub release when a version tag is pushed. A maintainer sets nsgo.yaml's version, turns CHANGELOG.md's `## [Unreleased]` into `## [X.Y.Z] - YYYY-MM-DD` above a fresh `## [Unreleased]`, merges that to main, then pushes the tag vX.Y.Z on main's commit. This workflow refuses a tag that is not on main, does not match nsgo.yaml or has no changelog section, builds the macOS app against NSGo's latest main, signs the installers with the NSGO_UPDATES_KEY secret for the appcasts, and publishes the section as the release's notes.
 #
-# Assets upload one at a time, in the order the release page lists them: the install scripts of the systems the release has installers for, each installer followed by its checksum, then the appcasts the apps check for updates.
+# Assets upload one at a time: the install scripts of the systems the release has installers for, each installer followed by its checksum, then the appcasts the apps check for updates. The release page lists them by name whatever the order.
 
 on:
   push:
