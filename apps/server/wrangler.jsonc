@@ -3,8 +3,8 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
   "d1_databases": [
-    // Create it with `npx wrangler d1 create umapp` and put its id here.
-    { "binding": "DB", "database_name": "umapp", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+    // Found by name, without an id: `npm run deploy` creates it the first time.
+    { "binding": "DB", "database_name": "umapp", "migrations_dir": "migrations" }
   ]
-  // The API key Umapp connects with is a secret: `npx wrangler secret put API_KEY`, and in .dev.vars for `npm run dev`.
+  // The API key Umapp connects with is the API_KEY secret, which `npm run deploy` makes the first time; for `npm run dev`, set it in .dev.vars.
 }

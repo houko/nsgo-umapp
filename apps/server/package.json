@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler d1 migrations apply umapp --local && wrangler dev",
-    "deploy": "wrangler d1 migrations apply umapp --remote && wrangler deploy",
+    "deploy": "node scripts/deploy.mjs",
     "check": "tsc --noEmit",
     "test": "vitest run"
   },

@@ -94,15 +94,13 @@ Anyone who can open the site can use it with their own key. Put [Cloudflare Acce
 
 ### Server
 
-`apps/server` is Umapp's own server: a Cloudflare Worker with D1 that counts the visitors of the websites embedding its `/script.js`, and answers Umapp as an Umami server does. Connect Umapp to its `/api` with the key you set. With [Wrangler](https://developers.cloudflare.com/workers/wrangler/) signed in, from the repository root:
+`apps/server` is Umapp's own server: a Cloudflare Worker with D1 that counts the visitors of the websites embedding its `/script.js`, and answers Umapp as an Umami server does. Deploy it to Cloudflare with one command:
 
 ```sh
-npm install
-cd apps/server
-npx wrangler d1 create umapp      # put the database_id it prints in wrangler.jsonc
-npx wrangler secret put API_KEY   # the key Umapp connects with
-npm run deploy
+git clone https://github.com/oneo-me/nsgo-umapp && cd nsgo-umapp && npm install && npm run deploy
 ```
+
+It signs in to Cloudflare if needed, asks which account when there are several (or reads `CLOUDFLARE_ACCOUNT_ID`), creates the D1 database, applies its migrations and deploys the Worker with a new API key. Then it prints the endpoint and the key to connect Umapp with; keep the key, which Cloudflare shows no one again. Run `npm run deploy` again to update: the database and the key stay.
 
 For `npm run dev`, set `API_KEY` in `apps/server/.dev.vars`. `npm test` runs the tests in workerd with D1.
 
