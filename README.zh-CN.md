@@ -38,16 +38,19 @@
 - 连接 Umami Cloud 或自建服务器，并按访客、浏览或名称为网站排序，每个网站都附上图标和域名。
 - 在图标旁显示在线访客数，也可以关掉。
 - 开机时启动。
+- 显示英文或简体中文，默认跟随系统，也可以手动选择。
+- 在 macOS 上自动更新，也可以在右键菜单和设置中“检查更新…”。
 - 在 iPhone 上运行，面板铺满屏幕。
 
 ## 安装
 
-还没有发布版本。请按[开发](#开发)一节从源码构建。
+在 Apple 芯片的 macOS 上，用以下命令安装或更新 Umapp：
 
-要求：
+```sh
+curl -fsSL https://github.com/oneo-me/nsgo-umapp/releases/latest/download/install.sh | sh
+```
 
-- Go 1.27 或更高版本。
-- Apple 芯片的 macOS；为 iPhone 构建还需要 Xcode。
+也可以从 [Releases](https://github.com/oneo-me/nsgo-umapp/releases) 下载磁盘映像。之后 Umapp 会自动保持更新。iPhone 版需按[开发](#开发)一节从源码构建，需要 Go 1.27 或更高版本和 Xcode。
 
 ## 快速开始
 
@@ -71,6 +74,8 @@ GOWORK=off go test ./...
 ```
 
 `go tool nsgo test -target macos -run TestScreenshots` 和 `-target ios_simulator` 会用虚构的数据把截图保存到 `.nsgo/test/screenshots/`。
+
+发布时，在 `main` 上把 `nsgo.yaml` 的版本和 `CHANGELOG.md` 的 `## [Unreleased]` 改为新版本，再推送标签 `vX.Y.Z`。[发布工作流](.github/workflows/release.yml)会构建 macOS 应用，用 `NSGO_UPDATES_KEY` 密钥为自动更新签名，并以该版本的更新记录发布 GitHub Release。
 
 布局见 [ARCHITECTURE.md](ARCHITECTURE.md)，协作规则见 [AGENTS.md](AGENTS.md)。
 

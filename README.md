@@ -38,16 +38,19 @@
 - Connect to Umami Cloud or a server of your own, and sort the websites, each with its icon and domain, by visitors, views or name.
 - Show the count of visitors online beside the icon, or hide it.
 - Open at login.
+- Show English or Simplified Chinese, following the system unless you choose one.
+- Update on its own on macOS, or from *Check for Updates…* in the right-click menu and settings.
 - Run on iPhone, the panel filling the screen.
 
 ## Install
 
-No release is published yet. Build from source with the [Development](#development) commands.
+On macOS with Apple silicon, install or update Umapp with:
 
-Requirements:
+```sh
+curl -fsSL https://github.com/oneo-me/nsgo-umapp/releases/latest/download/install.sh | sh
+```
 
-- Go 1.27 or later.
-- macOS on Apple silicon, with Xcode to build for iPhone.
+Or download the disk image from [Releases](https://github.com/oneo-me/nsgo-umapp/releases). Umapp then keeps itself up to date. The iPhone app builds from source with the [Development](#development) commands, which need Go 1.27 or later and Xcode.
 
 ## Getting started
 
@@ -71,6 +74,8 @@ GOWORK=off go test ./...
 ```
 
 `go tool nsgo test -target macos -run TestScreenshots` and `-target ios_simulator` save the screenshots, with made-up data, under `.nsgo/test/screenshots/`.
+
+To release, set `nsgo.yaml`'s version and turn `CHANGELOG.md`'s `## [Unreleased]` into that version on `main`, then push the tag `vX.Y.Z`. The [release workflow](.github/workflows/release.yml) builds the macOS app, signs it for updates with the `NSGO_UPDATES_KEY` secret and publishes a GitHub release with that version's notes.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the layout and [AGENTS.md](AGENTS.md) for the working rules.
 

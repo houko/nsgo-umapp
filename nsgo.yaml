@@ -1,6 +1,6 @@
 name: Umapp
 id: me.oneo.umapp
-version: 0.1.0
+version: 0.2026.1
 
 icon:
   apple: assets/AppIcon.icon
@@ -12,3 +12,9 @@ dev:
 build:
   output: dist
   targets: [macos_arm64, ios]
+
+release:
+  github: oneo-me/nsgo-umapp
+
+updates:
+  key: 0aaFCIFvpg/Lm7fDyNVezBTI3qPbxewe2QXjUYkaRBE=

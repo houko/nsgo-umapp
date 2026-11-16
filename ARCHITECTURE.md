@@ -17,6 +17,7 @@ Umapp is a native macOS menu bar application, built for Apple silicon, and an iP
 | `screenshots_test.go` | The README's screenshots, on a made-up account. |
 | `locales/` | NSGo message catalogs, and the accessors the `nsgo` tool writes from them. |
 | `assets/` | Icon sources. |
+| `.github/workflows/release.yml` | Builds, signs and publishes a release for each version tag. |
 
 ## Boundaries
 
@@ -37,7 +38,13 @@ Umapp is a native macOS menu bar application, built for Apple silicon, and an iP
 
 ## Data and state
 
-Preferences live in `config.json` under `~/Library/Application Support/umapp`, in the app's container on iOS. The API key is in the login keychain under `umapp: Umami API key`. Whether the app opens at login is the system's, read and changed through NSGo. The list of websites is held in memory only: each launch loads it again.
+Preferences, the language among them (empty follows the system), live in `config.json` under `~/Library/Application Support/umapp`, in the app's container on iOS. The API key is in the login keychain under `umapp: Umami API key`. Whether the app opens at login is the system's, read and changed through NSGo. The list of websites is held in memory only: each launch loads it again.
+
+## Subjects
+
+| Document | When to read |
+| --- | --- |
+| [NSGo's updates](https://github.com/nsgo-dev/nsgo/blob/main/docs/architecture/updates.md) | Changing how releases install or update the app |
 
 ## Verification
 
