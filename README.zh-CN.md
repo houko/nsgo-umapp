@@ -10,6 +10,7 @@
 </p>
 
 <p align="center">
+  <a href="https://oneo-me.github.io/nsgo-umapp/zh/"><img alt="官网" src="https://img.shields.io/badge/官网-oneo--me.github.io-0969da?logo=astro&logoColor=white"></a>
   <a href="https://github.com/oneo-me"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-oneo--me-181717?logo=github&logoColor=white"></a>
   <a href="https://oneo.me"><img alt="博客" src="https://img.shields.io/badge/%E5%8D%9A%E5%AE%A2-oneo.me-0969da"></a>
   <a href="https://x.com/oneo666"><img alt="X" src="https://img.shields.io/badge/X-%40oneo666-000000?logo=x&logoColor=white"></a>
@@ -21,13 +22,13 @@
 </p>
 
 <p align="center">
-  <img src="screenshots/macos-list-zh-Hans.png" alt="Umapp 在 macOS 上的面板：网站和访客" width="360">
-  <img src="screenshots/macos-site-zh-Hans.png" alt="macOS 上的单个网站页面" width="360">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="screenshots/macos-list-zh-Hans-dark.png"><img src="screenshots/macos-list-zh-Hans.png" alt="Umapp 在 macOS 上的面板：网站和访客" width="360"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="screenshots/macos-site-zh-Hans-dark.png"><img src="screenshots/macos-site-zh-Hans.png" alt="macOS 上的单个网站页面" width="360"></picture>
 </p>
 
 <p align="center">
-  <img src="screenshots/ios-list-zh-Hans.png" alt="iPhone 上的 Umapp" width="280">
-  <img src="screenshots/ios-site-zh-Hans.png" alt="iPhone 上的单个网站页面" width="280">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="screenshots/ios-list-zh-Hans-dark.png"><img src="screenshots/ios-list-zh-Hans.png" alt="iPhone 上的 Umapp" width="280"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="screenshots/ios-site-zh-Hans-dark.png"><img src="screenshots/ios-site-zh-Hans.png" alt="iPhone 上的单个网站页面" width="280"></picture>
 </p>
 
 ## 功能
@@ -76,7 +77,9 @@ go tool nsgo build
 GOWORK=off go test ./...
 ```
 
-`go tool nsgo test -target macos -run TestScreenshots` 和 `-target ios_simulator` 会用虚构的数据把截图保存到 `.nsgo/test/screenshots/`。
+`go tool nsgo test -target macos -run TestScreenshots` 和 `-target ios_simulator` 会用虚构的数据，以浅色和深色两种外观把截图保存到 `.nsgo/test/screenshots/`；在 `apps/website` 中运行 `bun run screenshots` 会同时拍摄两者并复制到 `screenshots/`。
+
+[官网](https://oneo-me.github.io/nsgo-umapp/zh/)在 `apps/website` 中，用 Astro 和 Bun 构建，不属于 npm workspaces：在该目录先 `bun install`，再用 `bun run dev` 在 <http://localhost:4321/> 预览，用 `bun run build` 检查并构建。推送到 `main` 且改动了官网时，会发布到 GitHub Pages。
 
 发布时，在 `main` 上把 `apps/umapp/nsgo.yaml` 的版本和 `CHANGELOG.md` 的 `## [Unreleased]` 改为新版本，再推送标签 `vX.Y.Z`。[发布工作流](.github/workflows/release.yml)会构建 macOS 应用，用 `NSGO_UPDATES_KEY` 密钥为自动更新签名，并以该版本的更新记录发布 GitHub Release。
 

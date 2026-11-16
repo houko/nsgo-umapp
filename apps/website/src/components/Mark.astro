@@ -1,0 +1,51 @@
+---
+// Umapp's icon, drawn flat: a U holding a cup of visitors and the live dot
+// above it, light or dark with the page.
+interface Props {
+  size?: number;
+  class?: string;
+}
+
+const { size = 32, class: className } = Astro.props;
+---
+
+<svg class:list={['mark', className]} width={size} height={size} viewBox="0 0 1024 1024" aria-hidden="true">
+  <rect class="mark-tile" x="8" y="8" width="1008" height="1008" rx="228"></rect>
+  <path class="mark-cup" d="M346 522H678A166 166 0 0 1 346 522Z"></path>
+  <path class="mark-u" d="M282 268V535A230 230 0 0 0 742 535V268" fill="none" stroke-width="128" stroke-linecap="round"
+  ></path>
+  <circle class="mark-dot" cx="512" cy="402" r="78"></circle>
+</svg>
+
+<style>
+  .mark-tile {
+    fill: #f0ede8;
+    stroke: rgb(0 0 0 / 8%);
+    stroke-width: 16;
+  }
+
+  .mark-u {
+    stroke: #222226;
+  }
+
+  .mark-cup {
+    fill: #86e6a8;
+  }
+
+  .mark-dot {
+    fill: #22c55e;
+  }
+
+  :global(html[data-theme='dark']) .mark-tile {
+    fill: #1c1c1e;
+    stroke: rgb(255 255 255 / 12%);
+  }
+
+  :global(html[data-theme='dark']) .mark-u {
+    stroke: #ececee;
+  }
+
+  :global(html[data-theme='dark']) .mark-cup {
+    fill: #288c52;
+  }
+</style>

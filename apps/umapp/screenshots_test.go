@@ -130,13 +130,16 @@ func (demo) addWebsite(context.Context, string, string) (website, error) {
 	return website{}, errors.New("the demo adds no websites")
 }
 
-// TestScreenshots and TestScreenshotsZh save the README's screenshots, of
-// the list and of a website's page, under nsgo test -target macos or
-// ios_simulator: one app to a test, as a phone runs one.
-func TestScreenshots(t *testing.T)   { screenshots(t, "en") }
-func TestScreenshotsZh(t *testing.T) { screenshots(t, "zh-Hans") }
+// TestScreenshots and the others save the README's and the website's
+// screenshots, of the list and of a website's page in each language and
+// appearance, under nsgo test -target macos or ios_simulator: one app to a
+// test, as a phone runs one.
+func TestScreenshots(t *testing.T)       { screenshots(t, "en", core.AppearanceLight) }
+func TestScreenshotsDark(t *testing.T)   { screenshots(t, "en", core.AppearanceDark) }
+func TestScreenshotsZh(t *testing.T)     { screenshots(t, "zh-Hans", core.AppearanceLight) }
+func TestScreenshotsZhDark(t *testing.T) { screenshots(t, "zh-Hans", core.AppearanceDark) }
 
-func screenshots(t *testing.T, locale string) {
+func screenshots(t *testing.T, locale string, appearance core.Appearance) {
 	a := newApp(config{Endpoint: cloudEndpoint, Key: "api_demo", Range: 1}, demo{})
 	size := nsgotest.Size(panelWidth, panelHeight)
 	if nsgotest.Target() == "ios_simulator" {
@@ -146,16 +149,21 @@ func screenshots(t *testing.T, locale string) {
 	a.refresh()
 	tt := nsgotest.Start(t, func(cx *core.Scope) core.Node {
 		cx.SetLocale(locale)
+		cx.SetAppearance(appearance)
 		a.attach(cx)
 		return a.root(cx)
 	}, size)
 	tt.WaitUntil(5*time.Second, func() bool { return a.loading == 0 })
 	// Let the icons and flags load.
 	time.Sleep(3 * time.Second)
-	tt.Screenshot(locale + "/list")
+	suffix := ""
+	if appearance == core.AppearanceDark {
+		suffix = "-dark"
+	}
+	tt.Screenshot(locale + "/list" + suffix)
 
 	a.openSite("a")
 	tt.WaitUntil(5*time.Second, func() bool { return a.loading == 0 && a.site("a").livePages != nil })
 	time.Sleep(3 * time.Second)
-	tt.Screenshot(locale + "/site")
+	tt.Screenshot(locale + "/site" + suffix)
 }

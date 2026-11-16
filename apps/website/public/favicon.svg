@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <style>
+    .tile { fill: #f0ede8; } .u { stroke: #222226; } .cup { fill: #86e6a8; }
+    @media (prefers-color-scheme: dark) { .tile { fill: #1c1c1e; } .u { stroke: #ececee; } .cup { fill: #288c52; } }
+  </style>
+  <rect class="tile" x="8" y="8" width="1008" height="1008" rx="228"/>
+  <path class="cup" d="M346 522H678A166 166 0 0 1 346 522Z"/>
+  <path class="u" d="M282 268V535A230 230 0 0 0 742 535V268" fill="none" stroke-width="128" stroke-linecap="round"/>
+  <circle cx="512" cy="402" r="78" fill="#22c55e"/>
+</svg>

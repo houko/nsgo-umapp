@@ -1,0 +1,126 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Lightbox from '../components/Lightbox.astro';
+import { copies } from '../copy';
+import { langTag, pagePath, path, site, type Lang } from '../site';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  noindex?: boolean;
+  /** The Chinese twin an English page sends a Chinese browser to. */
+  zhRedirect?: string;
+}
+
+const { lang, title, description, noindex = false, zhRedirect } = Astro.props;
+const copy = copies[lang];
+const tag = langTag(lang);
+const origin = Astro.site ?? new URL('https://oneo-me.github.io');
+const canonical = new URL(Astro.url.pathname, origin);
+const enUrl = new URL(pagePath('en'), origin);
+const zhUrl = new URL(pagePath('zh'), origin);
+const ogImage = new URL(path(lang === 'zh' ? 'og-zh.png' : 'og.png'), origin);
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: site.name,
+  description,
+  url: canonical.href,
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'macOS, iOS',
+  downloadUrl: site.releases,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  inLanguage: tag,
+  license: 'https://opensource.org/license/mit',
+  author: { '@type': 'Person', name: site.author, url: site.blog },
+};
+---
+
+<!doctype html>
+<html lang={tag} data-zh-path={zhRedirect}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={site.author} />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f7f8" />
+    {noindex && <meta name="robots" content="noindex" />}
+    {!noindex && <link rel="canonical" href={canonical.href} />}
+    {!noindex && <link rel="alternate" hreflang="en" href={enUrl.href} />}
+    {!noindex && <link rel="alternate" hreflang="zh-CN" href={zhUrl.href} />}
+    {!noindex && <link rel="alternate" hreflang="x-default" href={enUrl.href} />}
+    <link rel="icon" type="image/svg+xml" href={path('favicon.svg')} />
+    <link rel="apple-touch-icon" href={path('apple-touch-icon.png')} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage.href} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={copy.meta.ogAlt} />
+    <meta property="og:locale" content={lang === 'zh' ? 'zh_CN' : 'en_US'} />
+    <meta property="og:locale:alternate" content={lang === 'zh' ? 'en_US' : 'zh_CN'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage.href} />
+    <meta name="twitter:image:alt" content={copy.meta.ogAlt} />
+
+    {!noindex && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>}
+
+    <!-- The appearance and a first visit's language, before the first paint. -->
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        var preference = 'system';
+        try {
+          preference = localStorage.getItem('umapp-theme') || 'system';
+        } catch (error) {}
+        if (preference !== 'light' && preference !== 'dark' && preference !== 'system') preference = 'system';
+        var dark = preference === 'dark' || (preference === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+        root.dataset.theme = dark ? 'dark' : 'light';
+        root.dataset.themePreference = preference;
+        root.style.colorScheme = dark ? 'dark' : 'light';
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', dark ? '#0b0b0d' : '#f7f7f8');
+
+        var zhPath = root.getAttribute('data-zh-path') || '';
+        if (!zhPath) return;
+        var lang = null;
+        try {
+          lang = localStorage.getItem('umapp-lang');
+        } catch (error) {}
+        if (lang !== 'en' && lang !== 'zh') lang = null;
+        if (lang === 'en') return;
+        var languages = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
+        var chinese = languages.some(function (value) {
+          return String(value).toLowerCase().indexOf('zh') === 0;
+        });
+        if (lang === 'zh' || (!lang && chinese)) location.replace(zhPath + location.search + location.hash);
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{copy.nav.skip}</a>
+    <Header lang={lang} copy={copy} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer lang={lang} copy={copy} />
+    <Lightbox copy={copy} />
+
+    <script>
+      import '../scripts/site';
+    </script>
+  </body>
+</html>

@@ -25,10 +25,12 @@ Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone
 | `apps/umapp/detail.go` | One website's tag filter, metrics, chart and breakdowns, with favicons and flags. |
 | `apps/umapp/settings.go` | Connect and menu bar options. |
 | `apps/umapp/add.go` | Adding a website, and its tracking code to copy. |
-| `apps/umapp/screenshots_test.go` | The README's screenshots, on a made-up account. |
+| `apps/umapp/screenshots_test.go` | The README's and the website's screenshots, on a made-up account, light and dark. |
 | `apps/umapp/locales/` | NSGo message catalogs, and the accessors the `nsgo` tool writes from them. |
 | `apps/umapp/assets/` | Icon sources. |
 | `.github/workflows/release.yml` | Builds, signs and publishes a release for each version tag. |
+| `apps/website/` | The product site, in Astro with Bun, outside the npm workspaces: its words in `src/copy.ts`, its sections in `src/layouts/Home.astro`. |
+| `.github/workflows/website.yml` | Builds the site and publishes it to GitHub Pages. |
 
 ## Boundaries
 
@@ -62,6 +64,10 @@ Preferences, the language among them (empty follows the system), live in `config
 | Document | When to read |
 | --- | --- |
 | [NSGo's updates](https://github.com/nsgo-dev/nsgo/blob/main/docs/architecture/updates.md) | Changing how releases install or update the app |
+
+## Website
+
+The site is static, in English at its base and Simplified Chinese under `zh/`, light or dark as the system or the visitor chooses. It follows the template of [Agio's site](https://github.com/oneo-me/nsgo-agio/tree/main/website) and ships no UI framework. It shows the screenshots in `screenshots/` rather than copies, and Astro makes their AVIF and WebP versions. `bun run og` redraws the social cards and touch icons in `apps/website/public/` with Chrome; they are committed, so a build needs neither. Production builds use the base `/nsgo-umapp/`; CI sets `SITE_URL` and `BASE_PATH`, which a custom domain overrides.
 
 ## Verification
 

@@ -10,6 +10,7 @@
 </p>
 
 <p align="center">
+  <a href="https://oneo-me.github.io/nsgo-umapp/"><img alt="Website" src="https://img.shields.io/badge/Website-oneo--me.github.io-0969da?logo=astro&logoColor=white"></a>
   <a href="https://github.com/oneo-me"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-oneo--me-181717?logo=github&logoColor=white"></a>
   <a href="https://oneo.me"><img alt="Blog" src="https://img.shields.io/badge/Blog-oneo.me-0969da"></a>
   <a href="https://x.com/oneo666"><img alt="X" src="https://img.shields.io/badge/X-%40oneo666-000000?logo=x&logoColor=white"></a>
@@ -21,13 +22,13 @@
 </p>
 
 <p align="center">
-  <img src="screenshots/macos-list-en.png" alt="Umapp's panel on macOS: the websites and their visitors" width="360">
-  <img src="screenshots/macos-site-en.png" alt="A website's page on macOS" width="360">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="screenshots/macos-list-en-dark.png"><img src="screenshots/macos-list-en.png" alt="Umapp's panel on macOS: the websites and their visitors" width="360"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="screenshots/macos-site-en-dark.png"><img src="screenshots/macos-site-en.png" alt="A website's page on macOS" width="360"></picture>
 </p>
 
 <p align="center">
-  <img src="screenshots/ios-list-en.png" alt="Umapp on iPhone" width="280">
-  <img src="screenshots/ios-site-en.png" alt="A website's page on iPhone" width="280">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="screenshots/ios-list-en-dark.png"><img src="screenshots/ios-list-en.png" alt="Umapp on iPhone" width="280"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="screenshots/ios-site-en-dark.png"><img src="screenshots/ios-site-en.png" alt="A website's page on iPhone" width="280"></picture>
 </p>
 
 ## Features
@@ -76,7 +77,9 @@ go tool nsgo build
 GOWORK=off go test ./...
 ```
 
-`go tool nsgo test -target macos -run TestScreenshots` and `-target ios_simulator` save the screenshots, with made-up data, under `.nsgo/test/screenshots/`.
+`go tool nsgo test -target macos -run TestScreenshots` and `-target ios_simulator` save the screenshots, with made-up data and in both appearances, under `.nsgo/test/screenshots/`; `bun run screenshots` in `apps/website` takes both and copies them to `screenshots/`.
+
+The [website](https://oneo-me.github.io/nsgo-umapp/) is in `apps/website`, built with Astro and Bun outside the npm workspaces: from there, `bun install`, then `bun run dev` serves it at <http://localhost:4321/> and `bun run build` checks and builds it. Pushes to `main` that touch it publish it to GitHub Pages.
 
 To release, set `apps/umapp/nsgo.yaml`'s version and turn `CHANGELOG.md`'s `## [Unreleased]` into that version on `main`, then push the tag `vX.Y.Z`. The [release workflow](.github/workflows/release.yml) builds the macOS app, signs it for updates with the `NSGO_UPDATES_KEY` secret and publishes a GitHub release with that version's notes.
 
