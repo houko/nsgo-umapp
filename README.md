@@ -42,7 +42,7 @@
 - Show visitors / views and a sparkline for 24 hours, 7 days, 30 days or 90 days, compared with the range before.
 - Open one website for bounce rate, duration, a chart with counts under the pointer, and the top pages, referrers and countries with their icons and flags, all of them or of one tag.
 - Connect to Umami Cloud, a self-hosted Umami or Umapp's own server, and sort the websites, each with its icon and domain, by visitors, views or name.
-- Count visitors without Umami: deploy Umapp's own server to Cloudflare with `npm run deploy`, which tracks the websites of the same Cloudflare account with nothing to embed and connects Umapp on your Mac.
+- Count visitors without Umami: deploy Umapp's own server to Cloudflare with `npm run deploy`, after which + lists the websites of your Cloudflare accounts and tracks one with a tap, with nothing to embed.
 - Show the count of visitors online beside the icon, or hide it.
 - Manage the websites from settings or a website's page: add, rename or delete one, copy the tracking code it embeds, and check that its visits arrive.
 - Open at login.
@@ -67,7 +67,7 @@ Or download the disk image from [Releases](https://github.com/oneo-me/nsgo-umapp
 2. Connect a server in settings:
    - Umami Cloud or an Umami of your own: set the API endpoint (Umami Cloud by default) and an API key from Umami's *Settings → API keys*.
    - Umapp's own server: run `npm run deploy`, as [Server](#server) says. On your Mac it opens Umapp with the endpoint and key filled in; check them and press *Connect*.
-3. Add a website with + and put the tracking code it shows on the website's pages. Websites in the server's own Cloudflare account need no code: choose them when you deploy.
+3. Add a website with +. On Umapp's own server, + lists the websites of your Cloudflare accounts: tap one and it is counted with no code. Any other website takes the tracking code it shows.
 4. Browse the websites, change the range, or open one for its breakdown.
 5. Right-click the icon to quit.
 
@@ -114,7 +114,7 @@ git clone https://github.com/oneo-me/nsgo-umapp && cd nsgo-umapp && npm install 
 
 It signs in to Cloudflare if needed, asks which account when there are several (or reads `CLOUDFLARE_ACCOUNT_ID`), creates the D1 database, applies its migrations and deploys the Worker with a new API key. Then it prints the endpoint and the key to connect Umapp with; keep the key, which Cloudflare shows no one again. On a Mac it opens Umapp with both filled in, for you to check and connect.
 
-It also lists the websites of the same Cloudflare account and tracks the ones you choose with nothing to embed: their requests pass through the Worker, which adds the tracker to their pages and falls back to the website if it fails. Each request counts against the account's Workers requests, 100,000 a day on the free plan. Without a terminal, set `UMAPP_SITES` to their hostnames, `all` or `none`. A website elsewhere needs the tracking code Umapp shows when you add it.
+It asks once for a Cloudflare API token, created from a link with its permissions filled in, so that + in Umapp lists the websites of every Cloudflare account you manage and tracks one with a tap, with nothing to embed. Their requests pass through the Worker, or for another account through a small relay Worker the server puts there, which adds the tracker to their pages and falls back to the website if it fails. Each request counts against that account's Workers requests, 100,000 a day on the free plan. The script also offers the server's own account's websites to track; without a terminal, set `UMAPP_SITES` to their hostnames, `all` or `none`, and `UMAPP_CF_TOKEN` to the token. A website not on Cloudflare needs the tracking code Umapp shows when you add it.
 
 Run `npm run deploy` again to update or change the sites: the database, the key and the data stay. If you serve the Worker on a route of your own rather than its workers.dev address or a custom domain, add the hostname to `SERVER_HOSTS` in `apps/server/wrangler.jsonc`.
 

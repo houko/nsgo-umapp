@@ -177,6 +177,29 @@ func (cl *client) updateWebsite(ctx context.Context, id, name, domain string) (w
 	return w, err
 }
 
+// cloudflareSites are the websites of the Cloudflare accounts, which only Umapp's server lists.
+func (cl *client) cloudflareSites(ctx context.Context) ([]cfSite, error) {
+	var out struct {
+		Sites []cfSite `json:"sites"`
+	}
+	err := cl.get(ctx, "/cloudflare", nil, &out)
+	var ae *apiError
+	if errors.As(err, &ae) && ae.status == http.StatusNotImplemented {
+		return nil, errNoCloudflare
+	}
+	return out.Sites, err
+}
+
+// trackSite adds the website of a Cloudflare account's domain, which Umapp's server then tracks with nothing to embed.
+func (cl *client) trackSite(ctx context.Context, domain string) (website, error) {
+	var w website
+	err := cl.call(ctx, http.MethodPost, "/cloudflare/sites", nil, map[string]string{"domain": domain}, &w)
+	if err == nil && w.ID == "" {
+		err = errors.New("The server's answer isn't Umapp's.")
+	}
+	return w, err
+}
+
 // deleteWebsite deletes website id and its statistics.
 func (cl *client) deleteWebsite(ctx context.Context, id string) error {
 	return cl.call(ctx, http.MethodDelete, "/websites/"+url.PathEscape(id), nil, nil, nil)

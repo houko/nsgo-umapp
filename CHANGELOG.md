@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add a website of any of your Cloudflare accounts from + in one tap, tracked with nothing to embed, once `npm run deploy` gives the server a Cloudflare token (#15 by @houko).
+
 ## [0.2026.3] - 2026-11-16
 
 Umapp opens in a window on macOS, beside its menu bar panel.

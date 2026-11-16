@@ -141,6 +141,11 @@ const (
 	textCopy
 	textCopied
 	textAddWebsiteHint
+	textCloudflareSites
+	textCloudflareSitesHint
+	textCloudflareNoToken
+	textOtherWebsite
+	textLoading
 	textWebsiteSettings
 	textSaving
 	textInstallation
@@ -241,6 +246,11 @@ var keyOfText = [numTexts]string{
 	"copy",
 	"copied",
 	"addWebsiteHint",
+	"cloudflareSites",
+	"cloudflareSitesHint",
+	"cloudflareNoToken",
+	"otherWebsite",
+	"loading",
 	"websiteSettings",
 	"saving",
 	"installation",
@@ -339,6 +349,11 @@ var textsEn = i18n.NewTexts(""+
 	"Copy"+
 	"Copied"+
 	"Next comes the tracking code to put on the website."+
+	"On Cloudflare"+
+	"Counted from the moment it's added, with nothing to put on the website."+
+	"Run npm run deploy with a Cloudflare token to add the websites of your Cloudflare accounts here."+
+	"Another website"+
+	"Loading…"+
 	"Website settings"+
 	"Saving…"+
 	"Installation"+
@@ -434,6 +449,11 @@ var textsEn = i18n.NewTexts(""+
 		4,
 		6,
 		51,
+		13,
+		71,
+		96,
+		15,
+		10,
 		16,
 		9,
 		12,
@@ -532,6 +552,11 @@ var textsZhHans = i18n.NewTexts(""+
 	"复制"+
 	"已复制"+
 	"添加后会给出要放到网站上的跟踪代码。"+
+	"Cloudflare 上的网站"+
+	"添加后立即开始统计，网站上无需放任何代码。"+
+	"用 Cloudflare Token 运行 npm run deploy 后，这里就能添加你各个 Cloudflare 账号里的网站。"+
+	"其他网站"+
+	"正在读取…"+
 	"网站设置"+
 	"正在保存…"+
 	"安装状态"+
@@ -627,6 +652,11 @@ var textsZhHans = i18n.NewTexts(""+
 		6,
 		9,
 		54,
+		23,
+		63,
+		109,
+		12,
+		15,
 		12,
 		15,
 		12,
@@ -1331,6 +1361,41 @@ func AddWebsiteHint(cx *core.Scope) string { return For(cx).AddWebsiteHint() }
 
 // AddWebsiteHint is the package's AddWebsiteHint in the language of msgs.
 func (msgs Messages) AddWebsiteHint() string { return msgs.text(textAddWebsiteHint) }
+
+// CloudflareSites says "On Cloudflare"
+// in the language the app shows under cx.
+func CloudflareSites(cx *core.Scope) string { return For(cx).CloudflareSites() }
+
+// CloudflareSites is the package's CloudflareSites in the language of msgs.
+func (msgs Messages) CloudflareSites() string { return msgs.text(textCloudflareSites) }
+
+// CloudflareSitesHint says "Counted from the moment it's added, with nothing to put on the website."
+// in the language the app shows under cx.
+func CloudflareSitesHint(cx *core.Scope) string { return For(cx).CloudflareSitesHint() }
+
+// CloudflareSitesHint is the package's CloudflareSitesHint in the language of msgs.
+func (msgs Messages) CloudflareSitesHint() string { return msgs.text(textCloudflareSitesHint) }
+
+// CloudflareNoToken says "Run npm run deploy with a Cloudflare token to add the websites of your Cloudflare accounts here."
+// in the language the app shows under cx.
+func CloudflareNoToken(cx *core.Scope) string { return For(cx).CloudflareNoToken() }
+
+// CloudflareNoToken is the package's CloudflareNoToken in the language of msgs.
+func (msgs Messages) CloudflareNoToken() string { return msgs.text(textCloudflareNoToken) }
+
+// OtherWebsite says "Another website"
+// in the language the app shows under cx.
+func OtherWebsite(cx *core.Scope) string { return For(cx).OtherWebsite() }
+
+// OtherWebsite is the package's OtherWebsite in the language of msgs.
+func (msgs Messages) OtherWebsite() string { return msgs.text(textOtherWebsite) }
+
+// Loading says "Loading…"
+// in the language the app shows under cx.
+func Loading(cx *core.Scope) string { return For(cx).Loading() }
+
+// Loading is the package's Loading in the language of msgs.
+func (msgs Messages) Loading() string { return msgs.text(textLoading) }
 
 // WebsiteSettings says "Website settings"
 // in the language the app shows under cx.
