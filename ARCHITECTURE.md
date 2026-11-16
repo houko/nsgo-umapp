@@ -1,6 +1,6 @@
 # Umapp architecture
 
-Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone app and a web app served by a Cloudflare Worker, that reads an Umami account and shows its websites and visitors in a panel. It is a single Go module in `apps/umapp`, built with NSGo's `ui` components in its default theme.
+Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone app and a web app served by a Cloudflare Worker, that reads an Umami account and shows its websites and visitors in a panel. It is a single Go module in `apps/umapp`, built with NSGo's `ui` components in its default theme. Beside it, `apps/server` is a server of its own on Cloudflare Workers and D1, which counts visitors and answers the part of Umami's API the app reads.
 
 ## Code map
 
@@ -14,9 +14,17 @@ Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone
 | `apps/umapp/platform_native.go` | Config file and the macOS keychain; requests straight to Umami. |
 | `apps/umapp/platform_js.go` | Config in the site's storage, the browser's time zone, and requests through the Worker. |
 | `apps/umapp/wrangler.jsonc`, `apps/umapp/cloudflare/` | The web build's deployment: the build script and the Worker that serves it and forwards requests to Umami. |
+| `package.json` | npm workspaces of the TypeScript apps. |
+| `apps/server/src/index.ts` | The server's routes: `/script.js`, `/api/send` and `/api`. |
+| `apps/server/src/collect.ts` | Events the tracker sends, without bots, keyed by hashed sessions and visits. |
+| `apps/server/src/api.ts` | The API key, websites, and Umami 3's stats, active, pageviews and metrics. |
+| `apps/server/src/zone.ts` | The hours and days of a time zone as UTC ranges, which D1 groups series by. |
+| `apps/server/src/tracker.ts` | The script websites embed, sending what Umami's does. |
+| `apps/server/migrations/` | D1's schema: websites and their events. |
 | `apps/umapp/view.go` | List, header, summary and sparklines. |
 | `apps/umapp/detail.go` | One website's tag filter, metrics, chart and breakdowns, with favicons and flags. |
 | `apps/umapp/settings.go` | Connect and menu bar options. |
+| `apps/umapp/add.go` | Adding a website, and its tracking code to copy. |
 | `apps/umapp/screenshots_test.go` | The README's screenshots, on a made-up account. |
 | `apps/umapp/locales/` | NSGo message catalogs, and the accessors the `nsgo` tool writes from them. |
 | `apps/umapp/assets/` | Icon sources. |
@@ -35,7 +43,11 @@ Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone
 
 **Refresh.** Loads every website the key can see, then each one's stats, series and visitors online for the range shown. Visitors online refresh every minute, and on a website's page so do the tags, pages and countries they are on, counted over Umami's same five minutes and marked beside each one's count; the rest every five, or as the panel opens, or the iPhone app becomes active again, on numbers older than a minute.
 
-**Web requests.** In a browser the app sends each request to the Worker's `/umami-api` on its own origin, the Umami URL in `X-Umami-URL`. Browsers refuse Umami's answers to another origin's requests that carry `Authorization`, as its CORS headers allow headers by `*`, which leaves `Authorization` out. The Worker forwards only GETs, only to the APIs `UMAMI_ENDPOINTS` lists.
+**Web requests.** In a browser the app sends each request to the Worker's `/umami-api` on its own origin, the Umami URL in `X-Umami-URL`. Browsers refuse Umami's answers to another origin's requests that carry `Authorization`, as its CORS headers allow headers by `*`, which leaves `Authorization` out. The Worker forwards GETs and POSTs of JSON, only to the APIs `UMAMI_ENDPOINTS` lists.
+
+**Add a website.** The add page posts the name and domain to `/websites`, which Umami and Umapp's server both take, and shows the tag to embed: Umami Cloud's script for Umami Cloud, else the one served beside the endpoint's `/api`.
+
+**Server.** `/api/send` takes Umami's tracker events from any origin. A session is a hash of the website, address and browser with a salt that changes each month, and a visit a hash of the session and the hour, so no address is kept. The API answers in Umami 3's form; D1 keeps times in UTC, so series group by ranges `zone.ts` computes for the zone asked for.
 
 **Tags.** A website's page lists the tags of its events in the range. Choosing one loads that tag's totals, series and breakdowns, while the list keeps every event's; opening a website starts on all of them.
 
@@ -43,7 +55,7 @@ Umapp is a native macOS menu bar application, built for Apple silicon, an iPhone
 
 ## Data and state
 
-Preferences, the language among them (empty follows the system), live in `config.json` under `~/Library/Application Support/umapp`, in the app's container on iOS, and under `nsgo:me.oneo.umapp:config` in the site's local storage on the web. The API key is in the login keychain under `umapp: Umami API key`. Whether the app opens at login is the system's, read and changed through NSGo. The list of websites is held in memory only: each launch loads it again.
+Preferences, the language among them (empty follows the system), live in `config.json` under `~/Library/Application Support/umapp`, in the app's container on iOS, and under `nsgo:me.oneo.umapp:config` in the site's local storage on the web. The API key is in the login keychain under `umapp: Umami API key`. Whether the app opens at login is the system's, read and changed through NSGo. The list of websites is held in memory only: each launch loads it again. The server keeps its websites and events in D1 and the API key as a Worker secret.
 
 ## Subjects
 
@@ -53,4 +65,4 @@ Preferences, the language among them (empty follows the system), live in `config
 
 ## Verification
 
-The Umami client, formatting, bucketizing and sort logic are pure and fully testable headless. Localization and the view builders have headless tests. The phone layout has a headless test. The panel and tray need review in a desktop session, the iPhone app in the simulator, and the web app in a browser under `wrangler dev`.
+The Umami client, formatting, bucketizing and sort logic are pure and fully testable headless. Localization and the view builders have headless tests. The phone layout has a headless test. The panel and tray need review in a desktop session, the iPhone app in the simulator, and the web app in a browser under `wrangler dev`. The server's tests run in workerd with a migrated D1 through `@cloudflare/vitest-plugin`.

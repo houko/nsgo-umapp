@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -63,9 +64,9 @@ func (p *prefs) save(cfg config) {
 // browserZone is the browser's time zone, which only a page has.
 func browserZone() string { return "" }
 
-// apiRequest is a GET of u, an Umami endpoint's URL, made straight to the server.
-func apiRequest(ctx context.Context, u string) (*http.Request, error) {
-	return http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+// apiRequest is a request of method to u, an Umami endpoint's URL, made straight to the server.
+func apiRequest(ctx context.Context, method, u string, body io.Reader) (*http.Request, error) {
+	return http.NewRequestWithContext(ctx, method, u, body)
 }
 
 const keychainService = "umapp: Umami API key"

@@ -35,8 +35,9 @@
 - Open a panel from the menu bar with every website the API key can see, and how many people are on them now.
 - Show visitors / views and a sparkline for 24 hours, 7 days, 30 days or 90 days, compared with the range before.
 - Open one website for bounce rate, duration, a chart with counts under the pointer, and the top pages, referrers and countries with their icons and flags, all of them or of one tag.
-- Connect to Umami Cloud or a server of your own, and sort the websites, each with its icon and domain, by visitors, views or name.
+- Connect to Umami Cloud, a self-hosted Umami or Umapp's own server on Cloudflare Workers, and sort the websites, each with its icon and domain, by visitors, views or name.
 - Show the count of visitors online beside the icon, or hide it.
+- Add a website and copy the tracking code it embeds, from the list or a website's page.
 - Open at login.
 - Show English or Simplified Chinese, following the system unless you choose one.
 - Update on its own on macOS, or from *Check for Updates…* in the right-click menu and settings.
@@ -90,6 +91,20 @@ wrangler deploy
 ```
 
 Anyone who can open the site can use it with their own key. Put [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) in front to keep it to yourself.
+
+### Server
+
+`apps/server` is Umapp's own server: a Cloudflare Worker with D1 that counts the visitors of the websites embedding its `/script.js`, and answers Umapp as an Umami server does. Connect Umapp to its `/api` with the key you set. With [Wrangler](https://developers.cloudflare.com/workers/wrangler/) signed in, from the repository root:
+
+```sh
+npm install
+cd apps/server
+npx wrangler d1 create umapp      # put the database_id it prints in wrangler.jsonc
+npx wrangler secret put API_KEY   # the key Umapp connects with
+npm run deploy
+```
+
+For `npm run dev`, set `API_KEY` in `apps/server/.dev.vars`. `npm test` runs the tests in workerd with D1.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the layout and [AGENTS.md](AGENTS.md) for the working rules.
 

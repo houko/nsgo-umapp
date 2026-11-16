@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"math"
 	"testing"
 	"time"
@@ -123,6 +124,10 @@ func (demo) metrics(_ context.Context, id, kind string, from, to time.Time, limi
 		rows[i].Y = num(math.Round(float64(rows[i].Y)))
 	}
 	return rows[:min(limit, len(rows))], nil
+}
+
+func (demo) addWebsite(context.Context, string, string) (website, error) {
+	return website{}, errors.New("the demo adds no websites")
 }
 
 // TestScreenshots and TestScreenshotsZh save the README's screenshots, of

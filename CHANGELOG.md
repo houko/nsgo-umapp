@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- Run in a browser, deployed to Cloudflare Workers.
+- Add a server on Cloudflare Workers and D1 that counts the visitors of websites embedding its script, for Umapp to connect to as to Umami (#4 by @houko).
+- Add a website and copy its tracking code in the app (#4 by @houko).
+- Run in a browser, deployed to Cloudflare Workers (#1 by @houko).
 
 ## [0.2026.1] - 2026-11-16
 

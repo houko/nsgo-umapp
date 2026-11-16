@@ -1,7 +1,8 @@
-// The Worker serves the web build's files and, at PROXY_PATH, forwards the app's GETs to Umami (platform_js.go). Browsers refuse Umami's answers to a request of another origin that carries Authorization, as its CORS headers allow headers by "*", which leaves Authorization out; on the site's own origin no CORS applies.
+// The Worker serves the web build's files and, at PROXY_PATH, forwards the app's requests to Umami (platform_js.go): GETs, and POSTs of JSON, as adding a website. Browsers refuse Umami's answers to a request of another origin that carries Authorization, as its CORS headers allow headers by "*", which leaves Authorization out; on the site's own origin no CORS applies.
 const PROXY_PATH = "/umami-api";
 const TARGET_HEADER = "X-Umami-URL";
 const FORWARDED = ["Authorization", "x-umami-api-key"];
+const MAX_BODY = 16 << 10;
 
 export default {
   async fetch(request, env) {
@@ -9,8 +10,8 @@ export default {
     if (url.pathname !== PROXY_PATH) {
       return new Response("Not found", { status: 404 });
     }
-    if (request.method !== "GET") {
-      return new Response(null, { status: 405, headers: { Allow: "GET" } });
+    if (request.method !== "GET" && request.method !== "POST") {
+      return new Response(null, { status: 405, headers: { Allow: "GET, POST" } });
     }
     const target = allowedTarget(request.headers.get(TARGET_HEADER), env.UMAMI_ENDPOINTS);
     if (!target) {
@@ -21,7 +22,18 @@ export default {
       const value = request.headers.get(name);
       if (value) headers.set(name, value);
     }
-    const res = await fetch(target, { headers, redirect: "manual" });
+    let body;
+    if (request.method === "POST") {
+      if (!(request.headers.get("Content-Type") ?? "").startsWith("application/json")) {
+        return Response.json({ message: "The request isn't JSON." }, { status: 415 });
+      }
+      body = await request.text();
+      if (body.length > MAX_BODY) {
+        return Response.json({ message: "The request is too large." }, { status: 413 });
+      }
+      headers.set("Content-Type", "application/json");
+    }
+    const res = await fetch(target, { method: request.method, headers, body, redirect: "manual" });
     return new Response(res.body, {
       status: res.status,
       headers: {

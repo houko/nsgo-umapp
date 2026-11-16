@@ -65,6 +65,8 @@ func (a *app) root(cx *core.Scope) core.Node {
 				switch {
 				case a.page == pageSettings:
 					return a.settings(cx)
+				case a.page == pageAdd:
+					return a.addPage(cx)
 				case a.page == pageSite && a.site(a.open) != nil:
 					return a.region(a.detailKey, func(cx *core.Scope) core.Node {
 						s := a.site(a.open)
@@ -93,13 +95,14 @@ func (a *app) detailKey() string {
 		return a.open
 	}
 	return fmt.Sprint(a.cfg.Range, a.loading, a.gen, s.detailGen, a.tag, s.detailTag, len(s.tags), s.tagged.loaded,
-		len(s.pages), len(s.referrers), len(s.countries), s.detailErr, s.loaded, s.active, s.liveTag, s.liveTags, s.livePages, s.liveCountries)
+		len(s.pages), len(s.referrers), len(s.countries), s.detailErr, s.loaded, s.active, s.liveTag, s.liveTags, s.livePages, s.liveCountries, a.copied)
 }
 
 func (a *app) header(cx *core.Scope) core.Node {
 	return bar(cx,
 		a.rangeControl(cx),
 		ui.Spacer{},
+		a.toolButton(cx, lucide.Plus, a.msgs().AddWebsite(), nil, a.startAdd, "add"),
 		a.refreshButton(cx),
 		a.toolButton(cx, lucide.Settings, a.msgs().Settings(), nil, func() {
 			a.resetSettings()

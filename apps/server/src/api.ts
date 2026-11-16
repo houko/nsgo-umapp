@@ -1,0 +1,243 @@
+// The part of Umami's API Umapp reads, answered in Umami 3's form, and the websites it manages.
+
+import { type Env, forget } from "./collect";
+import { buckets, type Unit, validZone } from "./zone";
+
+const LIVE_WINDOW = 5 * 60_000;
+const MAX_RANGE = 400 * 86_400_000;
+const MAX_BUCKETS = 500;
+
+class HTTPError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+}
+
+/** authorized compares the key a request carries, as Umami's bearer token or Umami Cloud's header, with API_KEY in constant time. */
+async function authorized(request: Request, key: string): Promise<boolean> {
+  const auth = request.headers.get("Authorization") ?? "";
+  const given = auth.startsWith("Bearer ") ? auth.slice(7) : (request.headers.get("x-umami-api-key") ?? "");
+  const enc = new TextEncoder();
+  const [a, b] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(given)),
+    crypto.subtle.digest("SHA-256", enc.encode(key)),
+  ]);
+  return crypto.subtle.timingSafeEqual(a, b);
+}
+
+interface Range {
+  from: number;
+  to: number;
+  tag: string;
+}
+
+function range(q: URLSearchParams): Range {
+  const from = Number(q.get("startAt"));
+  const to = Number(q.get("endAt"));
+  if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to) || from < 0 || to < from) {
+    throw new HTTPError(400, "startAt and endAt must be times in milliseconds, startAt first.");
+  }
+  if (to - from > MAX_RANGE) throw new HTTPError(400, "The range is longer than 400 days.");
+  return { from, to, tag: q.get("tag") ?? "" };
+}
+
+/** where is the condition and bindings of a website's events in r, after the website's id as ?1, on the columns of table t. */
+function where(r: Range, t = "event"): [string, unknown[]] {
+  const cond = `${t}.website_id = ?1 AND ${t}.created_at BETWEEN ?2 AND ?3`;
+  return r.tag ? [`${cond} AND ${t}.tag = ?4`, [r.from, r.to, r.tag]] : [cond, [r.from, r.to]];
+}
+
+interface Stats {
+  pageviews: number;
+  visitors: number;
+  visits: number;
+  bounces: number;
+  totaltime: number;
+}
+
+async function totals(env: Env, id: string, r: Range): Promise<Stats> {
+  const [cond, args] = where(r);
+  const row = await env.DB.prepare(
+    `WITH v AS (
+       SELECT MIN(session_id) AS session, COUNT(*) AS events, SUM(type = 1) AS views, MAX(created_at) - MIN(created_at) AS span
+       FROM event WHERE ${cond} GROUP BY visit_id)
+     SELECT COALESCE(SUM(views), 0) AS pageviews, COUNT(DISTINCT session) AS visitors, COUNT(*) AS visits,
+       COALESCE(SUM(events = 1), 0) AS bounces, COALESCE(SUM(span), 0) / 1000 AS totaltime FROM v`,
+  )
+    .bind(id, ...args)
+    .first<Stats>();
+  return row ?? { pageviews: 0, visitors: 0, visits: 0, bounces: 0, totaltime: 0 };
+}
+
+async function stats(env: Env, id: string, q: URLSearchParams) {
+  const r = range(q);
+  const len = r.to - r.from;
+  const [cur, prev] = await Promise.all([totals(env, id, r), totals(env, id, { ...r, from: r.from - len - 1, to: r.from - 1 })]);
+  return { ...cur, comparison: prev };
+}
+
+async function active(env: Env, id: string, now: number) {
+  const row = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) AS visitors FROM event WHERE website_id = ? AND created_at >= ?")
+    .bind(id, now - LIVE_WINDOW)
+    .first<{ visitors: number }>();
+  return { visitors: row?.visitors ?? 0 };
+}
+
+async function pageviews(env: Env, id: string, q: URLSearchParams) {
+  const r = range(q);
+  const unit = q.get("unit") ?? "day";
+  if (unit !== "hour" && unit !== "day") throw new HTTPError(400, "unit must be hour or day.");
+  const tz = q.get("timezone") || "UTC";
+  if (!validZone(tz)) throw new HTTPError(400, "Unknown time zone.");
+  const bs = buckets(r.from, r.to, unit as Unit, tz, MAX_BUCKETS);
+  if (!bs) throw new HTTPError(400, `The range has more than ${MAX_BUCKETS} units.`);
+  if (bs.length === 0) return { pageviews: [], sessions: [] };
+  // The buckets are numbers computed here, written into the query as its table of ranges.
+  const values = bs.map((b, i) => `(${i}, ${b.start}, ${b.end})`).join(", ");
+  const [cond, args] = where(r, "e");
+  const { results } = await env.DB.prepare(
+    `WITH b (i, a, z) AS (VALUES ${values})
+     SELECT b.i AS i, SUM(e.type = 1) AS views, COUNT(DISTINCT e.session_id) AS visitors
+     FROM b JOIN event e ON e.created_at >= b.a AND e.created_at < b.z AND ${cond}
+     GROUP BY b.i ORDER BY b.i`,
+  )
+    .bind(id, ...args)
+    .all<{ i: number; views: number; visitors: number }>();
+  return {
+    pageviews: results.filter((row) => row.views > 0).map((row) => ({ x: bs[row.i].label, y: row.views })),
+    sessions: results.map((row) => ({ x: bs[row.i].label, y: row.visitors })),
+  };
+}
+
+// What each breakdown counts: pageviews of a page, visitors of the rest.
+const breakdowns: Record<string, { column: string; count: string }> = {
+  path: { column: "path", count: "SUM(type = 1)" },
+  url: { column: "path", count: "SUM(type = 1)" },
+  referrer: { column: "referrer", count: "COUNT(DISTINCT session_id)" },
+  country: { column: "country", count: "COUNT(DISTINCT session_id)" },
+  tag: { column: "tag", count: "COUNT(DISTINCT session_id)" },
+  event: { column: "name", count: "COUNT(*)" },
+};
+
+async function metrics(env: Env, id: string, q: URLSearchParams) {
+  const r = range(q);
+  const b = breakdowns[q.get("type") ?? ""];
+  if (!b) throw new HTTPError(400, "type must be path, referrer, country, tag or event.");
+  const limit = Math.min(Math.max(Number(q.get("limit")) || 500, 1), 500);
+  const [cond, args] = where(r);
+  const { results } = await env.DB.prepare(
+    `SELECT ${b.column} AS x, ${b.count} AS y FROM event WHERE ${cond} AND ${b.column} != ''
+     GROUP BY ${b.column} HAVING y > 0 ORDER BY y DESC, x LIMIT ${limit}`,
+  )
+    .bind(id, ...args)
+    .all<{ x: string; y: number }>();
+  return results;
+}
+
+interface Website {
+  id: string;
+  name: string;
+  domain: string;
+  createdAt: string;
+}
+
+const websiteColumns = "id, name, domain, strftime('%Y-%m-%dT%H:%M:%fZ', created_at / 1000.0, 'unixepoch') AS createdAt";
+
+async function website(env: Env, id: string): Promise<Website> {
+  const row = await env.DB.prepare(`SELECT ${websiteColumns} FROM website WHERE id = ?`).bind(id).first<Website>();
+  if (!row) throw new HTTPError(404, "No such website.");
+  return row;
+}
+
+async function websites(env: Env) {
+  const { results } = await env.DB.prepare(`SELECT ${websiteColumns} FROM website ORDER BY name, id`).all<Website>();
+  return { data: results, count: results.length, page: 1, pageSize: results.length };
+}
+
+/** domainOf is the host of what the user typed, an address or a domain. */
+function domainOf(s: string): string {
+  const t = s.trim();
+  try {
+    return new URL(t.includes("://") ? t : "https://" + t).hostname;
+  } catch {
+    return "";
+  }
+}
+
+async function createWebsite(env: Env, request: Request, now: number): Promise<Website> {
+  let body: { name?: unknown; domain?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    throw new HTTPError(400, "The website isn't JSON.");
+  }
+  const domain = typeof body.domain === "string" ? domainOf(body.domain) : "";
+  if (!domain) throw new HTTPError(400, "The domain is missing or isn't a domain.");
+  const name = (typeof body.name === "string" && body.name.trim()) || domain;
+  const id = crypto.randomUUID();
+  await env.DB.prepare("INSERT INTO website (id, name, domain, created_at) VALUES (?, ?, ?, ?)")
+    .bind(id, name.slice(0, 100), domain, now)
+    .run();
+  return website(env, id);
+}
+
+async function deleteWebsite(env: Env, id: string) {
+  await website(env, id);
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM event WHERE website_id = ?").bind(id),
+    env.DB.prepare("DELETE FROM website WHERE id = ?").bind(id),
+  ]);
+  forget(id);
+  return { ok: true };
+}
+
+/** api answers path, under /api, of an authorized request. */
+export async function api(request: Request, env: Env, path: string, now = Date.now()): Promise<Response> {
+  if (!env.API_KEY) return json({ message: "The server has no API_KEY." }, 500);
+  if (!(await authorized(request, env.API_KEY))) return json({ message: "The API key was rejected." }, 401);
+  const q = new URL(request.url).searchParams;
+  const m = request.method;
+  const parts = path.split("/").filter(Boolean);
+  try {
+    if (parts[0] !== "websites") throw new HTTPError(404, "Not found.");
+    const [, rawID, sub] = parts;
+    if (parts.length > 3) throw new HTTPError(404, "Not found.");
+    if (!rawID) {
+      if (m === "GET") return json(await websites(env));
+      if (m === "POST") return json(await createWebsite(env, request, now));
+      throw new HTTPError(405, "Method not allowed.");
+    }
+    const id = decodeURIComponent(rawID);
+    if (!sub) {
+      if (m === "GET") return json(await website(env, id));
+      if (m === "DELETE") return json(await deleteWebsite(env, id));
+      throw new HTTPError(405, "Method not allowed.");
+    }
+    if (m !== "GET") throw new HTTPError(405, "Method not allowed.");
+    await website(env, id);
+    switch (sub) {
+      case "stats":
+        return json(await stats(env, id, q));
+      case "active":
+        return json(await active(env, id, now));
+      case "pageviews":
+        return json(await pageviews(env, id, q));
+      case "metrics":
+        return json(await metrics(env, id, q));
+    }
+    throw new HTTPError(404, "Not found.");
+  } catch (e) {
+    if (e instanceof HTTPError) return json({ message: e.message }, e.status);
+    throw e;
+  }
+}

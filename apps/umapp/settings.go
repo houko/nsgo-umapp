@@ -21,13 +21,14 @@ func (a *app) settings(cx *core.Scope) core.Node {
 	if !connected {
 		return body
 	}
-	return core.View{Style: ui.FillRest, Children: []core.Node{a.settingsHeader(cx), body}}
+	return core.View{Style: ui.FillRest, Children: []core.Node{a.pageHeader(cx, msgsOf(cx).SettingsTitle()), body}}
 }
 
-func (a *app) settingsHeader(cx *core.Scope) core.Node {
+// pageHeader is the bar of a page under the list: the way back, and the page's title.
+func (a *app) pageHeader(cx *core.Scope, text string) core.Node {
 	tr := msgsOf(cx)
 	colors := ui.ColorsOf(cx)
-	title := oneLine(ui.Text(tr.SettingsTitle(), 13, ui.Semibold, colors.Text))
+	title := oneLine(ui.Text(text, 13, ui.Semibold, colors.Text))
 	title.Role = core.RoleHeader
 	title.Style = title.Style.Merge(core.Style{FlexGrow: 1, TextAlign: core.TextAlignCenter})
 	return core.View{Style: core.Style{Direction: core.Row, AlignItems: core.AlignCenter, Gap: 4,

@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"math"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -14,13 +15,14 @@ import (
 	"github.com/nsgo-dev/nsgo/core"
 )
 
-// source is what the app reads from Umami: *client, or a fake in tests.
+// source is what the app reads from Umami, and the websites it adds: *client, or a fake in tests.
 type source interface {
 	websites(ctx context.Context) ([]website, error)
 	stats(ctx context.Context, id string, from, to time.Time, tag string) (cur, prev stats, err error)
 	active(ctx context.Context, id string) (int, error)
 	series(ctx context.Context, id string, from, to time.Time, unit, tz, tag string) (views, visitors []point, err error)
 	metrics(ctx context.Context, id, kind string, from, to time.Time, limit int, tag string) ([]metric, error)
+	addWebsite(ctx context.Context, name, domain string) (website, error)
 }
 
 // span is a range of time the app shows, with its buckets.
@@ -161,6 +163,7 @@ const (
 	pageSites page = iota
 	pageSite
 	pageSettings
+	pageAdd
 )
 
 // app is the state of the panel. Everything in it is read and changed on
@@ -195,6 +198,15 @@ type app struct {
 	editKey      string
 	connecting   bool
 	connectErr   string
+
+	// The add page's fields until added, then the website it added.
+	addName   string
+	addDomain string
+	adding    bool
+	addErr    string
+	added     *website
+	// copied is the ID of the website whose tracking code was copied last, while its page shows.
+	copied string
 
 	// Whether the system starts the app at login, where it can. The
 	// system keeps the setting: readLogin asks it, setLogin changes it.
@@ -579,7 +591,7 @@ func withOnline(rows, live []metric) []metric {
 
 // openSite shows a site's page.
 func (a *app) openSite(id string) {
-	a.page, a.open, a.tag, a.selected = pageSite, id, "", -1
+	a.page, a.open, a.tag, a.selected, a.copied = pageSite, id, "", -1, ""
 	a.invalidate()
 	a.loadDetail()
 	a.loadLive()
@@ -612,8 +624,60 @@ func (a *app) back() {
 	if a.page == pageSettings {
 		a.resetSettings()
 	}
-	a.page, a.selected = pageSites, -1
+	a.page, a.selected, a.copied = pageSites, -1, ""
 	a.invalidate()
+}
+
+// startAdd shows the page that adds a website.
+func (a *app) startAdd() {
+	a.addName, a.addDomain, a.addErr, a.added, a.copied = "", "", "", nil, ""
+	a.page = pageAdd
+	a.invalidate()
+}
+
+// addWebsite adds the add page's website to the account, then shows its tracking code and loads the list again.
+func (a *app) addWebsite() {
+	domain := bareDomain(a.addDomain)
+	if a.adding || domain == "" || a.src == nil {
+		return
+	}
+	name := strings.TrimSpace(a.addName)
+	if name == "" {
+		name = domain
+	}
+	a.adding, a.addErr = true, ""
+	a.invalidate()
+	src := a.src
+	a.spawn(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+		w, err := src.addWebsite(ctx, name, domain)
+		a.post(func() {
+			a.adding = false
+			if err != nil {
+				a.addErr = err.Error()
+				return
+			}
+			a.added = &w
+			a.refresh()
+		})
+	})
+}
+
+// bareDomain is the host of what the user typed, an address or a domain, or "" when it names none.
+func bareDomain(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	if !strings.Contains(s, "://") {
+		s = "https://" + s
+	}
+	u, err := url.Parse(s)
+	if err != nil {
+		return ""
+	}
+	return strings.ToLower(u.Hostname())
 }
 
 // loadDetail loads the tags and the breakdowns the site's page shows, once
