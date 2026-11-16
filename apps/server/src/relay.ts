@@ -54,7 +54,8 @@ export async function relayFetch(request: Request, env: RelayEnv, ctx: Execution
     .transform(page);
 }
 
-/** relaySource is the relay as the module uploaded to an account. */
+/** relaySource is the relay as the module uploaded to an account. Wrangler bundles the server with esbuild's keepNames, which wraps the functions inside relayFetch in calls to its __name helper, so the module defines that helper too: without it, every page would throw and pass through untracked. */
 export function relaySource(): string {
-  return `export default { fetch: ${relayFetch.toString()} };\n`;
+  const name = `const __name = (target, value) => Object.defineProperty(target, "name", { value, configurable: true });\n`;
+  return `${name}export default { fetch: ${relayFetch.toString()} };\n`;
 }
